@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tournament Generator</title>
+<link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-text">
+        <p class="eyebrow">Court Manager</p>
+        <h1>Tournament Generator</h1>
+      </div>
+      <div>
+        <button type="button" class="imp-exp-button" id="export-tournament-btn">Full JSON Export</button>
+        <button type="button" class="imp-exp-button" id="import-tournament-btn">Full JSON Import</button>
+        <button type="button" class="discard-btn" id="discard-btn">Discard tournament</button>
+      </div>
+    </header>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="players">Players</button>
+      <button class="tab" data-tab="courts">Courts</button>
+      <button class="tab" data-tab="generator">Generator</button>
+    </div>
+
+    <!-- ===== PLAYERS TAB ===== -->
+    <div id="players" class="tab-content active">
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-subtab="all-players-section">All players</button>
+        <button class="sub-tab" data-subtab="active-players-section">Active players</button>
+      </div>
+
+      <!-- All Players -->
+      <div id="all-players-section" class="sub-tab-content active">
+        <div class="players-layout">
+          <div class="card form-card">
+            <h2>Add player</h2>
+            <form id="all-player-form">
+              <div class="field" id="ap-name-field">
+                <label for="ap-name">Name</label>
+                <input type="text" id="ap-name" name="name" autocomplete="off">
+                <span class="error-text">Enter a name.</span>
+              </div>
+              <div class="field">
+                <label for="ap-skill">Skill level (1–3)</label>
+                <select id="ap-skill" name="skill">
+                  <option value="1">1 — Beginner</option>
+                  <option value="2">2 — Intermediate</option>
+                  <option value="3">3 — Advanced</option>
+                </select>
+              </div>
+              <button type="submit">Add player</button>
+            </form>
+
+            <div class="import-section">
+              <h3>Import / Export CSV</h3>
+              <p class="csv-help">Data is stored in browser local storage. Export is useful if local storage is cleared or you wish to change browser or device.</p>
+              <p class="csv-help">Import format — one player per line, first line (header) is skipped. Columns:</p>
+              <ul class="csv-columns">
+                <li><code>name</code> — player's name</li>
+                <li><code>skill</code> — <code>1</code> (Beginner), <code>2</code> (Intermediate) or <code>3</code> (Advanced)</li>
+              </ul>
+              <p class="csv-example">Example:<br>
+                <code>name,skill<br>Alice,2<br>Bob,1</code>
+              </p>
+              <div class="import-actions">
+                <button type="button" class="secondary-btn" id="export-all-players-btn">Export CSV</button>
+                <label class="secondary-btn" for="all-players-csv-input">Import CSV</label>
+                <input type="file" id="all-players-csv-input" accept=".txt,.csv,text/csv">
+              </div>
+              <div class="import-result" id="all-players-import-result"></div>
+            </div>
+          </div>
+
+          <div class="card players-panel">
+            <div class="players-panel-header">
+              <h2>All players <span class="player-count" id="all-player-count">(0)</span></h2>
+              <button type="button" class="clear-btn" id="clear-all-players-btn">Clear all</button>
+            </div>
+            <div class="sort-bar">
+              <span class="sort-label">Sort by:</span>
+              <button type="button" class="sort-btn" data-list="all" data-field="name">Name</button>
+              <button type="button" class="sort-btn" data-list="all" data-field="skill">Skill</button>
+            </div>
+            <p class="empty" id="all-players-empty">No players added yet.</p>
+            <ul class="player-list" id="all-player-list"></ul>
+            <table class="player-table" id="all-player-table">
+              <thead>
+                <tr>
+                  <th class="sortable" data-list="all" data-field="name">Name <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-list="all" data-field="skill">Skill <span class="sort-icon">↕</span></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="all-player-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Players -->
+      <div id="active-players-section" class="sub-tab-content">
+        <div class="players-layout">
+          <div class="card form-card">
+            <h2>Add active player</h2>
+            <p class="section-hint">Select players from the All players list and set their arrival time and play duration for this tournament.</p>
+            <form id="active-player-form">
+              <div class="field" id="active-player-field">
+                <label for="active-player-select">Players</label>
+                <select id="active-player-select" name="playerId" multiple>
+                </select>
+                <span class="error-text">Select a player.</span>
+                <p class="section-hint">Hold Ctrl (Cmd on Mac) or Shift to select multiple players.</p>
+              </div>
+              <div class="field" id="active-arrival-field">
+                <label for="active-arrival">Arrival time</label>
+                <select id="active-arrival" name="arrival">
+                  <option value="">Select a time</option>
+                </select>
+                <span class="error-text">Select an arrival time.</span>
+              </div>
+              <div class="field" id="active-playtime-field">
+                <label for="active-playtime">Play time (hours)</label>
+                <input type="number" id="active-playtime" name="playtime" min="1" value="1">
+                <span class="error-text">Enter a play time of at least 1 hour.</span>
+              </div>
+              <button type="submit">Add to active</button>
+            </form>
+          </div>
+
+          <div class="card players-panel">
+            <div class="players-panel-header">
+              <h2>Active players <span class="player-count" id="active-player-count">(0)</span></h2>
+              <button type="button" class="clear-btn" id="clear-active-players-btn">Clear all</button>
+            </div>
+            <div class="sort-bar">
+              <span class="sort-label">Sort by:</span>
+              <button type="button" class="sort-btn" data-list="active" data-field="name">Name</button>
+              <button type="button" class="sort-btn" data-list="active" data-field="skill">Skill</button>
+            </div>
+            <p class="empty" id="active-players-empty">No active players added yet.</p>
+            <ul class="player-list" id="active-player-list"></ul>
+            <table class="player-table" id="active-player-table">
+              <thead>
+                <tr>
+                  <th class="sortable" data-list="active" data-field="name">Name <span class="sort-icon">↕</span></th>
+                  <th class="sortable" data-list="active" data-field="skill">Skill <span class="sort-icon">↕</span></th>
+                  <th>Arrival</th>
+                  <th>Play time</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="active-player-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- end players tab -->
+
+    <!-- ===== COURTS TAB ===== -->
+    <div id="courts" class="tab-content">
+      <div class="players-layout">
+        <div class="form-card form-stack">
+          <div class="card">
+            <h2>Courts <span class="player-count" id="court-name-count">(0)</span></h2>
+            <form id="court-name-form">
+              <div class="field" id="court-name-field">
+                <label for="court-name">Court name</label>
+                <input type="text" id="court-name" name="courtName" placeholder="e.g. C1">
+                <span class="error-text">Enter a court name.</span>
+              </div>
+              <button type="submit">Add court</button>
+            </form>
+            <ul class="chip-list" id="court-name-list"></ul>
+          </div>
+
+          <div class="card">
+            <h2>Add availability</h2>
+            <form id="court-form">
+              <div class="field" id="court-time-field">
+                <label for="court-time">Start time</label>
+                <select id="court-time" name="courtTime">
+                  <option value="">Select a time</option>
+                </select>
+                <span class="error-text">Select a start time.</span>
+              </div>
+
+              <div class="field" id="court-duration-field">
+                <label for="court-duration">Duration</label>
+                <select id="court-duration" name="courtDuration">
+                  <option value="">Select a duration</option>
+                </select>
+                <span class="error-text">Select a duration.</span>
+              </div>
+
+              <div class="field" id="court-select-field">
+                <label>Courts available</label>
+                <div class="checkbox-list" id="court-checkbox-list">
+                  <p class="empty" id="no-courts-hint">Add a court above first.</p>
+                </div>
+                <span class="error-text">Select at least one court.</span>
+              </div>
+
+              <button type="submit">Add block</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card players-panel">
+          <div class="players-panel-header">
+            <h2>Court schedule <span class="player-count" id="court-block-count">(0)</span></h2>
+            <button type="button" class="clear-btn" id="clear-courts-btn">Clear all</button>
+          </div>
+
+          <p class="empty" id="courts-empty-state">No court availability added yet.</p>
+
+          <ul class="player-list" id="court-list"></ul>
+
+          <table class="player-table" id="court-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Courts</th>
+                <th>Count</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="court-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GENERATOR TAB ===== -->
+    <div id="generator" class="tab-content">
+
+      <div class="card gen-controls-card">
+        <h2>Generate schedule</h2>
+
+        <div class="gen-controls-row">
+          <div class="field gen-field-inline">
+            <label for="matches-per-hour">Matches per hour (one match = one set)</label>
+            <select id="matches-per-hour">
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5" selected>5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+            </select>
+          </div>
+          <label class="checkbox-label gen-singles-label">
+            <input type="checkbox" id="allow-singles">
+            Allow singles (players on bench can play singles matches)
+          </label>
+        </div>
+
+        <div class="gen-btn-row">
+          <button type="button" id="gen-generate-btn" class="gen-primary-btn">Generate</button>
+          <button type="button" id="gen-clear-btn" class="clear-btn" hidden>Clear matches</button>
+          <button type="button" id="gen-print-btn" class="secondary-btn print-hide" hidden>Print</button>
+          <button type="button" id="gen-export-btn" class="secondary-btn print-hide" hidden>Export</button>
+        </div>
+
+        <div id="gen-progress" class="gen-progress-wrap" hidden>
+          <div id="gen-progress-bar" class="gen-progress-bar" style="width:0%">0%</div>
+        </div>
+      </div>
+
+      <p class="empty gen-empty-hint" id="gen-empty">
+        Add active players and court availability, then click <strong>Generate</strong>.
+      </p>
+
+      <div class="card gen-scoreboard-card" id="gen-scoreboard" hidden>
+        <h3 class="gen-section-heading">Penalty score</h3>
+      </div>
+
+      <div id="gen-schedule-output" hidden></div>
+
+      <div class="card" id="gen-stats-output" hidden></div>
+
+    </div>
+    <!-- end generator tab -->
+  </div>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/all-players.js"></script>
+  <script src="assets/js/active-players.js"></script>
+  <script src="assets/js/courts.js"></script>
+  <script src="assets/js/generate.js"></script>
+  <script src="assets/js/init.js"></script>
+  <script src="assets/js/exceljs.min.js"></script>
+</body>
+</html>
