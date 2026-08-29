@@ -26,44 +26,56 @@ document.querySelectorAll('.sub-tabs').forEach(subTabGroup => {
 });
 
 // ============================================================
-// SHARED CONSTANTS
-// ============================================================
-const skillLabels = { '1': 'Beginner', '2': 'Intermediate', '3': 'Advanced' };
-const skillLabelsShort = { '1': 'Beg', '2': 'Int', '3': 'Adv' };
-
-function renderSkillPillHtml(skill, short = false) {
-	return `<span class="skill-pill skill-${skill}">${(short ? skillLabelsShort[skill] : skillLabels[skill]) || skill}</span>`;
-  }
-  
-// ============================================================
 // SORT UTILITIES
 // ============================================================
 const sortState = {
   all:    { field: 'name', dir: 'asc' },
-  active: { field: 'name', dir: 'asc' }
+  active: { field: 'name', dir: 'asc' },
+  stats:  { field: 'name', dir: 'asc' }
 };
 
 function getSorted(arr, listKey) {
-  const { field, dir } = sortState[listKey];
-  return [...arr].sort((a, b) => {
-    const va = field === 'skill' ? Number(a.skill) : a.name.toLowerCase();
-    const vb = field === 'skill' ? Number(b.skill) : b.name.toLowerCase();
-    if (va < vb) return dir === 'asc' ? -1 : 1;
-    if (va > vb) return dir === 'asc' ?  1 : -1;
-    return 0;
-  });
+	const { field, dir } = sortState[listKey];
+	return [...arr].sort((a, b) => {
+		if (field === 'arrival') {
+			const va = a[field].split(':').map(Number).reduce((h, m) => h * 60 + m, 0);
+			const vb = b[field].split(':').map(Number).reduce((h, m) => h * 60 + m, 0);
+			if (va < vb) return dir === 'asc' ? -1 : 1;
+			if (va > vb) return dir === 'asc' ?  1 : -1;
+			return 0;
+		}
+		if (field === 'playtime' || field === 'matches' || field === 'bench') {
+			const va = a[field];
+			const vb = b[field];
+			if (va < vb) return dir === 'asc' ? -1 : 1;
+			if (va > vb) return dir === 'asc' ?  1 : -1;
+			return 0;
+		}
+		if (field === 'skill') {
+			const va = Number(a.skill);
+			const vb = Number(b.skill);
+			if (va < vb) return dir === 'asc' ? -1 : 1;
+			if (va > vb) return dir === 'asc' ?  1 : -1;
+			return 0;
+		}
+		if (field === 'partners' || field === 'opponents') {
+			const va = a[field].size;
+			const vb = b[field].size;
+			if (va < vb) return dir === 'asc' ? -1 : 1;
+			if (va > vb) return dir === 'asc' ?  1 : -1;
+			return 0;
+		}
+		const va = a.name.toLowerCase();
+		const vb = b.name.toLowerCase();
+		if (va < vb) return dir === 'asc' ? -1 : 1;
+		if (va > vb) return dir === 'asc' ?  1 : -1;
+		return 0;
+	});
 }
 
 function updateSortUI(listKey) {
   const { field, dir } = sortState[listKey];
   const arrow = dir === 'asc' ? '↑' : '↓';
-
-  document.querySelectorAll(`.sort-btn[data-list="${listKey}"]`).forEach(btn => {
-    const active = btn.dataset.field === field;
-    btn.classList.toggle('active-sort', active);
-    const label = btn.dataset.field.charAt(0).toUpperCase() + btn.dataset.field.slice(1);
-    btn.textContent = active ? `${label} ${arrow}` : label;
-  });
 
   document.querySelectorAll(`th.sortable[data-list="${listKey}"]`).forEach(th => {
     const active = th.dataset.field === field;
@@ -80,10 +92,12 @@ function handleSort(listKey, field) {
     sortState[listKey].field = field;
     sortState[listKey].dir = 'asc';
   }
+  console.log(`Sorting ${listKey} by ${field} (${sortState[listKey].dir})`);
   if (listKey === 'all') renderAllPlayers();
-  else renderActivePlayers();
+  else if (listKey === 'active') renderActivePlayers();
+  else renderStatsTable();
 }
 
-document.querySelectorAll('.sort-btn, th.sortable').forEach(el => {
+document.querySelectorAll('th.sortable').forEach(el => {
   el.addEventListener('click', () => handleSort(el.dataset.list, el.dataset.field));
 });

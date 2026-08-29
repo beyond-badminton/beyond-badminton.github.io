@@ -7,31 +7,6 @@ const ACTIVE_PLAYERS_NEXT_ID_KEY = 'tournament-generator:activePlayersNextId';
 let activePlayers = [];
 let nextActivePlayerId = 1;
 
-function loadActivePlayersFromStorage() {
-  try {
-    const saved   = localStorage.getItem(ACTIVE_PLAYERS_KEY);
-    const savedId = localStorage.getItem(ACTIVE_PLAYERS_NEXT_ID_KEY);
-    if (saved)   activePlayers      = JSON.parse(saved);
-    if (savedId) nextActivePlayerId = Number(savedId) || 1;
-  } catch (err) { activePlayers = []; nextActivePlayerId = 1; }
-}
-
-function saveActivePlayersToStorage() {
-  try {
-    localStorage.setItem(ACTIVE_PLAYERS_KEY,         JSON.stringify(activePlayers));
-    localStorage.setItem(ACTIVE_PLAYERS_NEXT_ID_KEY, String(nextActivePlayerId));
-  } catch (err) {}
-}
-
-function clearActivePlayersFromStorage() {
-	activePlayers = [];
-	nextActivePlayerId = 1;
-	try {
-		localStorage.removeItem(ACTIVE_PLAYERS_KEY);
-		localStorage.removeItem(ACTIVE_PLAYERS_NEXT_ID_KEY);
-	} catch (err) {}
-}
-
 // DOM refs
 const activePlayerSelect    = document.getElementById('active-player-select');
 const activeArrivalInput    = document.getElementById('active-arrival');
@@ -73,21 +48,6 @@ function populateActivePlayerSelect() {
 	activePlayerSelect.size = Math.max(2, Math.min(optionCount, 15));
 }
 
-// function populateActivePlayerSelect() {
-//   const activeIds = new Set(activePlayers.map(ap => ap.allPlayerId));
-//   const current   = activePlayerSelect.value;
-//   activePlayerSelect.innerHTML = '<option value="">Select a player</option>';
-//   allPlayers.forEach(p => {
-//     if (activeIds.has(p.id)) return;
-//     const opt = document.createElement('option');
-//     opt.value       = String(p.id);
-//     opt.textContent = `${p.name} — ${skillLabels[p.skill] || p.skill}`;
-//     activePlayerSelect.appendChild(opt);
-//   });
-//   if (current && activePlayerSelect.querySelector(`option[value="${current}"]`)) {
-//     activePlayerSelect.value = current;
-//   }
-// }
 function validateActivePlayerForm() {
 	const playerOk   = activePlayerSelect.selectedOptions.length > 0;
 	const arrivalOk  = activeArrivalInput.value !== '';
@@ -97,16 +57,6 @@ function validateActivePlayerForm() {
 	activePlaytimeField.classList.toggle('invalid', !playtimeOk);
 	return playerOk && arrivalOk && playtimeOk;
 }
-
-// function validateActivePlayerForm() {
-//   const playerOk   = activePlayerSelect.value !== '';
-//   const arrivalOk  = activeArrivalInput.value !== '';
-//   const playtimeOk = activePlaytimeInput.value !== '' && Number(activePlaytimeInput.value) > 0;
-//   activePlayerField.classList.toggle('invalid',   !playerOk);
-//   activeArrivalField.classList.toggle('invalid',  !arrivalOk);
-//   activePlaytimeField.classList.toggle('invalid', !playtimeOk);
-//   return playerOk && arrivalOk && playtimeOk;
-// }
 
 activePlayerSelect.addEventListener('change',  () => { if (activePlayerField.classList.contains('invalid'))   validateActivePlayerForm(); });
 activeArrivalInput.addEventListener('change',  () => { if (activeArrivalField.classList.contains('invalid'))  validateActivePlayerForm(); });
@@ -149,42 +99,32 @@ function renderActivePlayers() {
 	populateActivePlayerSelect();
 }
 
-// function renderActivePlayers() {
-//   activePlayerList.innerHTML      = '';
-//   activePlayerTableBody.innerHTML = '';
+function loadActivePlayersFromStorage() {
+	try {
+		const saved   = localStorage.getItem(ACTIVE_PLAYERS_KEY);
+		const savedId = localStorage.getItem(ACTIVE_PLAYERS_NEXT_ID_KEY);
+		if (saved)   activePlayers      = JSON.parse(saved);
+		if (savedId) nextActivePlayerId = Number(savedId) || 1;
+	} catch (err) { activePlayers = []; nextActivePlayerId = 1; }
+	renderActivePlayers();
+}
 
-//   const enriched = activePlayers.map(ap => {
-//     const p = allPlayers.find(p => p.id === ap.allPlayerId);
-//     return { ...ap, name: p ? p.name : '(removed)', skill: p ? p.skill : '0' };
-//   });
+function saveActivePlayersToStorage() {
+	try {
+		localStorage.setItem(ACTIVE_PLAYERS_KEY,         JSON.stringify(activePlayers));
+		localStorage.setItem(ACTIVE_PLAYERS_NEXT_ID_KEY, String(nextActivePlayerId));
+	} catch (err) {}
+}
 
-//   getSorted(enriched, 'active').forEach(p => {
-
-//     const li = document.createElement('li');
-//     li.innerHTML = `
-//       <div class="info">
-//         <span class="name">${p.name}</span>
-//         <span class="meta">` + renderSkillPillHtml(p.skill) + ` · ${p.arrival} · ${p.playtime}h</span>
-//       </div>
-//       <button type="button" class="remove-btn" data-id="${p.id}">Remove</button>`;
-//     activePlayerList.appendChild(li);
-
-//     const row = document.createElement('tr');
-//     row.innerHTML = `
-//       <td>${p.name}</td>
-//       <td>` + renderSkillPillHtml(p.skill) + `</td>
-//       <td>${p.arrival}</td>
-//       <td>${p.playtime}h</td>
-//       <td><button type="button" class="remove-btn" data-id="${p.id}">Remove</button></td>`;
-//     activePlayerTableBody.appendChild(row);
-//   });
-
-//   activePlayerCount.textContent = `(${activePlayers.length})`;
-//   activePlayersEmpty.style.display = activePlayers.length === 0 ? 'block' : 'none';
-//   updateSortUI('active');
-//   saveActivePlayersToStorage();
-//   populateActivePlayerSelect();
-// }
+function clearActivePlayersFromStorage() {
+	activePlayers = [];
+	nextActivePlayerId = 1;
+	try {
+		localStorage.removeItem(ACTIVE_PLAYERS_KEY);
+		localStorage.removeItem(ACTIVE_PLAYERS_NEXT_ID_KEY);
+	} catch (err) {}
+	renderActivePlayers();
+}
 
 function addActivePlayer(allPlayerId, arrival, playtime) {
   activePlayers.push({ id: nextActivePlayerId++, allPlayerId: Number(allPlayerId), arrival, playtime });
@@ -237,4 +177,3 @@ document.getElementById('active-player-form').addEventListener('submit', e => {
 // ============================================================
 loadActivePlayersFromStorage();
 populateActivePlayerSelect();
-renderActivePlayers();

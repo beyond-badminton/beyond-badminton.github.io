@@ -4,33 +4,10 @@
 const ALL_PLAYERS_KEY         = 'tournament-generator:allPlayers';
 const ALL_PLAYERS_NEXT_ID_KEY = 'tournament-generator:allPlayersNextId';
 
+const SKILL_LABELS = { '1': 'Beginner', '2': 'Intermediate', '3': 'Advanced', '4': 'Skilled' };
+
 let allPlayers = [];
 let nextAllPlayerId = 1;
-
-function loadAllPlayersFromStorage() {
-  try {
-    const saved   = localStorage.getItem(ALL_PLAYERS_KEY);
-    const savedId = localStorage.getItem(ALL_PLAYERS_NEXT_ID_KEY);
-    if (saved)   allPlayers      = JSON.parse(saved);
-    if (savedId) nextAllPlayerId = Number(savedId) || 1;
-  } catch (err) { allPlayers = []; nextAllPlayerId = 1; }
-}
-
-function saveAllPlayersToStorage() {
-  try {
-    localStorage.setItem(ALL_PLAYERS_KEY,         JSON.stringify(allPlayers));
-    localStorage.setItem(ALL_PLAYERS_NEXT_ID_KEY, String(nextAllPlayerId));
-  } catch (err) {}
-}
-
-function clearAllPlayersFromStorage() {
-	allPlayers = [];
-	nextAllPlayerId = 1;
-	try {
-		localStorage.removeItem(ALL_PLAYERS_KEY);
-		localStorage.removeItem(ALL_PLAYERS_NEXT_ID_KEY);
-	} catch (err) {}
-}
 
 // DOM refs
 const allPlayerForm      = document.getElementById('all-player-form');
@@ -42,62 +19,107 @@ const allPlayerTableBody = document.getElementById('all-player-table-body');
 const allPlayersEmpty    = document.getElementById('all-players-empty');
 const allPlayerCount     = document.getElementById('all-player-count');
 
+function renderSkillPillHtml(skillId, clickable = false) {
+	return `<span class="skill-pill skill-${skillId} ${clickable ? 'skill-pick' : ''}">${SKILL_LABELS[skillId] || skillId}</span>`;
+}
+
+function updateSkillPillElement(element, skillId, clickable = false) {
+	element.className = `skill-pill skill-${skillId} ${clickable ? 'skill-pick' : ''}`;
+	element.textContent = SKILL_LABELS[skillId] || skillId;
+}
+
+function populateAppSkillOptions() {
+	Object.entries(SKILL_LABELS).forEach(([skillId, skillName]) => {
+		const opt = document.createElement('option');
+		opt.value       = skillId;
+		opt.textContent = `${skillId} — ${skillName}`;
+		apSkillInput.appendChild(opt);
+	});
+}
 function validateAllPlayerForm() {
-  const ok = apNameInput.value.trim().length > 0;
-  apNameField.classList.toggle('invalid', !ok);
-  return ok;
+	const ok = apNameInput.value.trim().length > 0;
+	apNameField.classList.toggle('invalid', !ok);
+	return ok;
 }
 
 apNameInput.addEventListener('input', () => {
-  if (apNameField.classList.contains('invalid')) validateAllPlayerForm();
+	if (apNameField.classList.contains('invalid')) validateAllPlayerForm();
 });
 
 function renderAllPlayers() {
-  allPlayerList.innerHTML      = '';
-  allPlayerTableBody.innerHTML = '';
+	allPlayerList.innerHTML      = '';
+	allPlayerTableBody.innerHTML = '';
 
-  getSorted(allPlayers, 'all').forEach(p => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <div class="info">
-        <span class="name">${p.name}</span>
-        <span class="meta">` + renderSkillPillHtml(p.skill) + `</span>
-      </div>
-      <button type="button" class="remove-btn" data-id="${p.id}">Remove</button>`;
-    allPlayerList.appendChild(li);
+	getSorted(allPlayers, 'all').forEach(p => {
+		const li = document.createElement('li');
+		li.innerHTML = `
+		<div class="info">
+			<span class="name">${p.name}</span>
+			<span class="meta">` + renderSkillPillHtml(p.skill) + `</span>
+		</div>
+		<button type="button" class="remove-btn" data-id="${p.id}">Remove</button>`;
+		allPlayerList.appendChild(li);
 
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${p.name}</td>
-      <td>` + renderSkillPillHtml(p.skill) +`</td>
-      <td><button type="button" class="remove-btn" data-id="${p.id}">Remove</button></td>`;
-    allPlayerTableBody.appendChild(row);
-  });
+		const row = document.createElement('tr');
+		row.innerHTML = `
+		<td>${p.name}</td>
+		<td>` + renderSkillPillHtml(p.skill, true) +`</td>
+		<td><button type="button" class="remove-btn" data-id="${p.id}">Remove</button></td>`;
+		allPlayerTableBody.appendChild(row);
+	});
 
-  allPlayerCount.textContent = `(${allPlayers.length})`;
-  allPlayersEmpty.style.display = allPlayers.length === 0 ? 'block' : 'none';
-  updateSortUI('all');
-  saveAllPlayersToStorage();
+	allPlayerCount.textContent = `(${allPlayers.length})`;
+	allPlayersEmpty.style.display = allPlayers.length === 0 ? 'block' : 'none';
+	updateSortUI('all');
+	saveAllPlayersToStorage();
 }
 
 function addAllPlayer(name, skill) {
-  if (allPlayers.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-	return `Player "${name}" already exists.`;
-  }
-  allPlayers.push({ id: nextAllPlayerId++, name, skill });
-  renderAllPlayers();
-  populateActivePlayerSelect();
-  return null;
+	if (allPlayers.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+		return `Player "${name}" already exists.`;
+	}
+	allPlayers.push({ id: nextAllPlayerId++, name, skill });
+	renderAllPlayers();
+	populateActivePlayerSelect();
+	return null;
 }
 
 function removeAllPlayer(id) {
-  allPlayers    = allPlayers.filter(p => p.id !== id);
-  activePlayers = activePlayers.filter(ap => ap.allPlayerId !== id);
-  renderAllPlayers();
-  populateActivePlayerSelect();
-  renderActivePlayers();
-  saveActivePlayersToStorage();
+	allPlayers    = allPlayers.filter(p => p.id !== id);
+	activePlayers = activePlayers.filter(ap => ap.allPlayerId !== id);
+	renderAllPlayers();
+	populateActivePlayerSelect();
+	renderActivePlayers();
+	saveActivePlayersToStorage();
 }
+
+function loadAllPlayersFromStorage() {
+	try {
+		const saved   = localStorage.getItem(ALL_PLAYERS_KEY);
+		const savedId = localStorage.getItem(ALL_PLAYERS_NEXT_ID_KEY);
+		if (saved)   allPlayers      = JSON.parse(saved);
+		if (savedId) nextAllPlayerId = Number(savedId) || 1;
+	} catch (err) { allPlayers = []; nextAllPlayerId = 1; }
+	renderAllPlayers();
+}
+
+function saveAllPlayersToStorage() {
+	try {
+		localStorage.setItem(ALL_PLAYERS_KEY,         JSON.stringify(allPlayers));
+		localStorage.setItem(ALL_PLAYERS_NEXT_ID_KEY, String(nextAllPlayerId));
+	} catch (err) {}
+}
+
+function clearAllPlayersFromStorage() {
+	allPlayers = [];
+	nextAllPlayerId = 1;
+	try {
+		localStorage.removeItem(ALL_PLAYERS_KEY);
+		localStorage.removeItem(ALL_PLAYERS_NEXT_ID_KEY);
+	} catch (err) {}
+  renderAllPlayers();
+}
+
 
 allPlayerList.addEventListener('click', e => {
   const btn = e.target.closest('.remove-btn');
@@ -150,7 +172,7 @@ allPlayersCsvInput.addEventListener('change', () => {
     const rows = lines.slice(1);
     let added = 0;
     const errors = [];
-    const skillNumbers = Object.keys(skillLabels)
+    const skillNumbers = Object.keys(SKILL_LABELS)
     rows.forEach((line, i) => {
       const [name, skill] = line.split(',').map(c => c.trim());
       if (!name) { errors.push(`Row ${i + 2}: missing name`); return; }
@@ -188,8 +210,109 @@ document.getElementById('export-all-players-btn').addEventListener('click', () =
 });
 
 
+// skill change
+let currentPopover = null;
+
+// 2. Delegate click event to skill pills inside the table
+allPlayerTableBody.addEventListener('click', (event) => {
+  const targetPill = event.target.closest('.skill-pill');
+  if (!targetPill || targetPill.closest('.skill-picker-popover')) return;
+
+  event.stopPropagation();
+  openSkillPicker(targetPill);
+});
+
+function openSkillPicker(targetPill) {
+  closeSkillPicker();
+
+  // Create popover element
+  const popover = document.createElement('div');
+  popover.className = 'skill-picker-popover';
+
+  // Apply positioning styles
+  Object.assign(popover.style, {
+    position: 'absolute',
+    backgroundColor: '#ffffff',
+    border: '1px solid var(--accent-soft)',
+    borderRadius: '6px',
+    padding: '6px 8px',
+    boxShadow: '0 4px 12px var(--accent-soft)',
+    zIndex: '1000',
+    display: 'flex',
+    gap: '6px'
+  });
+
+  // Calculate position relative to clicked pill
+  const rect = targetPill.getBoundingClientRect();
+  popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+  popover.style.left = `${rect.left + window.scrollX}px`;
+
+  // Retrieve player ID from the row's remove button or dataset
+  const row = targetPill.closest('tr');
+  const playerId = targetPill.dataset.id || row.querySelector('.remove-btn')?.dataset.id;
+
+  // Build skill option pills
+  Object.keys(SKILL_LABELS).forEach(skillId => {
+    const option = document.createElement('span');
+	updateSkillPillElement(option, skillId, true);
+
+    option.addEventListener('click', (e) => {
+      e.stopPropagation();
+
+      // Update target pill UI
+
+      // Callback hook for backend/API update
+      onSkillChanged(targetPill, playerId, skillId);
+
+      closeSkillPicker();
+    });
+
+    popover.appendChild(option);
+  });
+
+  document.body.appendChild(popover);
+  currentPopover = popover;
+}
+
+function closeSkillPicker() {
+  if (currentPopover) {
+    currentPopover.remove();
+    currentPopover = null;
+  }
+}
+
+// 3. Backend callback placeholder
+function onSkillChanged(targetPillElement, playerId, skillId) {
+  const player = allPlayers.find(p => p.id === Number(playerId));
+  if (player) {
+	player.skill = skillId;
+	saveAllPlayersToStorage();
+
+	// here we can avoid to render all players again, just update the pill text and class
+	updateSkillPillElement(targetPillElement, skillId, true);
+	
+	renderActivePlayers();
+	renderGeneratedSchedule();
+	populateActivePlayerSelect();
+  }
+}
+
+// 4. Close popover on Escape key
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closeSkillPicker();
+  }
+});
+
+// 5. Close popover when clicking outside
+document.addEventListener('click', (event) => {
+  if (currentPopover && !currentPopover.contains(event.target)) {
+    closeSkillPicker();
+  }
+});
+
 // ============================================================
 // INIT — initial render on page load
 // ============================================================
+populateAppSkillOptions();
 loadAllPlayersFromStorage();
-renderAllPlayers();

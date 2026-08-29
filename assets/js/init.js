@@ -1,31 +1,29 @@
 // ============================================================
 // DISCARD TOURNAMENT
 // ============================================================
-document.getElementById('discard-btn').addEventListener('click', () => {
+async function discardTournament() {
 	const hasData = activePlayers.length > 0 || courtBlocks.length > 0 /*|| courtNames.length > 0*/;
 	if (hasData && !confirm('Discard this tournament? Active players, courts, and availability will be removed. The All players list and the Court names are kept.')) {
 		return;
 	}
-	activePlayers      = [];
-	nextActivePlayerId = 1;
-	courtBlocks        = [];
-	nextCourtId        = 1;
-//	 courtNames        = [];
-//	 nextCourtNameId   = 1;
-	try {
-		localStorage.removeItem(ACTIVE_PLAYERS_KEY);
-		localStorage.removeItem(ACTIVE_PLAYERS_NEXT_ID_KEY);
-		localStorage.removeItem(COURTS_STORAGE_KEY);
-		localStorage.removeItem(COURTS_NEXT_ID_KEY);
-		// localStorage.removeItem(COURT_NAMES_STORAGE_KEY);
-		// localStorage.removeItem(COURT_NAMES_NEXT_ID_KEY);
-	} catch (err) {}
 
-	renderActivePlayers();
-	renderCourtNames();
-	renderCourts();
 	clearGeneratedScheduleFromStorage();
-});
+	clearCourtsFromStorage();
+	clearActivePlayersFromStorage();
+}
+
+async function discardLocalStorane() {
+	const hasData = allPlayers.length > 0 || activePlayers.length > 0 || courtBlocks.length > 0 || courtNames.length > 0;
+	if (hasData && !confirm('This will discard all data. Are you sure you want to proceed? To keep All players and Court names, use the "Discard Tournament" button instead.')) {
+		return;
+	}
+
+	clearGeneratedScheduleFromStorage();
+	clearCourtsFromStorage();
+	clearCourtNamesFromStorage();
+	clearActivePlayersFromStorage();
+	clearAllPlayersFromStorage();
+}
 
 const STORAGE_KEYS = [
 	ALL_PLAYERS_KEY,
@@ -92,6 +90,9 @@ async function saveLocalStorageToFile() {
 
 // Load a JSON file (opens a file picker) and write its keys back into localStorage
 async function loadLocalStorageFromFile() {
+	if (!confirm('This will discard all current data. Are you sure you want to proceed?')) {
+		return;
+	}
 	let file;
 
 	// Use File System Access API if available
@@ -139,15 +140,11 @@ async function loadLocalStorageFromFile() {
 	loadCourtsFromStorage();
 	loadGeneratedScheduleFromStorage();
 
-	renderAllPlayers();
-	renderActivePlayers();
-	renderCourtNames();
-	renderCourts();
-	renderGeneratedSchedule();
-
 	return true;
 }
 
-document.getElementById('export-tournament-btn').addEventListener('click', () => { saveLocalStorageToFile().catch(err => alert('Error saving file: ' + err.message)); });
-document.getElementById('import-tournament-btn').addEventListener('click', () => { loadLocalStorageFromFile().catch(err => alert('Error loading file: ' + err.message)); });
+document.getElementById('export-storage-btn').addEventListener('click', () => { saveLocalStorageToFile().catch(err => alert('Error saving file: ' + err.message)); });
+document.getElementById('import-storage-btn').addEventListener('click', () => { loadLocalStorageFromFile().catch(err => alert('Error loading file: ' + err.message)); });
+document.getElementById('discard-storage-btn').addEventListener('click', () => { discardLocalStorane(); });
+document.getElementById('discard-tournament-btn').addEventListener('click', () => { discardTournament(); });
 

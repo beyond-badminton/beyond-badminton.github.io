@@ -10,14 +10,15 @@ State is persisted via `localStorage`.
 ```
 tournament-generator.html   # Single-page app shell, all tabs
 assets/
-  css/styles.css      # All styles
+  css/styles.css       # All styles
   js/
-    init.js           # App bootstrap, tab switching
-    common.js         # Shared utilities / helpers
-    all-players.js    # "All Players" tab — master player list
-    active-players.js # "Active Players" tab — players entering the current tournament
-    courts.js         # "Courts" tab — court names + court availability blocks
-    generate.js       # "Generate" tab — generated matches + stats
+    init.js            # App bootstrap, tab switching
+    common.js          # Shared utilities / helpers
+    all-players.js     # "All Players" tab — master player list
+    active-players.js  # "Active Players" tab — players entering the current tournament
+    courts.js          # "Courts" tab — court names + court availability blocks
+    schedule.js        # "Schedule" tab — generated matches + stats
+    schedule.export.js # "Schedule" tab — print/export functions
 ```
 
 ## Tabs
@@ -26,7 +27,7 @@ assets/
 | All Players | `all-players.js` | Master list of known players (persisted). Add / remove players. |
 | Active Players | `active-players.js` | Subset of all players participating in the current tournament. |
 | Courts | `courts.js` | (1) Define court names, (2) add availability blocks (start time + duration + courts). |
-| Generate | `generate.js` | Will generate a round-robin / random match schedule (2v2). |
+| Schedule | `schedule.js` | Will schedule a round-robin / random match schedule (2v2). |
 
 ## Key Data Shapes (localStorage)
 - **Court names** — `{ id: number, name: string }[]`
@@ -42,7 +43,7 @@ assets/
 - Validation uses `.invalid` CSS class toggled on field wrapper elements.
 - "Chip" UI for list items, "checkbox-pill" for court selection.
 
-## Generate Tab — Algorithm
+## Schedule Tab — Generate Algorithm
 
 ### Approach: Monte Carlo with Penalty Scoring
 The generator runs **many random tournament simulations** and keeps the one with the **lowest total penalty score**.
@@ -112,7 +113,7 @@ The run with the **lowest otalPenalty** is selected as the final schedule.
 ---
 
 ### Implementation Notes
-- `assets/js/generate.js` — Monte Carlo engine + UI for the Generate tab.
+- `assets/js/schedule.js` — Monte Carlo engine + UI for the Schedule tab.
 - Penalty weights should be tunable constants at the top of the file.
 - The history matrices reset per tournament generation (not persisted).
 
@@ -291,7 +292,7 @@ Examples:
 
 ## Generator Option — Allow Singles
 
-A checkbox in the Generate tab (`#allow-singles`).
+A checkbox in the Schedule tab (`#allow-singles`).
 
 **Default (unchecked):** Generator generates doubles only (matches 2x2 - 4 players)
 
@@ -301,7 +302,7 @@ A checkbox in the Generate tab (`#allow-singles`).
 
 ## Generator Tab — Round Duration Setting
 
-A `<select>` (`#matches-per-hour`) in the Generate tab with values from 2 to 8
+A `<select>` (`#matches-per-hour`) in the Schedule tab with values from 2 to 8
 
 - Used to compute how many rounds fit into each court block: `roundsPerBlock = floor(block.duration / roundDuration)`
 - **Lenient rounding rule**: if the remaining time after full rounds is `>= roundDuration * 0.5`, squeeze in one extra round. E.g. 30-min block with 20-min rounds → `floor(30/20) = 1`, remainder = 10 min which is `>= 10` → **2 rounds accepted**.
@@ -381,7 +382,7 @@ After generation, display a **live penalty scoreboard** that updates whenever th
 Controls (top of tab):
 - `#matches-per-hour` — select number of matches per hour
 - `#allow-singles` — checkbox
-- "Generate" button
+- "Schedule" button
 - "Regenerate" button (with confirmation prompt, replaces current schedule)
 - "Export PDF" button
 
@@ -406,7 +407,7 @@ Below controls:
 ### 3. Monte Carlo — Web Worker
 - Max expected player count is **40**. With guided seeding + 50–100 iterations this may still cause a brief UI freeze.
 - Run the Monte Carlo engine in a **Web Worker**.
-- Show a **progress bar / spinner** in the Generate tab while the worker runs.
+- Show a **progress bar / spinner** in the Schedule tab while the worker runs.
 - Worker posts the best schedule back to the main thread when done.
 
 ### 4. Player stats summary
@@ -422,5 +423,5 @@ Below controls:
 ### 6. Generated schedule persistence
 - Generated schedule **is persisted** to `localStorage` under key `tournament-generator:schedule`.
 - "Discard tournament" (existing button) clears everything including schedule and scores.
-- A new **"Clear matches"** button in the Generate tab clears only the generated schedule (and scores), without touching active players or courts.
-- "Generate" replaces any existing schedule (with confirmation prompt if one already exists).
+- A new **"Clear matches"** button in the Schedule tab clears only the generated schedule (and scores), without touching active players or courts.
+- "Schedule" replaces any existing schedule (with confirmation prompt if one already exists).

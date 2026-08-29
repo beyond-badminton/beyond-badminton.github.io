@@ -228,7 +228,7 @@ function workerMain() {
 
 	// ── Team assignment ───────────────────────────────────────────
 	function findBestTeams(players, matchCount, courts, sameTeamMat, oppMat, idxOf, skillOf) {
-		const ITER = 80;
+		const ITER = 100;
 
 		let best      = seedTeams(players, matchCount);
 		let bestScore = scoreTeams(best, sameTeamMat, oppMat, idxOf, skillOf);
@@ -340,6 +340,7 @@ function workerMain() {
 // ── Storage keys ──────────────────────────────────────────────
 const SCHEDULE_KEY = 'tournament-generator:schedule';
 const SCORES_KEY   = 'tournament-generator:scores';
+const SCHEULE_DATE_KEY = 'tournament-generator:scheduleDate';
 
 // ── Penalty weights (mirror of worker) ───────────────────────
 const PENALTY_WEIGHTS = {
@@ -356,46 +357,14 @@ const PENALTY_WEIGHTS = {
 let schedule = null;   // { rounds: [...] }
 let scores   = {};     // { [matchId]: { a: number|null, b: number|null } }
 let worker   = null;
-
-// ── Persistence ───────────────────────────────────────────────
-function loadGeneratedScheduleFromStorage() {
-	try {
-		const s = localStorage.getItem(SCHEDULE_KEY);
-		const c = localStorage.getItem(SCORES_KEY);
-		if (s) schedule = JSON.parse(s);
-		if (c) scores   = JSON.parse(c);
-	} catch (_) {}
-}
-
-function saveScores() {
-	try {
-		localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
-	} catch (_) {}
-}
-
-function saveGeneratedScheduleToStorage() {
-	try {
-		localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule));
-		localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
-	} catch (_) {}
-}
-
-
-function clearGeneratedScheduleFromStorage() {
-	schedule = null;
-	scores   = {};
-	try {
-		localStorage.removeItem(SCHEDULE_KEY);
-		localStorage.removeItem(SCORES_KEY);
-	} catch (_) {}
-	renderGeneratedSchedule();
-}
+let scheduleDate = null; // Date object representing the date of the schedule
 
 // ── DOM refs ──────────────────────────────────────────────────
 const genMatchesPerHourSel = document.getElementById('matches-per-hour');
 const genAllowSinglesCb   = document.getElementById('allow-singles');
 const genGenerateBtn      = document.getElementById('gen-generate-btn');
 const genClearBtn         = document.getElementById('gen-clear-btn');
+const genDatePicker       = document.getElementById('gen-date-picker');
 const genPrintBtn         = document.getElementById('gen-print-btn');
 const genExportBtn        = document.getElementById('gen-export-btn');
 const genProgress         = document.getElementById('gen-progress');
@@ -403,6 +372,7 @@ const genProgressBar      = document.getElementById('gen-progress-bar');
 const genScoreboard       = document.getElementById('gen-scoreboard');
 const genScheduleOut      = document.getElementById('gen-schedule-output');
 const genStatsOut         = document.getElementById('gen-stats-output');
+const genStatsTbody       = document.getElementById('gen-stats-tbody');
 const genEmpty            = document.getElementById('gen-empty');
 
 // ── Utility ───────────────────────────────────────────────────
@@ -441,17 +411,18 @@ genClearBtn.addEventListener('click', () => {
 });
 
 genPrintBtn.addEventListener('click', () => {
-	//window.print();
 	printSchedule();
 });
 
 
 genExportBtn.addEventListener('click', () => {
-	// const csvData = convertScheduleToCSV();
-	// downloadCSV(csvData, 'tournament.csv');
 	downloadScheduleSpreadsheet();
 });
 
+genDatePicker.addEventListener('change', () => {
+	scheduleDate = genDatePicker.valueAsDate;
+	saveGeneratedScheduleToStorage();
+});
 
 function normalizeBlock(blocks) {
 	// Helper: Convert "HH:MM" to total minutes since midnight
@@ -599,356 +570,6 @@ function setProgress(pct) {
 	genProgressBar.textContent = pct < 100 ? pct + '%' : 'Done';
 }
 
-async function downloadScheduleSpreadsheet() {
-	// 1. Initialize Workbook and Worksheet
-	const workbook = new ExcelJS.Workbook();
-
-	if (schedule != null && schedule.rounds != null) {
-		const worksheet = workbook.addWorksheet('Matches');
-
-		worksheet.addRow([]);
-
-		// 2. Define Columns with widths (to handle those long placeholder names)
-		worksheet.columns = [
-			{ header: 'Round', key: 'round', width: 8 },
-			{ header: 'Court', key: 'court', width: 8 },
-			{ header: 'Team A', key: 'teamA', width: 30 },
-			{ header: 'Score', key: 'score', width: 15 },
-			{ header: 'Team B', key: 'teamB', width: 30 }
-		];
-
-		// Format for the headers
-		let firstRow = worksheet.getRow(1)
-		firstRow.font = { bold: true };
-		firstRow.alignment = { vertical: 'middle', horizontal: 'center' };
-		
-		// Define the border style we want to apply
-		const borderStyle = {
-			top: { style: 'thin' },
-			left: { style: 'thin' },
-			bottom: { style: 'thin' },
-			right: { style: 'thin' }
-		};
-
-		// 3. Process the Data
-		schedule.rounds.forEach(round => {
-			let firstMatch = true;
-			const roundStartRow = worksheet.rowCount;
-
-			round.matches.forEach(match => {
-				let row = worksheet.addRow([firstMatch ? round.roundId + 1 : '', match.court, match.teamA.map(pid => playerName(pid)).join(', '), '', match.teamB.map(pid => playerName(pid)).join(', ')]);
-
-				if (firstMatch) {
-					row.getCell(1).font = { bold: true };
-				}
-
-				row.getCell(2).font = { bold: true };
-
-				// Apply borders and center alignment ONLY to cells that have data
-				row.eachCell({ includeEmpty: false }, (cell) => {
-					cell.border = borderStyle;
-					cell.alignment = { vertical: 'middle', horizontal: 'center' };
-				});
-				firstMatch = false;
-			});
-
-			if (firstMatch) {
-				// If there were no matches, skip
-				return;
-			}
-
-			worksheet.getRow(roundStartRow + 1).eachCell({ includeEmpty: false }, (cell) => {
-				cell.border = { ...(cell.border || {}), top: { style: 'medium' }};
-			});
-
-
-			worksheet.getRow(worksheet.rowCount).eachCell({ includeEmpty: false }, (cell) => {
-				cell.border = { ...(cell.border || {}), bottom: { style: 'medium' }};
-			});
-
-			for (let i = roundStartRow + 1; i <= worksheet.rowCount; i++) {
-				let cell = worksheet.getRow(i).getCell(1);
-				let cellBorder = { ...(cell.border || {}), left: { style: 'medium' }, right: { style: 'medium' }};
-				if (i === roundStartRow + 1) {
-					cellBorder.top = { style: 'medium' };
-				}
-				else if (i === worksheet.rowCount) {
-					cellBorder.bottom = { style: 'medium' };
-				}
-				else {
-					cellBorder.bottom = { style: 'thin' };
-				}
-				cell.border = cellBorder;
-
-				cell = worksheet.getRow(i).getCell(2);
-				cell.border = { ...(cell.border || {}), left: { style: 'medium' }, right: { style: 'medium' }};
-
-				cell = worksheet.getRow(i).getCell(5);
-				cellBorder = { ...(cell.border || {}), right: { style: 'medium' }};
-				if (i === roundStartRow + 1) {
-					cellBorder.top = { style: 'medium' };
-				}
-				else if (i === worksheet.rowCount) {
-					cellBorder.bottom = { style: 'medium' };
-				}
-				else {
-					cellBorder.bottom = {};
-				}
-				cell.border = cellBorder;
-			}
-
-			let row = worksheet.addRow(['', 'Bench:', round.bench.map(pid => playerName(pid)).join(', '), '', '']);
-			// Apply borders and center alignment ONLY to cells that have data
-			for (let i = 1; i <= 5; i++) {
-				let cell = row.getCell(i);
-				cell.fill = {
-					type: 'pattern',
-					pattern: 'solid',
-					fgColor: { argb: 'FFEEEEEE' }
-				};
-				let cellBorder = { ...(cell.border || {}), top: { style: 'medium' }, bottom: { style: 'medium' }};
-				if (i === 1) {
-					cellBorder.left = { style: 'medium' };
-				}
-				else if (i === 5) {
-					cellBorder.right = { style: 'medium' };
-				}
-				cell.border = cellBorder;
-				cell.alignment = { vertical: 'middle', horizontal: 'left' };
-			}
-
-			worksheet.addRow([]);
-		});
-	}
-
-
-	// 4. Generate the File and Trigger Download
-	const buffer = await workbook.xlsx.writeBuffer();
-	const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-	
-	// Create a temporary hidden link to download the blob
-	const url = window.URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = 'tournament.xlsx';
-	document.body.appendChild(a);
-	a.click();
-	
-	// Cleanup
-	document.body.removeChild(a);
-	window.URL.revokeObjectURL(url);
-}
-
-function printSchedule() {
-	if (schedule == null || schedule.rounds == null) return;
-
-	// 1. Build the HTML for the table, mirroring the Excel layout
-	let rowsHtml = '';
-
-	schedule.rounds.forEach(round => {
-		if (round.matches.length === 0) return;
-
-		let matchRows = round.matches.map((match, idx) => {
-			const teamA = match.teamA.map(pid => playerName(pid)).join(', ');
-			const teamB = match.teamB.map(pid => playerName(pid)).join(', ');
-			const topCellClass = idx === 0 ? 'top-cell' : '';
-			const roundCell = idx === 0
-				? `<td class="round-cell left-cell right-cell top-cell bottom-cell ${topCellClass}" rowspan="${round.matches.length}">${round.roundId + 1}</td>`
-				: '';
-			
-			return `
-				<tr>
-					${roundCell}
-					<td class="court-cell ${topCellClass}">${match.court}</td>
-					<td class="team-cell left-cell ${topCellClass}">${teamA}</td>
-					<td class="score-cell ${topCellClass}"></td>
-					<td class="team-cell right-cell ${topCellClass}">${teamB}</td>
-				</tr>`;
-		}).join('');
-
-		const benchRow = `
-			<tr class="bench-row">
-				<td class="colspan-cell left-cell top-cell bottom-cell"></td>
-				<td class="bench-label colspan-cell top-cell bottom-cell">Bench:</td>
-				<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${round.bench.map(pid => playerName(pid)).join(', ')}</td>
-			</tr>`;
-
-		rowsHtml += `<tbody class="round-block">${matchRows}${benchRow}<tr><td colspan="5" class="round-spacer"></td></tr></tbody>`;
-	});
-
-	const html = `
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<meta charset="utf-8">
-			<title>Tournament Schedule</title>
-			<style>
-				@page { size: auto; margin: 12mm; }
-				* { box-sizing: border-box; }
-				body {
-					font-family: Arial, Helvetica, sans-serif;
-					font-size: 12px;
-					color: #000;
-					margin: 0;
-					-webkit-print-color-adjust: exact;
-					print-color-adjust: exact;
-					color-adjust: exact; /* older Firefox */
-				}
-				table {
-					width: 100%;
-					border-collapse: collapse;
-				}
-				th {
-					border: 0px solid #000;
-					padding: 6px 8px;
-					font-weight: bold;
-					text-align: center;
-					background: #fff;
-				}
-				td {
-					border: 1px solid #999;
-					padding: 6px 8px;
-					text-align: center;
-					vertical-align: middle;
-				}
-				.round-block {
-					page-break-inside: avoid;
-				}
-				.round-spacer {
-					height: 25px;
-					border: 0px;
-				}
-				.left-cell {
-					border-left: 2px solid #000 !important;
-				}
-				.right-cell {
-					border-right: 2px solid #000 !important;
-				}
-				.top-cell {
-					border-top: 2px solid #000 !important;
-				}
-				.bottom-cell {
-					border-bottom: 2px solid #000 !important;
-				}
-				.colspan-cell {
-					border-left: 0px;
-					border-right: 0px;
-				}
-				.round-cell {
-					font-weight: bold;
-				}
-				.court-cell {
-					font-weight: bold;
-				}
-				.team-cell {
-					width: 35%;
-				}
-				.score-cell {
-					width: 12%;
-				}
-				.bench-row td {
-					background: #eeeeee !important;
-				}
-				.bench-label {
-					font-weight: normal;
-				}
-				.bench-names {
-					text-align: left;
-					font-weight: normal;
-				}
-			</style>
-		</head>
-		<body>
-			<table>
-				<thead>
-					<tr>
-						<th>Round</th>
-						<th>Court</th>
-						<th>Team A</th>
-						<th>Score</th>
-						<th>Team B</th>
-					</tr>
-				</thead>
-				${rowsHtml}
-			</table>
-		</body>
-		</html>`;
-
-		//console.log("Printing schedule HTML:", html);
-	// 2. Create a hidden iframe
-	const iframe = document.createElement('iframe');
-	iframe.style.position = 'fixed';
-	iframe.style.right = '0';
-	iframe.style.bottom = '0';
-	iframe.style.width = '0';
-	iframe.style.height = '0';
-	iframe.style.border = '0';
-	iframe.style.visibility = 'hidden';
-
-	document.body.appendChild(iframe);
-
-	const doc = iframe.contentWindow.document;
-	doc.open();
-	doc.write(html);
-	doc.close();
-
-	// 3. Wait for content/styles to be ready, then print
-	iframe.onload = () => {
-		let cleaned = false;
-		const cleanup = () => {
-		  if (cleaned) return;
-		  cleaned = true;
-		  document.body.removeChild(iframe);
-		};
-	  
-		iframe.contentWindow.onafterprint = cleanup;
-		iframe.contentWindow.focus();
-		iframe.contentWindow.print();
-	  
-		setTimeout(cleanup, 10000); // generous safety net, shouldn't normally fire
-	};
-}
-
-// Export CSV
-function convertScheduleToCSV() {
-	if (schedule == null || schedule.rounds == null) { return ''; }
-
-	let rows = [];
-
-	schedule.rounds.forEach(round => {
-		let firstMatch = true;
-		round.matches.forEach(match => {
-			rows.push(`${firstMatch ? round.roundId + 1 : ''},${match.court},"${playerName(match.teamA[0])}${match.teamA.length > 1 ? ", " + playerName(match.teamA[1]) : ''}",____ : ____,"${playerName(match.teamB[0])}${match.teamB.length > 1 ? ', ' + playerName(match.teamB[1]) : ''}"`);
-			firstMatch = false;
-		});
-	});
-
-	return rows.join('\n');
-}
-
-// 3. Function to trigger the file download
-function downloadCSV(csvString, filename) {
-	// Create a Blob with the CSV data
-	const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-	
-	// Create a temporary URL for the Blob
-	const url = URL.createObjectURL(blob);
-	
-	// Create a hidden anchor element
-	const link = document.createElement('a');
-	link.href = url;
-	link.setAttribute('download', filename);
-	link.style.display = 'none';
-	
-	// Append to the DOM, click it, and clean up
-	document.body.appendChild(link);
-	link.click();
-	document.body.removeChild(link);
-	
-	// Release the object URL to free up memory
-	URL.revokeObjectURL(url);
-}
-
 // ── Render ────────────────────────────────────────────────────
 function renderGeneratedSchedule() {
 	const hasSchedule = schedule && schedule.rounds && schedule.rounds.length > 0;
@@ -960,12 +581,14 @@ function renderGeneratedSchedule() {
 	genClearBtn.hidden       = !hasSchedule;
 	genPrintBtn.hidden       = !hasSchedule;
 	genExportBtn.hidden      = !hasSchedule;
+	
+	genDatePicker.valueAsDate = null;
 
 	if (!hasSchedule) return;
 
 	renderSchedule();
 	renderScoreboard();
-	renderStats();
+	renderStatsTable();
 }
 
 function buildPlayerSlotInnerHtml(pid) {
@@ -1036,6 +659,10 @@ function renderSchedule() {
 	genScheduleOut.appendChild(blockEl);
 
 	attachDragHandlers();
+
+	if (scheduleDate) {
+		genDatePicker.valueAsDate = scheduleDate; // Format as YYYY-MM-DD for input[type=date]
+	}
 }
 
 function buildMatchCard(match, roundId) {
@@ -1233,18 +860,18 @@ function renderScoreboard() {
 }
 
 // ── Player stats ──────────────────────────────────────────────
-function renderStats() {
+function renderStatsTable() {
 	if (!schedule) return;
 
 	const stats = {};
 	activePlayers.forEach(ap => {
-		stats[ap.id] = { name: playerName(ap.id), skill: playerSkill(ap.id), played: 0, benched: 0, partners: new Set(), opponents: new Set() };
+		stats[ap.id] = { name: playerName(ap.id), skill: playerSkill(ap.id), playtime: ap.playtime, matches: 0, bench: 0, partners: new Set(), opponents: new Set() };
 	});
 
 	schedule.rounds.forEach(round => {
 		round.matches.forEach(m => {
 			[...m.teamA, ...m.teamB].forEach(id => {
-				if (stats[id]) stats[id].played++;
+				if (stats[id]) stats[id].matches++;
 			});
 			m.teamA.forEach(id => {
 				m.teamA.forEach(pid => { if (pid !== id && stats[id]) stats[id].partners.add(pid); });
@@ -1255,31 +882,67 @@ function renderStats() {
 				m.teamA.forEach(pid => { if (stats[id]) stats[id].opponents.add(pid); });
 			});
 		});
-		(round.bench || []).forEach(id => { if (stats[id]) stats[id].benched++; });
+		(round.bench || []).forEach(id => { if (stats[id]) stats[id].bench++; });
 	});
 
 	const rows = Object.values(stats).sort((a, b) => a.name.localeCompare(b.name));
 
-	genStatsOut.innerHTML = `
-		<h3 class="gen-stats-heading">Player stats</h3>
-		<div class="gen-stats-scroll">
-		<table class="gen-stats-table">
-			<thead><tr>
-				<th>Player</th><th>Skill</th><th>Matches</th><th>Bench</th><th>Unique partners</th><th>Unique opponents</th>
-			</tr></thead>
-			<tbody>
-				${rows.map(r => `<tr>
+	genStatsTbody.innerHTML = getSorted(rows, 'stats').map(r => `<tr>
 					<td>${r.name}</td>
-					<td>` + renderSkillPillHtml(r.skill, false) + `</td>
-					<td>${r.played}</td>
-					<td>${r.benched}</td>
+					<td>` + renderSkillPillHtml(r.skill) + `</td>
+					<td>${r.playtime}h</td>
+					<td>${r.matches}</td>
+					<td>${r.bench}</td>
 					<td>${r.partners.size}</td>
 					<td>${r.opponents.size}</td>
-				</tr>`).join('')}
-			</tbody>
-		</table>
-		</div>`;
+				</tr>`).join('')
+
+	updateSortUI('stats');
 }
+
+// ── Persistence ───────────────────────────────────────────────
+function loadGeneratedScheduleFromStorage() {
+	try {
+		const s = localStorage.getItem(SCHEDULE_KEY);
+		const c = localStorage.getItem(SCORES_KEY);
+		const d = localStorage.getItem(SCHEULE_DATE_KEY);
+		if (s) schedule = JSON.parse(s);
+		if (c) scores   = JSON.parse(c);
+		if (d) scheduleDate = new Date(d);
+	} catch (_) {}
+	
+	if (scheduleDate == null) scheduleDate = new Date();
+
+	renderGeneratedSchedule();
+}
+
+function saveScores() {
+	try {
+		localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+	} catch (_) {}
+}
+
+function saveGeneratedScheduleToStorage() {
+	try {
+		localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule));
+		localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+		localStorage.setItem(SCHEULE_DATE_KEY, scheduleDate.toISOString());
+	} catch (_) {}
+}
+
+
+function clearGeneratedScheduleFromStorage() {
+	schedule = null;
+	scores   = {};
+	scheduleDate = new Date();
+	try {
+		localStorage.removeItem(SCHEDULE_KEY);
+		localStorage.removeItem(SCORES_KEY);
+		localStorage.removeItem(SCHEULE_DATE_KEY);
+	} catch (_) {}
+	renderGeneratedSchedule();
+}
+
 
 // ── Drag & Drop ───────────────────────────────────────────────
 let dragSrc = null; // { playerId, team, pos, matchId, roundId }
@@ -1345,7 +1008,7 @@ function onDrop(e) {
 	saveGeneratedScheduleToStorage();
 	renderSchedule();
 	renderScoreboard();
-	renderStats();
+	renderStatsTable();
 	dragSrc = null;
 }
 
@@ -1376,7 +1039,7 @@ function onDropBench(e, benchEl) {
 	saveGeneratedScheduleToStorage();
 	renderSchedule();
 	renderScoreboard();
-	renderStats();
+	renderStatsTable();
 	dragSrc = null;
 }
 
@@ -1438,4 +1101,3 @@ function swapPlayerOrBench(src, dst) {
 // INIT — initial render on page load
 // ============================================================
 loadGeneratedScheduleFromStorage();
-renderGeneratedSchedule();

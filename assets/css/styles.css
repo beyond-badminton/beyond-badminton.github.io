@@ -19,7 +19,7 @@ body{
   color:var(--ink);
   display:flex;
   justify-content:center;
-  padding:48px 20px;
+  padding: 20px 20px 40px 20px;
 }
 
 .app{
@@ -169,7 +169,7 @@ label{
   font-weight:600;
 }
 
-input, select{
+input, select, input[type="date"]{
   width:100%;
   padding:9px 10px;
   font-size:.9rem;
@@ -182,7 +182,7 @@ input, select{
   transition:border-color .15s ease, box-shadow .15s ease;
 }
 
-input:focus, select:focus{
+input:focus, select:focus input[type="date"]:focus{
   border-color:var(--accent);
   box-shadow:0 0 0 3px var(--accent-soft);
 }
@@ -260,24 +260,13 @@ button[type="submit"]:active{
 }
 
 .csv-columns code,
-.csv-example code{
+.code{
   background:var(--paper);
   border:1px solid var(--line);
   border-radius:4px;
   padding:1px 5px;
   font-size:.76rem;
   color:var(--ink);
-}
-
-.csv-example{
-  font-size:.78rem;
-  color:var(--ink-soft);
-  line-height:1.7;
-  margin:0 0 14px;
-}
-
-.csv-example code{
-  display:inline;
 }
 
 input[type="file"]{
@@ -543,11 +532,20 @@ input[type="file"]{
   border-radius:999px;
   font-weight:600;
   font-size:.78rem;
+  transition: box-shadow 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+.skill-pick{
+  cursor: pointer;
 }
 
 .skill-pill.skill-1{
-  background:#e3f3e1;
-  color:#2f7a35;
+  background:#fbe3d3;
+  color:#c05a1d;
+}
+
+.skill-pick.skill-1:hover{
+  box-shadow: 0 0 0 1px #c05a1d;
 }
 
 .skill-pill.skill-2{
@@ -555,13 +553,43 @@ input[type="file"]{
   color:#96760a;
 }
 
+.skill-pick.skill-2:hover{
+  box-shadow: 0 0 0 1px #96760a;
+}
+
 .skill-pill.skill-3{
-  background:#fbe3d3;
-  color:#c05a1d;
+  background:#e3f3e1;
+  color:#2f7a35;
+}
+
+.skill-pick.skill-3:hover{
+  box-shadow: 0 0 0 1px #2f7a35;
+}
+
+.skill-pill.skill-4{
+  background:hsl(194, 100%, 92%);
+  color:#0f7f9b;
+}
+
+.skill-pick.skill-4:hover{
+  box-shadow: 0 0 0 1px #0f7f9b;
+}
+
+/* Tablet and up: widen the shell, show table instead of stacked cards */
+@media (max-width:680px){
+  .logo{
+    max-width:400px;
+  }
+  .app{
+    max-width:640px;
+  }
 }
 
 /* Tablet and up: widen the shell, show table instead of stacked cards */
 @media (min-width:680px){
+  .logo{
+    max-width:400px;
+  }
   .app{
     max-width:640px;
   }
@@ -569,6 +597,9 @@ input[type="file"]{
 
 /* Desktop: form + table side by side, form stays narrow and fixed */
 @media (min-width:900px){
+  .logo{
+    max-width:400px;
+  }
   .app{
     max-width:960px;
   }
@@ -581,6 +612,39 @@ input[type="file"]{
   .form-card{
     width:300px;
     flex:0 0 300px;
+  }
+
+  .players-panel{
+    flex:1;
+    min-width:0;
+  }
+
+  .player-list{
+    display:none;
+  }
+
+  .player-table{
+    display:table;
+  }
+}
+
+/* Desktop: larger screens 120px+ */
+@media (min-width:1200px){
+  .logo{
+    max-width:520px;
+  }
+  .app{
+    max-width:1100px;
+  }
+
+  .players-layout{
+    flex-direction:row;
+    align-items:flex-start;
+  }
+
+  .form-card{
+    width:340px;
+    flex:0 0 340px;
   }
 
   .players-panel{
@@ -631,47 +695,6 @@ input[type="file"]{
   
   .sub-tab-content{ display:none; }
   .sub-tab-content.active{ display:block; }
-  
-  /* ---- Sort bar ---- */
-  .sort-bar{
-	display:flex;
-	align-items:center;
-	gap:6px;
-	margin-bottom:10px;
-	flex-wrap:wrap;
-  }
-  
-  .sort-label{
-	font-size:.72rem;
-	text-transform:uppercase;
-	letter-spacing:.04em;
-	color:var(--ink-soft);
-	font-weight:600;
-  }
-  
-  .sort-btn{
-	border:1px solid var(--line);
-	background:var(--card);
-	color:var(--ink-soft);
-	font-family:inherit;
-	font-size:.78rem;
-	font-weight:600;
-	padding:4px 10px;
-	border-radius:999px;
-	cursor:pointer;
-	transition:border-color .15s ease, color .15s ease, background .15s ease;
-  }
-  
-  .sort-btn:hover{
-	border-color:var(--accent);
-	color:var(--accent);
-  }
-  
-  .sort-btn.active-sort{
-	border-color:var(--accent);
-	background:var(--accent-soft);
-	color:var(--accent);
-  }
   
   /* ---- Sortable table headers ---- */
   th.sortable{
@@ -740,9 +763,9 @@ input[type="file"]{
 }
 
 .gen-field-inline { flex:0 0 auto; }
-.gen-field-inline select { width:auto; min-width:130px; }
+.gen-field-inline select input[type="date"] { width:auto; min-width:130px; }
 
-.gen-singles-label {
+.gen-checkbox-label {
   display:flex;
   align-items:center;
   gap:6px;
@@ -753,7 +776,7 @@ input[type="file"]{
   letter-spacing:0;
   padding-bottom:2px;
 }
-.gen-singles-label input[type="checkbox"] { width:auto; padding:0; accent-color:var(--accent); }
+.gen-checkbox-label input[type="checkbox"] { width:auto; padding:0; accent-color:var(--accent); }
 
 .gen-btn-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:4px; }
 
@@ -797,7 +820,11 @@ input[type="file"]{
 
 .gen-empty-hint { padding:20px 0 8px; text-align:center; }
 
-.gen-scoreboard-card { margin-bottom:16px; }
+.gen-scoreboard-card {
+  position: sticky;
+  top: -12px;
+  margin-bottom:16px;
+}
 
 .gen-section-heading {
   font-size:.82rem;
