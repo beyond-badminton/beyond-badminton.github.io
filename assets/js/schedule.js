@@ -2,6 +2,9 @@
 
 function workerMain() {
 
+	const SCHEDULES_GEN_COUNT = 120;
+	const BEST_TEAMS_ITER = 100;
+
 	// ── Utilities ─────────────────────────────────────────────────
 	function timeToMins(t) {
 		const [h, m] = t.split(':').map(Number);
@@ -62,8 +65,6 @@ function workerMain() {
 		const skillOf = {};
 		players.forEach(p => { skillOf[p.id] = p.skill; });
 
-		const schedulesGenCount = 100;
-
 		// Pre-compute total rounds for smooth progress reporting
 		let totalIretations = 0;
 		courtBlocks.forEach(courtBlocks => {
@@ -76,14 +77,14 @@ function workerMain() {
 
 		//console.log("courtBlocks:", courtBlocks);
 
-		totalIretations *= schedulesGenCount;
+		totalIretations *= SCHEDULES_GEN_COUNT;
 
 		let doneIterations = 0;
 
 		let lastSchedule = null;
 		let lastScheduleTotalPenalty = Infinity;
 
-		for (let genIdx = 0; genIdx < schedulesGenCount; genIdx++) {
+		for (let genIdx = 0; genIdx < SCHEDULES_GEN_COUNT; genIdx++) {
 
 			// Global history matrices (accumulated across all courtBlocks within a single schedule)
 			const sameTeamMat = Array.from({ length: n }, () => new Array(n).fill(0));
@@ -228,12 +229,11 @@ function workerMain() {
 
 	// ── Team assignment ───────────────────────────────────────────
 	function findBestTeams(players, matchCount, courts, sameTeamMat, oppMat, idxOf, skillOf) {
-		const ITER = 100;
 
 		let best      = seedTeams(players, matchCount);
 		let bestScore = scoreTeams(best, sameTeamMat, oppMat, idxOf, skillOf);
 
-		for (let i = 0; i < ITER; i++) {
+		for (let i = 0; i < BEST_TEAMS_ITER; i++) {
 			const candidate = mutate(best);
 			const s = scoreTeams(candidate, sameTeamMat, oppMat, idxOf, skillOf);
 			if (s < bestScore) { best = candidate; bestScore = s; }
