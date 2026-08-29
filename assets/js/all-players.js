@@ -18,6 +18,7 @@ const allPlayerList      = document.getElementById('all-player-list');
 const allPlayerTableBody = document.getElementById('all-player-table-body');
 const allPlayersEmpty    = document.getElementById('all-players-empty');
 const allPlayerCount     = document.getElementById('all-player-count');
+const csvSkillCodes       = document.getElementById('csv-skill-codes');
 
 function renderSkillPillHtml(skillId, clickable = false) {
 	return `<span class="skill-pill skill-${skillId} ${clickable ? 'skill-pick' : ''}">${SKILL_LABELS[skillId] || skillId}</span>`;
@@ -29,6 +30,7 @@ function updateSkillPillElement(element, skillId, clickable = false) {
 }
 
 function populateAppSkillOptions() {
+	csvSkillCodes.innerHTML="<code>skill</code> — " + Object.entries(SKILL_LABELS).map(([skillId, skillName]) => `<code>${skillId}</code> (${skillName})`).join(', ');
 	Object.entries(SKILL_LABELS).forEach(([skillId, skillName]) => {
 		const opt = document.createElement('option');
 		opt.value       = skillId;
