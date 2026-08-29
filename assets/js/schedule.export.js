@@ -146,6 +146,8 @@ function printScheduleRound(round, emptyTable = false) {
 	if (round.matches.length === 0) return;
 
 	let matchRows = round.matches.map((match, idx) => {
+		const matchScore = scores[match.matchId] || null;
+		const matchScoreStr = matchScore && matchScore['a'] && matchScore['b']  ? `${matchScore['a']} : ${matchScore['b']}` : '';
 		const teamA = emptyTable ? '' : match.teamA.map(pid => playerName(pid)).join(', ');
 		const teamB = emptyTable ? '' : match.teamB.map(pid => playerName(pid)).join(', ');
 		const topCellClass = idx === 0 ? 'top-cell' : '';
@@ -158,7 +160,7 @@ function printScheduleRound(round, emptyTable = false) {
 				${roundCell}
 				<td class="court-cell ${topCellClass}">${match.court}</td>
 				<td class="team-cell left-cell ${topCellClass}">${teamA}</td>
-				<td class="score-cell ${topCellClass}"></td>
+				<td class="score-cell ${topCellClass}">${matchScoreStr}</td>
 				<td class="team-cell right-cell ${topCellClass}">${teamB}</td>
 			</tr>`;
 	}).join('');
