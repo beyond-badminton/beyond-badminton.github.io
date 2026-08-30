@@ -660,7 +660,38 @@ input[type="file"]{
     display:table;
   }
 }
+/* Desktop: larger screens 120px+ */
+@media (min-width:1500px){
+  .logo{
+    max-width:580px;
+  }
+  .app{
+    max-width:1400px;
+  }
 
+  .players-layout{
+    flex-direction:row;
+    align-items:flex-start;
+  }
+
+  .form-card{
+    width:340px;
+    flex:0 0 340px;
+  }
+
+  .players-panel{
+    flex:1;
+    min-width:0;
+  }
+
+  .player-list{
+    display:none;
+  }
+
+  .player-table{
+    display:table;
+  }
+}
 /* ---- Sub-tabs ---- */
 .sub-tabs{
 	display:flex;
