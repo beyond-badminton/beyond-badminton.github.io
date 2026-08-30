@@ -2,7 +2,7 @@
 
 function workerMain() {
 
-	const SCHEDULES_GEN_COUNT = 120;
+	const SCHEDULES_GEN_COUNT = 200;
 	const BEST_TEAMS_ITER = 100;
 
 	// ── Utilities ─────────────────────────────────────────────────
@@ -35,6 +35,14 @@ function workerMain() {
 		const i = idx[id1], j = idx[id2];
 		if (i == null || j == null) return 0;
 		return mat[i][j];
+	}
+
+	function shuffle(array) {
+		for (let i = array.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[array[i], array[j]] = [array[j], array[i]];
+		}
+		return array;
 	}
 
 	// ── Main message handler ──────────────────────────────────────
@@ -75,6 +83,9 @@ function workerMain() {
 			totalIretations += rc;
 		});
 
+		// find max playtime
+		const maxPlaytime = Math.max(...players.map(p => p.playtime));
+
 		//console.log("courtBlocks:", courtBlocks);
 
 		totalIretations *= SCHEDULES_GEN_COUNT;
@@ -94,7 +105,10 @@ function workerMain() {
 			const rounds = [];
 
 			const sitCount     = {};
-			const lastSitRound = {};
+			const lastSitRound = {}; // Tracks the last round in which each player sat (0 is invalid - no sitting, sit round starts at 1)
+
+			// Per-block sit-count tracking for Phase 1 bench assignment
+			players.forEach(p => { sitCount[p.id] = 0; lastSitRound[p.id] = 0; });
 
 			for (const courtBlock of courtBlocks) {
 				if (courtBlock.duration < 5) continue;
@@ -105,9 +119,6 @@ function workerMain() {
 				if (roundsPerBlock === 0) roundsPerBlock = 1;
 
 				const blockStartMin = timeToMins(courtBlock.start);
-
-				// Per-block sit-count tracking for Phase 1 bench assignment
-				players.forEach(p => { sitCount[p.id] = 0; lastSitRound[p.id] = -99; });
 
 				for (let ri = 0; ri < roundsPerBlock; ri++) {
 					const slotStart = blockStartMin + ri * roundDuration;
@@ -149,15 +160,62 @@ function workerMain() {
 					const benchCount   = Math.max(0, eligible.length - doublesPlayingCount);
 
 					// ── Phase 1: deterministic bench assignment ─────────────
-					// Players who sat last round must play now (no consecutive sits).
-					const canSitNow = eligible.filter(p => lastSitRound[p.id] !== ri - 1);
-					// Sort ascending by sit count → fewest sits first (they're best candidates for bench)
-					canSitNow.sort((a, b) => sitCount[a.id] - sitCount[b.id]);
 
-					let benchPlayers = canSitNow.slice(0, benchCount);
+					// filter out those that sat last round
+					const satRoundBefore = eligible.filter(p => lastSitRound[p.id] === roundId);
+					// filter those that sat 2 rounds before
+					const sat2RoundsBefore = eligible.filter(p => lastSitRound[p.id] === roundId - 1);
+					
+					// filter trose that sat more than fair share of rounds (i.e. those that sat more than 1 round more than the player with the same playtime)
+					let sitMoreWithPlaytime = [];
+					for (let i = 1; i <= maxPlaytime; i++) {
+						const playtimePlayers = eligible.filter(p => p.playtime == i);
+						if (playtimePlayers.length === 0) continue;
+
+						const maxP = playtimePlayers.reduce((max, p) => { return sitCount[max.id] > sitCount[p.id] ? max : p; });
+						const minM = playtimePlayers.reduce((min, p) => { return sitCount[min.id] < sitCount[p.id] ? min : p; });
+						if (sitCount[maxP.id] - sitCount[minP.id] > 1) {
+							sitMoreWithPlaytime.push(eligible.filter(p => sitCount[p.id] == maxP));
+						}
+					}
+
+					// now filter out those that matched previous excluding criteria
+					let canSitNow = eligible.filter(p => !satRoundBefore.includes(p) && !sat2RoundsBefore.includes(p) && !sitMoreWithPlaytime[p.playtime]?.includes(p));
+
+					if (canSitNow.length < benchCount) {
+						// now we have to return some players that sat 2 rounds before
+						const fallback = sat2RoundsBefore.filter(p => !canSitNow.includes(p));
+						canSitNow = canSitNow.concat(fallback);
+						
+						while (canSitNow.length < benchCount && sitMoreWithPlaytime.length > 0) {
+							// now we have to return some players that have high number of sits with same playtime
+							const fallback = sitMoreWithPlaytime.pop().filter(p => !canSitNow.includes(p));
+							canSitNow = canSitNow.concat(fallback);
+						}
+						
+						// if still not enough, return some players that sat last round
+						if (canSitNow.length < benchCount) {
+							const fallback = satRoundBefore.filter(p => !canSitNow.includes(p));
+							canSitNow = canSitNow.concat(fallback);
+						}
+					}
+					
+					// Sort ascending by:
+					// → last sit round (earliest sit first)
+					// → tie-break by sits (fewest sits first )
+					// → tie-break by playtime (longest playtime first)
+					canSitNow.sort((a, b) => lastSitRound[a.id] - lastSitRound[b.id] || sitCount[a.id] - sitCount[b.id] || b.playtime - a.playtime);
+
+					// now splice the canSitNow array to only have benchCount number of players (plus 30% more)
+					canSitNow = canSitNow.slice(0, benchCount + Math.ceil(benchCount * 0.3));
+					
+					// now shuffle ans splice to final benchCount number of players
+					let benchPlayers = shuffle(canSitNow).slice(0, benchCount).sort((a, b) => a.name.localeCompare(b.name));
+
 					const benchSet     = new Set(benchPlayers.map(p => p.id));
 					const playingPlayers = eligible.filter(p => !benchSet.has(p.id));
 
+					//console.log(roundId + 1, "Bench players:", benchPlayers.map(p => p.name));
 
 					// ── Phase 2+3: seeded init + Monte Carlo ────────────────
 					let matches = findBestTeams(
@@ -194,7 +252,7 @@ function workerMain() {
 					
 					benchPlayers.forEach(p => {
 						sitCount[p.id]++;
-						lastSitRound[p.id] = ri;
+						lastSitRound[p.id] = roundId + 1;
 					});
 
 					rounds.push({
@@ -211,7 +269,7 @@ function workerMain() {
 			let schedule = { rounds: rounds };
 
 			const penalties = computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS);
-			const totalPenalty = penalties.skill + penalties.sameTeam + penalties.opponent + penalties.bench;
+			const totalPenalty = penalties.skill + penalties.sameTeam + penalties.opponent + penalties.consecutiveBench + penalties.extraBench;
 
 			// console.log(" index: ", genIdx, "penalties: ", penalties, "total penalty: ", totalPenalty);
 			// console.log("penalties: ", penalties);
@@ -344,7 +402,7 @@ const SCHEULE_DATE_KEY = 'tournament-generator:scheduleDate';
 
 // ── Penalty weights (mirror of worker) ───────────────────────
 const PENALTY_WEIGHTS = {
-	EXTRA_SIT:   5,
+	EXTRA_SIT:  10,
 	CONSEC_SIT: 50,
 	SKILL_1:     2,
 	SKILL_2:     6,
@@ -756,7 +814,7 @@ genScheduleOut.addEventListener('change', e => {
 
 // ── Scoreboard ────────────────────────────────────────────────
 function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
-	if (!schedule) return { skill: 0, sameTeam: 0, opponent: 0, bench: 0 };
+	if (!schedule) return { skill: 0, sameTeam: 0, opponent: 0, consecutiveBench: 0, extraBench: 0 };
 
 	// Rebuild history matrices from schedule
 	const ids = activePlayers.map(p => p.id);
@@ -780,6 +838,13 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 		return mat[i][j];
 	}
 
+	function playerName(allPlayers, activePlayers, activeId) {
+		const ap = activePlayers.find(p => p.id === activeId);
+		if (!ap) return "?";
+		const p = allPlayers.find(p => p.id === ap.allPlayerId);
+		return p ? p.name : "?";
+	}
+	
 	function playerSkill(allPlayers, activePlayers, activeId) {
 		const ap = activePlayers.find(p => p.id === activeId);
 		if (!ap) return 1;
@@ -787,23 +852,28 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 		return p ? Number(p.skill) : 1;
 	}
 	
-	let skillPen = 0, stPen = 0, oppPen = 0, benchPen = 0;
+	let skillPen = 0, stPen = 0, oppPen = 0, consecutiveBenchPen = 0, extraBenchPen = 0;
 
 	// Track consecutive bench streak per player across all rounds
 	const consecBench = {};
-	ids.forEach(id => { consecBench[id] = 0; });
+	const sitCount = {};
+	ids.forEach(id => { consecBench[id] = 0; sitCount[id] = 0; });
 
 	schedule.rounds.forEach(round => {
 		const benchSet   = new Set(round.bench || []);
 		const playingSet = new Set();
 		round.matches.forEach(m => { [...m.teamA, ...m.teamB].forEach(id => playingSet.add(id)); });
 
+		benchSet.forEach(id => {
+			sitCount[id]++;
+		});
+
 		// Update consecutive bench streaks; only for players participating this round
 		ids.forEach(id => {
 			if (!benchSet.has(id) && !playingSet.has(id)) return;
 			if (benchSet.has(id)) {
 				consecBench[id] = (consecBench[id] || 0) + 1;
-				if (consecBench[id] >= 2) benchPen += penaltyWeights.CONSEC_SIT;
+				if (consecBench[id] >= 2) consecutiveBenchPen += penaltyWeights.CONSEC_SIT;
 			} else {
 				consecBench[id] = 0;
 			}
@@ -831,7 +901,55 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 		});
 	});
 
-	return { skill: skillPen, sameTeam: stPen, opponent: oppPen, bench: benchPen };
+	// create a mapping of playtime to players for easier processing
+	// then for every playtime:
+	// find the players (with the same playtime) which have sitcount difference greater than 1 - sitcount imbalance penalty.
+	// e.g. for playtime 3h:
+	// if one player has sitcount 4 and two players have sitcount 2, then the player with sitcount 4 will incur a penalty of ((4-2)-1)*EXTRA_SIT*2 = 10*2 = 20
+	// explanation: ((3-1)-1)*EXTRA_SIT*2
+	//               (3-1) = 2, which is the difference between the sit counts
+	//               -1 = 1, which is the number of imbalanced sit counts that are above the allowed imbalance
+	//               *EXTRA_SIT = the penalty weight for extra sits
+	//               *2 = the number of players that have the minimum sit count, which is the number of players that are affected by the penalty
+	// if another player has sitcount 4, the same calculation will be done and added to the penalty, so the total penalty will be 20 + 20 = 40
+
+	// Penalty if player with playtime 2h has higher sitcount than player playtime 3h:
+	// this is the same formula but penalty is applied when sit count of player with lesser playtime is greate as sitcount of player with greater playtime.
+	// This is to prevent players with lesser playtime from being benched more than players with greater playtime.
+	// e.g. for playtime 2h and 3h:
+	// if player with playtime 2h has sitcount 4 and player with playtime 3h has sitcount 2, then the player with playtime 2h will incur a penalty of (4-2)*EXTRA_SIT*1*(3-2) = 10*1*1 = 10
+	// explanation: (4-2) = 2, which is the difference between the sit counts
+	//               *EXTRA_SIT = the penalty weight for extra sits
+	//               *1 = the number of players that have the minimum sit count, which is the number of players that are affected by the penalty
+	//               *(3-2) = 1, which is the difference in playtime between the two players, which is used to scale the penalty based on how much more playtime the player with greater playtime has.
+
+	const maxPlaytime = Math.max(...activePlayers.map(p => p.playtime));
+	
+	for (let i = 1; i <= maxPlaytime; i++) {
+		const playtimePlayers = activePlayers.filter(p => p.playtime == i);
+		if (playtimePlayers.length === 0) continue;
+
+		const minSitCount = sitCount[playtimePlayers.reduce((min, p) => { return sitCount[min.id] < sitCount[p.id] ? min : p; }).id]
+		const minSitSum = playtimePlayers.reduce((sum, p) => sitCount[p.id] == minSitCount ? sum + 1 : sum, 0);
+
+		extraBenchPen += playtimePlayers.reduce((penalty, p) => {
+			const diff = sitCount[p.id] - minSitCount;
+			if (diff > 1) penalty += ((diff - 1) * penaltyWeights.EXTRA_SIT) * minSitSum;
+			return penalty;
+		}, 0);
+
+		if (i > 1) {
+			const lesserPlaytimePlayers = activePlayers.filter(p => p.playtime < i && sitCount[p.id] > minSitCount);
+
+			extraBenchPen += lesserPlaytimePlayers.reduce((penalty, p) => {
+				const diff = sitCount[p.id] - minSitCount;
+				if (diff > 0) penalty += (diff * penaltyWeights.EXTRA_SIT) * minSitSum * (i - p.playtime);
+				return penalty;
+			}, 0);
+		}
+	}
+
+	return { skill: skillPen, sameTeam: stPen, opponent: oppPen, consecutiveBench: consecutiveBenchPen, extraBench: extraBenchPen };
 }
 
 function penColor(val) {
@@ -842,12 +960,13 @@ function penColor(val) {
 
 function renderScoreboard() {
 	const p = computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS);
-	const total = p.skill + p.sameTeam + p.opponent + p.bench;
+	const total = p.skill + p.sameTeam + p.opponent + p.consecutiveBench + p.extraBench;
 	const rows = [
 		['Skill imbalance',             p.skill],
 		['Same-team repeats',           p.sameTeam],
 		['Opponent repeats',            p.opponent],
-		['Consecutive bench sits (≥2)', p.bench],
+		['Consecutive bench sits (≥2)', p.consecutiveBench],
+		['Sits count imbalance',        p.extraBench], // Not computed in this version
 		['Total',                       total],
 	];
 	genScoreboard.innerHTML = '<h3 class="gen-section-heading">Tournament penalty score</h3>' +

@@ -92,7 +92,7 @@ function handleSort(listKey, field) {
     sortState[listKey].field = field;
     sortState[listKey].dir = 'asc';
   }
-  console.log(`Sorting ${listKey} by ${field} (${sortState[listKey].dir})`);
+  //console.log(`Sorting ${listKey} by ${field} (${sortState[listKey].dir})`);
   if (listKey === 'all') renderAllPlayers();
   else if (listKey === 'active') renderActivePlayers();
   else renderStatsTable();
