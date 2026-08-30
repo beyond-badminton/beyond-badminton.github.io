@@ -951,6 +951,7 @@ function attachDragHandlers() {
 	genScheduleOut.querySelectorAll('.gen-player-slot').forEach(el => {
 		el.addEventListener('dragstart', onDragStart);
 		el.addEventListener('dragover',  onDragOver);
+		el.addEventListener('dragleave', onDragLeave);
 		el.addEventListener('drop',      onDrop);
 		el.addEventListener('dragend',   onDragEnd);
 	});
@@ -982,6 +983,11 @@ function onDragOver(e) {
 	e.currentTarget.classList.add('drag-over');
 }
 
+function onDragLeave(e) {
+	e.preventDefault();
+	e.dataTransfer.dropEffect = 'move';
+	e.currentTarget.classList.remove('drag-over');
+}
 function onDragEnd(e) {
 	e.currentTarget.classList.remove('dragging');
 	genScheduleOut.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
