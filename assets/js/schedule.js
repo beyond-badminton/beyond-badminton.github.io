@@ -398,6 +398,7 @@ function workerMain() {
 // ── Storage keys ──────────────────────────────────────────────
 const SCHEDULE_KEY = 'tournament-generator:schedule';
 const SCORES_KEY   = 'tournament-generator:scores';
+const GEN_PENALTIES_KEY   = 'tournament-generator:original_penalties';
 const SCHEULE_DATE_KEY = 'tournament-generator:scheduleDate';
 
 // ── Penalty weights (mirror of worker) ───────────────────────
@@ -414,6 +415,7 @@ const PENALTY_WEIGHTS = {
 // ── State ─────────────────────────────────────────────────────
 let schedule = null;   // { rounds: [...] }
 let scores   = {};     // { [matchId]: { a: number|null, b: number|null } }
+let generatedPenalties = {};
 let worker   = null;
 let scheduleDate = null; // Date object representing the date of the schedule
 
@@ -603,6 +605,8 @@ function runGeneration() {
 				}));
 			}
 			scores = newScores;
+			generatedPenalties = computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS);
+
 			saveGeneratedScheduleToStorage();
 			renderGeneratedSchedule();
 		}
@@ -953,29 +957,58 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 }
 
 function penColor(val) {
-	if (val === 0) return 'pen-green';
-	if (val <= 10) return 'pen-yellow';
+	if (val <= 0) return 'pen-green';
+	if (val <= 50) return 'pen-yellow';
 	return 'pen-red';
 }
 
+function valueWithSign(val) {
+	if (val > 0) return `+${val}`;
+	if (val <= 0) return val;
+}
+
 function renderScoreboard() {
-	const p = computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS);
-	const total = p.skill + p.sameTeam + p.opponent + p.consecutiveBench + p.extraBench;
+	const totalGenerated = generatedPenalties.skill + generatedPenalties.sameTeam + generatedPenalties.opponent + generatedPenalties.consecutiveBench + generatedPenalties.extraBench;
+	const adjustedPenalties = computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS);
+	const totalAdjusted = adjustedPenalties.skill + adjustedPenalties.sameTeam + adjustedPenalties.opponent + adjustedPenalties.consecutiveBench + adjustedPenalties.extraBench;
 	const rows = [
-		['Skill imbalance',             p.skill],
-		['Same-team repeats',           p.sameTeam],
-		['Opponent repeats',            p.opponent],
-		['Consecutive bench sits (≥2)', p.consecutiveBench],
-		['Sits count imbalance',        p.extraBench], // Not computed in this version
-		['Total',                       total],
+		['Skill imbalance',             generatedPenalties.skill, adjustedPenalties.skill, adjustedPenalties.skill - generatedPenalties.skill],
+		['Same-team repeats',           generatedPenalties.sameTeam, adjustedPenalties.sameTeam, adjustedPenalties.sameTeam - generatedPenalties.sameTeam],
+		['Opponent repeats',            generatedPenalties.opponent, adjustedPenalties.opponent, adjustedPenalties.opponent - generatedPenalties.opponent],
+		['Consecutive bench sits (≥2)', generatedPenalties.consecutiveBench, adjustedPenalties.consecutiveBench, adjustedPenalties.consecutiveBench - generatedPenalties.consecutiveBench],
+		['Sits count imbalance',        generatedPenalties.extraBench, adjustedPenalties.extraBench, adjustedPenalties.extraBench - generatedPenalties.extraBench],
+		['Total',                       totalGenerated, totalAdjusted, totalAdjusted - totalGenerated],
 	];
-	genScoreboard.innerHTML = '<h3 class="gen-section-heading">Tournament penalty score</h3>' +
-		rows.map(([label, val]) =>
-			`<div class="sb-row">
-				 <span class="sb-label">${label}</span>
-				 <span class="sb-val ${penColor(val)}">${val}</span>
-			 </div>`
-		).join('');
+	genScoreboard.innerHTML = `
+	<table class="sb-table">
+		<thead>
+		<tr class="gen-section-heading">
+			<th>Tournament penalty score</th>
+			<th>Generated</th>
+			<th>Adjusted</th>
+			<th>Difference</th>
+		</tr>
+		</thead>
+		<tbody>
+		${rows.map(([label, val1, val2, val3]) => `
+			<tr>
+			<td>${label}</td>
+			<td class="sb-val ${penColor(val1)}">${val1}</td>
+			<td class="sb-val ${penColor(val2)}">${val2}</td>
+			<td class="sb-val ${penColor(val3)}">${valueWithSign(val3)}</td>
+			</tr>
+		`).join('')}
+		</tbody>
+	</table>
+	`;
+
+	// genScoreboard.innerHTML = '<h3 class="gen-section-heading">Tournament penalty score</h3>' +
+	// 	rows.map(([label, val]) =>
+	// 		`<div class="sb-row">
+	// 			 <span class="sb-label">${label}</span>
+	// 			 <span class="sb-val ${penColor(val)}">${val}</span>
+	// 		 </div>`
+	// 	).join('');
 }
 
 // ── Player stats ──────────────────────────────────────────────
@@ -1024,20 +1057,24 @@ function loadGeneratedScheduleFromStorage() {
 	try {
 		const s = localStorage.getItem(SCHEDULE_KEY);
 		const c = localStorage.getItem(SCORES_KEY);
+		const p = localStorage.getItem(GEN_PENALTIES_KEY);
 		const d = localStorage.getItem(SCHEULE_DATE_KEY);
-		if (s) schedule = JSON.parse(s);
-		if (c) scores   = JSON.parse(c);
-		if (d) scheduleDate = new Date(d);
+		if (s) schedule       = JSON.parse(s);
+		if (c) scores         = JSON.parse(c);
+		if (p) generatedPenalties = JSON.parse(p);
+		if (d) scheduleDate   = new Date(d); else scheduleDate = null;
 	} catch (_) {}
 	
 	if (scheduleDate == null) scheduleDate = new Date();
-
+	if (generatedPenalties == null || Object.keys(generatedPenalties).length === 0) generatedPenalties = computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS);
+	console.log("Loaded schedule from storage:", generatedPenalties, computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS));
 	renderGeneratedSchedule();
 }
 
 function saveScores() {
 	try {
 		localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+		localStorage.setItem(GEN_PENALTIES_KEY, JSON.stringify(generatedPenalties));
 	} catch (_) {}
 }
 
@@ -1045,6 +1082,7 @@ function saveGeneratedScheduleToStorage() {
 	try {
 		localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule));
 		localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
+		localStorage.setItem(GEN_PENALTIES_KEY, JSON.stringify(generatedPenalties));
 		localStorage.setItem(SCHEULE_DATE_KEY, scheduleDate.toISOString());
 	} catch (_) {}
 }
@@ -1053,10 +1091,12 @@ function saveGeneratedScheduleToStorage() {
 function clearGeneratedScheduleFromStorage() {
 	schedule = null;
 	scores   = {};
+	generatedPenalties   = {};
 	scheduleDate = new Date();
 	try {
 		localStorage.removeItem(SCHEDULE_KEY);
 		localStorage.removeItem(SCORES_KEY);
+		localStorage.removeItem(GEN_PENALTIES_KEY);
 		localStorage.removeItem(SCHEULE_DATE_KEY);
 	} catch (_) {}
 	renderGeneratedSchedule();
