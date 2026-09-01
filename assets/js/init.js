@@ -35,7 +35,8 @@ const STORAGE_KEYS = [
 	COURTS_STORAGE_KEY,
 	COURTS_NEXT_ID_KEY,
 	SCHEDULE_KEY,
-	SCORES_KEY
+	SCORES_KEY,
+	GEN_PENALTIES_KEY
 ];
 
 // Save selected localStorage keys to a JSON file (opens a save dialog)
