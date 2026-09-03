@@ -17,10 +17,22 @@ function loadCourtNamesFromStorage() {
 }
 
 function saveCourtNamesToStorage() {
-  try {
-    localStorage.setItem(COURT_NAMES_STORAGE_KEY, JSON.stringify(courtNames));
-    localStorage.setItem(COURT_NAMES_NEXT_ID_KEY, String(nextCourtNameId));
-  } catch (err) {}
+	try {
+		localStorage.setItem(COURT_NAMES_STORAGE_KEY, JSON.stringify(courtNames));
+		localStorage.setItem(COURT_NAMES_NEXT_ID_KEY, String(nextCourtNameId));
+	} catch (err) {}
+}
+
+function clearCourtNamesFromStorage() {
+	courtNames      = [];
+	nextCourtNameId = 1;
+
+	try {
+		localStorage.removeItem(COURT_NAMES_STORAGE_KEY);
+		localStorage.removeItem(COURT_NAMES_NEXT_ID_KEY);
+	} catch (err) {}
+
+	renderCourtNames();
 }
 
 loadCourtNamesFromStorage();
@@ -131,10 +143,22 @@ function loadCourtsFromStorage() {
 }
 
 function saveCourtsToStorage() {
-  try {
-    localStorage.setItem(COURTS_STORAGE_KEY, JSON.stringify(courtBlocks));
-    localStorage.setItem(COURTS_NEXT_ID_KEY, String(nextCourtId));
-  } catch (err) {}
+	try {
+		localStorage.setItem(COURTS_STORAGE_KEY, JSON.stringify(courtBlocks));
+		localStorage.setItem(COURTS_NEXT_ID_KEY, String(nextCourtId));
+	} catch (err) {}
+}
+
+function clearCourtsFromStorage() {
+	courtBlocks = [];
+	nextCourtId = 1;
+
+	try {
+		localStorage.removeItem(COURTS_STORAGE_KEY);
+		localStorage.removeItem(COURTS_NEXT_ID_KEY);
+	} catch (err) {}
+	
+	renderCourts();
 }
 
 loadCourtsFromStorage();
