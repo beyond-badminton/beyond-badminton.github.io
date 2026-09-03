@@ -328,11 +328,11 @@ function printSchedule() {
 		  cleaned = true;
 		  document.body.removeChild(iframe);
 		};
-	  
+
 		iframe.contentWindow.onafterprint = cleanup;
 		iframe.contentWindow.focus();
 		iframe.contentWindow.print();
-	  
+
 		setTimeout(cleanup, 10000); // generous safety net, shouldn't normally fire
 	};
 }

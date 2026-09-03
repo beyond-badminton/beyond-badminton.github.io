@@ -133,27 +133,27 @@ allPlayerTableBody.addEventListener('click', e => {
 });
 
 document.getElementById('clear-all-players-btn').addEventListener('click', () => {
-  if (allPlayers.length === 0) return;
-  if (confirm('Remove all players? This will also clear active players.')) {
-    allPlayers    = [];
-    activePlayers = [];
-    renderAllPlayers();
-	populateActivePlayerSelect();
-    renderActivePlayers();
-    saveActivePlayersToStorage();
-  }
+	if (allPlayers.length === 0) return;
+	if (confirm('Remove all players? This will also clear active players.')) {
+		allPlayers    = [];
+		activePlayers = [];
+		renderAllPlayers();
+		populateActivePlayerSelect();
+		renderActivePlayers();
+		saveActivePlayersToStorage();
+	}
 });
 
 allPlayerForm.addEventListener('submit', e => {
-  e.preventDefault();
-  if (!validateAllPlayerForm()) return;
-  const error = addAllPlayer(apNameInput.value.trim(), apSkillInput.value);
-  if (error) {
-	alert(error);
-	return;
-  }
-  allPlayerForm.reset();
-  apNameField.classList.remove('invalid');
+	e.preventDefault();
+	if (!validateAllPlayerForm()) return;
+	const error = addAllPlayer(apNameInput.value.trim(), apSkillInput.value);
+	if (error) {
+		alert(error);
+		return;
+	}
+	allPlayerForm.reset();
+	apNameField.classList.remove('invalid');
 });
 
 // ---- CSV Import ----
@@ -161,54 +161,54 @@ const allPlayersCsvInput     = document.getElementById('all-players-csv-input');
 const allPlayersImportResult = document.getElementById('all-players-import-result');
 
 allPlayersCsvInput.addEventListener('change', () => {
-  const file = allPlayersCsvInput.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    const lines = reader.result.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-    if (lines.length === 0) {
-      allPlayersImportResult.innerHTML = '<span class="summary">The file is empty.</span>';
-      allPlayersImportResult.className = 'import-result error';
-      return;
-    }
-    const rows = lines.slice(1);
-    let added = 0;
-    const errors = [];
-    const skillNumbers = Object.keys(SKILL_LABELS)
-    rows.forEach((line, i) => {
-      const [name, skill] = line.split(',').map(c => c.trim());
-      if (!name) { errors.push(`Row ${i + 2}: missing name`); return; }
-      
-      if (!skillNumbers.includes(skill)) { errors.push(`Row ${i + 2}: Skill must be one of ${skillNumbers.join(', ')}`); return; }
-      const error = addAllPlayer(name, skill);
-	  if (error) { errors.push(`Row ${i + 2}: ${error}`); return;}
-      added++;
-    });
-    const summary = `Imported ${added} player${added === 1 ? '' : 's'}.` +
-      (errors.length ? ` Skipped ${errors.length} row${errors.length === 1 ? '' : 's'}:` : '');
-    if (errors.length) {
-      allPlayersImportResult.innerHTML = `<span class="summary">${summary}</span><ul class="import-errors">${errors.map(e => `<li>${e}</li>`).join('')}</ul>`;
-      allPlayersImportResult.className = 'import-result error';
-    } else {
-      allPlayersImportResult.innerHTML = `<span class="summary">${summary}</span>`;
-      allPlayersImportResult.className = 'import-result success';
-    }
-    allPlayersCsvInput.value = '';
-  };
-  reader.readAsText(file);
+	const file = allPlayersCsvInput.files[0];
+	if (!file) return;
+	const reader = new FileReader();
+	reader.onload = () => {
+		const lines = reader.result.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+		if (lines.length === 0) {
+		allPlayersImportResult.innerHTML = '<span class="summary">The file is empty.</span>';
+		allPlayersImportResult.className = 'import-result error';
+		return;
+		}
+		const rows = lines.slice(1);
+		let added = 0;
+		const errors = [];
+		const skillNumbers = Object.keys(SKILL_LABELS)
+		rows.forEach((line, i) => {
+		const [name, skill] = line.split(',').map(c => c.trim());
+		if (!name) { errors.push(`Row ${i + 2}: missing name`); return; }
+		
+		if (!skillNumbers.includes(skill)) { errors.push(`Row ${i + 2}: Skill must be one of ${skillNumbers.join(', ')}`); return; }
+		const error = addAllPlayer(name, skill);
+		if (error) { errors.push(`Row ${i + 2}: ${error}`); return;}
+		added++;
+		});
+		const summary = `Imported ${added} player${added === 1 ? '' : 's'}.` +
+		(errors.length ? ` Skipped ${errors.length} row${errors.length === 1 ? '' : 's'}:` : '');
+		if (errors.length) {
+		allPlayersImportResult.innerHTML = `<span class="summary">${summary}</span><ul class="import-errors">${errors.map(e => `<li>${e}</li>`).join('')}</ul>`;
+		allPlayersImportResult.className = 'import-result error';
+		} else {
+		allPlayersImportResult.innerHTML = `<span class="summary">${summary}</span>`;
+		allPlayersImportResult.className = 'import-result success';
+		}
+		allPlayersCsvInput.value = '';
+	};
+	reader.readAsText(file);
 });
 
 // ---- CSV Export ----
 document.getElementById('export-all-players-btn').addEventListener('click', () => {
-  if (allPlayers.length === 0) { alert('No players to export.'); return; }
-  const csv = ['name,skill', ...allPlayers.map(p => `${p.name},${p.skill}`)].join('\r\n');
-  const a   = document.createElement('a');
-  a.href    = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  a.download = 'players.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(a.href);
+	if (allPlayers.length === 0) { alert('No players to export.'); return; }
+	const csv = ['name,skill', ...allPlayers.map(p => `${p.name},${p.skill}`)].join('\r\n');
+	const a   = document.createElement('a');
+	a.href    = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+	a.download = 'players.csv';
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(a.href);
 });
 
 
@@ -217,100 +217,100 @@ let currentPopover = null;
 
 // 2. Delegate click event to skill pills inside the table
 allPlayerTableBody.addEventListener('click', (event) => {
-  const targetPill = event.target.closest('.skill-pill');
-  if (!targetPill || targetPill.closest('.skill-picker-popover')) return;
+	const targetPill = event.target.closest('.skill-pill');
+	if (!targetPill || targetPill.closest('.skill-picker-popover')) return;
 
-  event.stopPropagation();
-  openSkillPicker(targetPill);
+	event.stopPropagation();
+	openSkillPicker(targetPill);
 });
 
 function openSkillPicker(targetPill) {
-  closeSkillPicker();
+	closeSkillPicker();
 
-  // Create popover element
-  const popover = document.createElement('div');
-  popover.className = 'skill-picker-popover';
+	// Create popover element
+	const popover = document.createElement('div');
+	popover.className = 'skill-picker-popover';
 
-  // Apply positioning styles
-  Object.assign(popover.style, {
-    position: 'absolute',
-    backgroundColor: '#ffffff',
-    border: '1px solid var(--accent-soft)',
-    borderRadius: '6px',
-    padding: '6px 8px',
-    boxShadow: '0 4px 12px var(--accent-soft)',
-    zIndex: '1000',
-    display: 'flex',
-    gap: '6px'
-  });
+	// Apply positioning styles
+	Object.assign(popover.style, {
+		position: 'absolute',
+		backgroundColor: '#ffffff',
+		border: '1px solid var(--accent-soft)',
+		borderRadius: '6px',
+		padding: '6px 8px',
+		boxShadow: '0 4px 12px var(--accent-soft)',
+		zIndex: '1000',
+		display: 'flex',
+		gap: '6px'
+	});
 
-  // Calculate position relative to clicked pill
-  const rect = targetPill.getBoundingClientRect();
-  popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
-  popover.style.left = `${rect.left + window.scrollX}px`;
+	// Calculate position relative to clicked pill
+	const rect = targetPill.getBoundingClientRect();
+	popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+	popover.style.left = `${rect.left + window.scrollX}px`;
 
-  // Retrieve player ID from the row's remove button or dataset
-  const row = targetPill.closest('tr');
-  const playerId = targetPill.dataset.id || row.querySelector('.remove-btn')?.dataset.id;
+	// Retrieve player ID from the row's remove button or dataset
+	const row = targetPill.closest('tr');
+	const playerId = targetPill.dataset.id || row.querySelector('.remove-btn')?.dataset.id;
 
-  // Build skill option pills
-  Object.keys(SKILL_LABELS).forEach(skillId => {
-    const option = document.createElement('span');
-	updateSkillPillElement(option, skillId, true);
+	// Build skill option pills
+	Object.keys(SKILL_LABELS).forEach(skillId => {
+		const option = document.createElement('span');
+		updateSkillPillElement(option, skillId, true);
 
-    option.addEventListener('click', (e) => {
-      e.stopPropagation();
+		option.addEventListener('click', (e) => {
+			e.stopPropagation();
 
-      // Update target pill UI
+			// Update target pill UI
 
-      // Callback hook for backend/API update
-      onSkillChanged(targetPill, playerId, skillId);
+			// Callback hook for backend/API update
+			onSkillChanged(targetPill, playerId, skillId);
 
-      closeSkillPicker();
-    });
+			closeSkillPicker();
+		});
 
-    popover.appendChild(option);
-  });
+		popover.appendChild(option);
+	});
 
-  document.body.appendChild(popover);
-  currentPopover = popover;
+	document.body.appendChild(popover);
+	currentPopover = popover;
 }
 
 function closeSkillPicker() {
-  if (currentPopover) {
-    currentPopover.remove();
-    currentPopover = null;
-  }
+	if (currentPopover) {
+		currentPopover.remove();
+		currentPopover = null;
+	}
 }
 
 // 3. Backend callback placeholder
 function onSkillChanged(targetPillElement, playerId, skillId) {
-  const player = allPlayers.find(p => p.id === Number(playerId));
-  if (player) {
-	player.skill = skillId;
-	saveAllPlayersToStorage();
+	const player = allPlayers.find(p => p.id === Number(playerId));
+	if (player) {
+		player.skill = skillId;
+		saveAllPlayersToStorage();
 
-	// here we can avoid to render all players again, just update the pill text and class
-	updateSkillPillElement(targetPillElement, skillId, true);
-	
-	renderActivePlayers();
-	renderGeneratedSchedule();
-	populateActivePlayerSelect();
-  }
+		// here we can avoid to render all players again, just update the pill text and class
+		updateSkillPillElement(targetPillElement, skillId, true);
+		
+		renderActivePlayers();
+		renderGeneratedSchedule();
+		populateActivePlayerSelect();
+	}
 }
 
 // 4. Close popover on Escape key
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') {
-    closeSkillPicker();
-  }
+	if (event.key === 'Escape') {
+		closeSkillPicker();
+	}
 });
 
 // 5. Close popover when clicking outside
 document.addEventListener('click', (event) => {
-  if (currentPopover && !currentPopover.contains(event.target)) {
-    closeSkillPicker();
-  }
+	if (currentPopover && !currentPopover.contains(event.target)) {
+		closeSkillPicker();
+	}
 });
 
 // ============================================================

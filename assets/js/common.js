@@ -29,9 +29,9 @@ document.querySelectorAll('.sub-tabs').forEach(subTabGroup => {
 // SORT UTILITIES
 // ============================================================
 const sortState = {
-  all:    { field: 'name', dir: 'asc' },
-  active: { field: 'name', dir: 'asc' },
-  stats:  { field: 'name', dir: 'asc' }
+	all:    { field: 'name', dir: 'asc' },
+	active: { field: 'name', dir: 'asc' },
+	stats:  { field: 'name', dir: 'asc' }
 };
 
 function getSorted(arr, listKey) {
@@ -74,30 +74,30 @@ function getSorted(arr, listKey) {
 }
 
 function updateSortUI(listKey) {
-  const { field, dir } = sortState[listKey];
-  const arrow = dir === 'asc' ? '↑' : '↓';
+	const { field, dir } = sortState[listKey];
+	const arrow = dir === 'asc' ? '↑' : '↓';
 
-  document.querySelectorAll(`th.sortable[data-list="${listKey}"]`).forEach(th => {
-    const active = th.dataset.field === field;
-    th.classList.toggle('sort-active', active);
-    const icon = th.querySelector('.sort-icon');
-    if (icon) icon.textContent = active ? arrow : '↕';
-  });
+	document.querySelectorAll(`th.sortable[data-list="${listKey}"]`).forEach(th => {
+		const active = th.dataset.field === field;
+		th.classList.toggle('sort-active', active);
+		const icon = th.querySelector('.sort-icon');
+		if (icon) icon.textContent = active ? arrow : '↕';
+	});
 }
 
 function handleSort(listKey, field) {
-  if (sortState[listKey].field === field) {
-    sortState[listKey].dir = sortState[listKey].dir === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortState[listKey].field = field;
-    sortState[listKey].dir = 'asc';
-  }
-  //console.log(`Sorting ${listKey} by ${field} (${sortState[listKey].dir})`);
-  if (listKey === 'all') renderAllPlayers();
-  else if (listKey === 'active') renderActivePlayers();
-  else renderStatsTable();
+	if (sortState[listKey].field === field) {
+		sortState[listKey].dir = sortState[listKey].dir === 'asc' ? 'desc' : 'asc';
+	} else {
+		sortState[listKey].field = field;
+		sortState[listKey].dir = 'asc';
+	}
+	//console.log(`Sorting ${listKey} by ${field} (${sortState[listKey].dir})`);
+	if (listKey === 'all') renderAllPlayers();
+	else if (listKey === 'active') renderActivePlayers();
+	else renderStatsTable();
 }
 
 document.querySelectorAll('th.sortable').forEach(el => {
-  el.addEventListener('click', () => handleSort(el.dataset.list, el.dataset.field));
+	el.addEventListener('click', () => handleSort(el.dataset.list, el.dataset.field));
 });

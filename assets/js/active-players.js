@@ -21,27 +21,27 @@ const activePlayerCount     = document.getElementById('active-player-count');
 
 // Populate arrival dropdown (08:00 – 20:00 in 30-min steps)
 (function() {
-  for (let mins = 8 * 60; mins <= 20 * 60; mins += 30) {
-    const h = String(Math.floor(mins / 60)).padStart(2, '0');
-    const m = String(mins % 60).padStart(2, '0');
-    const opt = document.createElement('option');
-    opt.value = opt.textContent = `${h}:${m}`;
-    activeArrivalInput.appendChild(opt);
-  }
+	for (let mins = 8 * 60; mins <= 20 * 60; mins += 30) {
+		const h = String(Math.floor(mins / 60)).padStart(2, '0');
+		const m = String(mins % 60).padStart(2, '0');
+		const opt = document.createElement('option');
+		opt.value = opt.textContent = `${h}:${m}`;
+		activeArrivalInput.appendChild(opt);
+	}
 })();
 
 function populateActivePlayerSelect() {
 	const activeIds  = new Set(activePlayers.map(ap => ap.allPlayerId));
 	const currentSel = new Set(Array.from(activePlayerSelect.selectedOptions).map(opt => opt.value));
-  
+
 	activePlayerSelect.innerHTML = '';
 	allPlayers.forEach(p => {
-	  if (activeIds.has(p.id)) return;
-	  const opt = document.createElement('option');
-	  opt.value       = String(p.id);
-	  opt.textContent = p.name;
-	  if (currentSel.has(opt.value)) opt.selected = true;
-	  activePlayerSelect.appendChild(opt);
+		if (activeIds.has(p.id)) return;
+		const opt = document.createElement('option');
+		opt.value       = String(p.id);
+		opt.textContent = p.name;
+		if (currentSel.has(opt.value)) opt.selected = true;
+		activePlayerSelect.appendChild(opt);
 	});
 
 	const optionCount = activePlayerSelect.options.length;
@@ -65,33 +65,33 @@ activePlaytimeInput.addEventListener('input',  () => { if (activePlaytimeField.c
 function renderActivePlayers() {
 	activePlayerList.innerHTML      = '';
 	activePlayerTableBody.innerHTML = '';
-  
+
 	const enriched = activePlayers.map(ap => {
-	  const p = allPlayers.find(p => p.id === ap.allPlayerId);
-	  return { ...ap, name: p ? p.name : '(removed)', skill: p ? p.skill : '0' };
+		const p = allPlayers.find(p => p.id === ap.allPlayerId);
+		return { ...ap, name: p ? p.name : '(removed)', skill: p ? p.skill : '0' };
 	});
-  
+
 	getSorted(enriched, 'active').forEach(p => {
-  
-	  const li = document.createElement('li');
-	  li.innerHTML = `
+
+	const li = document.createElement('li');
+	li.innerHTML = `
 		<div class="info">
-		  <span class="name">${p.name}</span>
-		  <span class="meta">` + renderSkillPillHtml(p.skill) + ` · ${p.arrival} · ${p.playtime}h</span>
+			<span class="name">${p.name}</span>
+			<span class="meta">` + renderSkillPillHtml(p.skill) + ` · ${p.arrival} · ${p.playtime}h</span>
 		</div>
 		<button type="button" class="remove-btn" data-id="${p.id}">Remove</button>`;
-	  activePlayerList.appendChild(li);
-  
-	  const row = document.createElement('tr');
-	  row.innerHTML = `
+	activePlayerList.appendChild(li);
+
+	const row = document.createElement('tr');
+	row.innerHTML = `
 		<td>${p.name}</td>
 		<td>` + renderSkillPillHtml(p.skill) + `</td>
 		<td>${p.arrival}</td>
 		<td>${p.playtime}h</td>
 		<td><button type="button" class="remove-btn" data-id="${p.id}">Remove</button></td>`;
-	  activePlayerTableBody.appendChild(row);
+	activePlayerTableBody.appendChild(row);
 	});
-  
+
 	activePlayerCount.textContent = `(${activePlayers.length})`;
 	activePlayersEmpty.style.display = activePlayers.length === 0 ? 'block' : 'none';
 	updateSortUI('active');
@@ -127,31 +127,31 @@ function clearActivePlayersFromStorage() {
 }
 
 function addActivePlayer(allPlayerId, arrival, playtime) {
-  activePlayers.push({ id: nextActivePlayerId++, allPlayerId: Number(allPlayerId), arrival, playtime });
-  renderActivePlayers();
+	activePlayers.push({ id: nextActivePlayerId++, allPlayerId: Number(allPlayerId), arrival, playtime });
+	renderActivePlayers();
 }
 
 function removeActivePlayer(id) {
-  activePlayers = activePlayers.filter(ap => ap.id !== id);
-  renderActivePlayers();
+	activePlayers = activePlayers.filter(ap => ap.id !== id);
+	renderActivePlayers();
 }
 
 activePlayerList.addEventListener('click', e => {
-  const btn = e.target.closest('.remove-btn');
-  if (btn) removeActivePlayer(Number(btn.dataset.id));
+	const btn = e.target.closest('.remove-btn');
+	if (btn) removeActivePlayer(Number(btn.dataset.id));
 });
 activePlayerTableBody.addEventListener('click', e => {
-  const btn = e.target.closest('.remove-btn');
-  if (btn) removeActivePlayer(Number(btn.dataset.id));
+	const btn = e.target.closest('.remove-btn');
+	if (btn) removeActivePlayer(Number(btn.dataset.id));
 });
 
 document.getElementById('clear-active-players-btn').addEventListener('click', () => {
-  if (activePlayers.length === 0) return;
-  if (confirm('Remove all active players from this tournament?')) {
-    activePlayers      = [];
-    nextActivePlayerId = 1;
-    renderActivePlayers();
-  }
+	if (activePlayers.length === 0) return;
+	if (confirm('Remove all active players from this tournament?')) {
+		activePlayers      = [];
+		nextActivePlayerId = 1;
+		renderActivePlayers();
+	}
 });
 
 // document.getElementById('active-player-form').addEventListener('submit', e => {

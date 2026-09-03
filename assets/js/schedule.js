@@ -487,75 +487,75 @@ genDatePicker.addEventListener('change', () => {
 function normalizeBlock(blocks) {
 	// Helper: Convert "HH:MM" to total minutes since midnight
 	const timeToMins = (time) => {
-	  const [hours, minutes] = time.split(':').map(Number);
-	  return hours * 60 + minutes;
+		const [hours, minutes] = time.split(':').map(Number);
+		return hours * 60 + minutes;
 	};
-  
+
 	// Helper: Convert total minutes back to "HH:MM"
 	const minsToTime = (mins) => {
-	  const hours = String(Math.floor(mins / 60)).padStart(2, '0');
-	  const minutes = String(mins % 60).padStart(2, '0');
-	  return `${hours}:${minutes}`;
+		const hours = String(Math.floor(mins / 60)).padStart(2, '0');
+		const minutes = String(mins % 60).padStart(2, '0');
+		return `${hours}:${minutes}`;
 	};
-  
+
 	// 1. Gather all unique time boundaries (starts and ends)
 	const boundaries = new Set();
 	const processedBlocks = blocks.map(block => {
-	  const startMins = timeToMins(block.start);
-	  const endMins = startMins + block.duration;
-	  boundaries.add(startMins);
-	  boundaries.add(endMins);
-	  return { ...block, startMins, endMins };
+		const startMins = timeToMins(block.start);
+		const endMins = startMins + block.duration;
+		boundaries.add(startMins);
+		boundaries.add(endMins);
+		return { ...block, startMins, endMins };
 	});
-  
+
 	// Sort boundaries chronologically
 	const sortedBoundaries = Array.from(boundaries).sort((a, b) => a - b);
-  
+
 	const result = [];
   
 	// 2. Create intervals between consecutive boundaries
 	for (let i = 0; i < sortedBoundaries.length - 1; i++) {
-	  const segmentStart = sortedBoundaries[i];
-	  const segmentEnd = sortedBoundaries[i + 1];
-	  const duration = segmentEnd - segmentStart;
-  
-	  const activeCourts = new Set();
-  
-	  // Find all original blocks that cover this time segment
-	  for (const block of processedBlocks) {
-		if (block.startMins <= segmentStart && block.endMins >= segmentEnd) {
-		  block.courts.forEach(court => activeCourts.add(court));
+		const segmentStart = sortedBoundaries[i];
+		const segmentEnd = sortedBoundaries[i + 1];
+		const duration = segmentEnd - segmentStart;
+	
+		const activeCourts = new Set();
+	
+		// Find all original blocks that cover this time segment
+		for (const block of processedBlocks) {
+			if (block.startMins <= segmentStart && block.endMins >= segmentEnd) {
+			block.courts.forEach(court => activeCourts.add(court));
+			}
 		}
-	  }
-  
-	  // If courts are available during this segment, add to result
-	  if (activeCourts.size > 0) {
-		result.push({
-		  start: minsToTime(segmentStart),
-		  duration: duration,
-		  courts: Array.from(activeCourts).sort() // sort alphabetically (optional)
-		});
-	  }
+	
+		// If courts are available during this segment, add to result
+		if (activeCourts.size > 0) {
+			result.push({
+			start: minsToTime(segmentStart),
+			duration: duration,
+			courts: Array.from(activeCourts).sort() // sort alphabetically (optional)
+			});
+		}
 	}
   
 	// 3. Clean up: Merge consecutive blocks that have the exact same courts
 	const mergedResult = [];
 	for (const current of result) {
-	  if (mergedResult.length > 0) {
-		const last = mergedResult[mergedResult.length - 1];
-		const lastEndMins = timeToMins(last.start) + last.duration;
-		const currentStartMins = timeToMins(current.start);
-		
-		// Check if the courts are identical
-		const sameCourts = JSON.stringify(last.courts) === JSON.stringify(current.courts);
-  
-		// If they touch continuously and have the same courts, merge them
-		if (lastEndMins === currentStartMins && sameCourts) {
-		  last.duration += current.duration;
-		  continue;
+		if (mergedResult.length > 0) {
+			const last = mergedResult[mergedResult.length - 1];
+			const lastEndMins = timeToMins(last.start) + last.duration;
+			const currentStartMins = timeToMins(current.start);
+			
+			// Check if the courts are identical
+			const sameCourts = JSON.stringify(last.courts) === JSON.stringify(current.courts);
+	
+			// If they touch continuously and have the same courts, merge them
+			if (lastEndMins === currentStartMins && sameCourts) {
+			last.duration += current.duration;
+			continue;
+			}
 		}
-	  }
-	  mergedResult.push(current);
+		mergedResult.push(current);
 	}
 
 	//console.log("Original court blocks:", blocks);
