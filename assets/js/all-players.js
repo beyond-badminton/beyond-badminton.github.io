@@ -73,7 +73,6 @@ function renderAllPlayers() {
 	allPlayerCount.textContent = `(${allPlayers.length})`;
 	allPlayersEmpty.style.display = allPlayers.length === 0 ? 'block' : 'none';
 	updateSortUI('all');
-	saveAllPlayersToStorage();
 }
 
 function addAllPlayer(name, skill) {
@@ -81,17 +80,19 @@ function addAllPlayer(name, skill) {
 		return `Player "${name}" already exists.`;
 	}
 	allPlayers.push({ id: nextAllPlayerId++, name, skill });
-	renderAllPlayers();
+	saveAllPlayersToStorage();
 	populateActivePlayerSelect();
 	return null;
 }
 
 function removeAllPlayer(id) {
+	const isActive = activePlayers.some(ap => ap.allPlayerId === id);
+	if (isActive && !confirm('This player is currently active. Removing them will also remove them from the active players list. Proceed?')) {
+		return;
+	}
 	allPlayers    = allPlayers.filter(p => p.id !== id);
 	activePlayers = activePlayers.filter(ap => ap.allPlayerId !== id);
-	renderAllPlayers();
-	populateActivePlayerSelect();
-	renderActivePlayers();
+	saveAllPlayersToStorage();
 	saveActivePlayersToStorage();
 }
 
@@ -105,11 +106,13 @@ function loadAllPlayersFromStorage() {
 	renderAllPlayers();
 }
 
-function saveAllPlayersToStorage() {
+function saveAllPlayersToStorage(render = true) {
 	try {
 		localStorage.setItem(ALL_PLAYERS_KEY,         JSON.stringify(allPlayers));
 		localStorage.setItem(ALL_PLAYERS_NEXT_ID_KEY, String(nextAllPlayerId));
 	} catch (err) {}
+
+	if (render) renderAllPlayers();
 }
 
 function clearAllPlayersFromStorage() {
@@ -119,7 +122,7 @@ function clearAllPlayersFromStorage() {
 		localStorage.removeItem(ALL_PLAYERS_KEY);
 		localStorage.removeItem(ALL_PLAYERS_NEXT_ID_KEY);
 	} catch (err) {}
-  renderAllPlayers();
+	renderAllPlayers();
 }
 
 
@@ -135,12 +138,8 @@ allPlayerTableBody.addEventListener('click', e => {
 document.getElementById('clear-all-players-btn').addEventListener('click', () => {
 	if (allPlayers.length === 0) return;
 	if (confirm('Remove all players? This will also clear active players.')) {
-		allPlayers    = [];
-		activePlayers = [];
-		renderAllPlayers();
-		populateActivePlayerSelect();
-		renderActivePlayers();
-		saveActivePlayersToStorage();
+		clearAllPlayersFromStorage();
+		clearActivePlayersFromStorage();
 	}
 });
 
@@ -288,14 +287,13 @@ function onSkillChanged(targetPillElement, playerId, skillId) {
 	const player = allPlayers.find(p => p.id === Number(playerId));
 	if (player) {
 		player.skill = skillId;
-		saveAllPlayersToStorage();
+		saveAllPlayersToStorage(false);
 
 		// here we can avoid to render all players again, just update the pill text and class
 		updateSkillPillElement(targetPillElement, skillId, true);
 		
 		renderActivePlayers();
 		renderGeneratedSchedule();
-		populateActivePlayerSelect();
 	}
 }
 

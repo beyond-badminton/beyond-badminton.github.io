@@ -14,6 +14,8 @@ function loadCourtNamesFromStorage() {
 		if (saved)   courtNames      = JSON.parse(saved);
 		if (savedId) nextCourtNameId = Number(savedId) || 1;
 	} catch (err) { courtNames = []; nextCourtNameId = 1; }
+
+	renderCourtNames();
 }
 
 function saveCourtNamesToStorage() {
@@ -21,6 +23,8 @@ function saveCourtNamesToStorage() {
 		localStorage.setItem(COURT_NAMES_STORAGE_KEY, JSON.stringify(courtNames));
 		localStorage.setItem(COURT_NAMES_NEXT_ID_KEY, String(nextCourtNameId));
 	} catch (err) {}
+	
+	renderCourtNames();
 }
 
 function clearCourtNamesFromStorage() {
@@ -34,8 +38,6 @@ function clearCourtNamesFromStorage() {
 
 	renderCourtNames();
 }
-
-loadCourtNamesFromStorage();
 
 // DOM refs
 const courtNameForm     = document.getElementById('court-name-form');
@@ -79,12 +81,11 @@ function renderCourtNames() {
 	});
 	courtNameCount.textContent = `(${courtNames.length})`;
 	renderCourtCheckboxes();
-	saveCourtNamesToStorage();
 }
 
 function addCourtName(name) {
 	courtNames.push({ id: nextCourtNameId++, name });
-	renderCourtNames();
+	saveCourtNamesToStorage();
 }
 
 function removeCourtName(id) {
@@ -94,7 +95,7 @@ function removeCourtName(id) {
 		return;
 	}
 	courtNames = courtNames.filter(c => c.id !== id);
-	renderCourtNames();
+	saveCourtNamesToStorage();
 }
 
 courtNameList.addEventListener('click', e => {
@@ -140,6 +141,8 @@ function loadCourtsFromStorage() {
 		if (saved)   courtBlocks = JSON.parse(saved);
 		if (savedId) nextCourtId = Number(savedId) || 1;
 	} catch (err) { courtBlocks = []; nextCourtId = 1; }
+
+	renderCourts();
 }
 
 function saveCourtsToStorage() {
@@ -147,6 +150,8 @@ function saveCourtsToStorage() {
 		localStorage.setItem(COURTS_STORAGE_KEY, JSON.stringify(courtBlocks));
 		localStorage.setItem(COURTS_NEXT_ID_KEY, String(nextCourtId));
 	} catch (err) {}
+
+	renderCourts();
 }
 
 function clearCourtsFromStorage() {
@@ -160,8 +165,6 @@ function clearCourtsFromStorage() {
 	
 	renderCourts();
 }
-
-loadCourtsFromStorage();
 
 // DOM refs
 const courtForm          = document.getElementById('court-form');
@@ -259,17 +262,16 @@ function renderCourts() {
 		courtTableBody.appendChild(row);
 	});
 	updateCourtCount();
-	saveCourtsToStorage();
 }
 
 function addCourtBlock(start, duration, courts) {
 	courtBlocks.push({ id: nextCourtId++, start, duration: Number(duration), courts });
-	renderCourts();
+	saveCourtsToStorage();
 }
 
 function removeCourtBlock(id) {
 	courtBlocks = courtBlocks.filter(b => b.id !== id);
-	renderCourts();
+	saveCourtsToStorage();
 }
 
 courtList.addEventListener('click', e => {
@@ -283,7 +285,7 @@ courtTableBody.addEventListener('click', e => {
 
 document.getElementById('clear-courts-btn').addEventListener('click', () => {
 	if (courtBlocks.length === 0) return;
-	if (confirm('Remove all court availability blocks?')) { courtBlocks = []; renderCourts(); }
+	if (confirm('Remove all court availability blocks?')) { clearCourtsFromStorage(); }
 });
 
 courtForm.addEventListener('submit', e => {
@@ -300,6 +302,4 @@ courtForm.addEventListener('submit', e => {
 // INIT — initial render on page load
 // ============================================================
 loadCourtNamesFromStorage();
-renderCourtNames();
 loadCourtsFromStorage();
-renderCourts();

@@ -95,7 +95,6 @@ function renderActivePlayers() {
 	activePlayerCount.textContent = `(${activePlayers.length})`;
 	activePlayersEmpty.style.display = activePlayers.length === 0 ? 'block' : 'none';
 	updateSortUI('active');
-	saveActivePlayersToStorage();
 	populateActivePlayerSelect();
 }
 
@@ -114,6 +113,8 @@ function saveActivePlayersToStorage() {
 		localStorage.setItem(ACTIVE_PLAYERS_KEY,         JSON.stringify(activePlayers));
 		localStorage.setItem(ACTIVE_PLAYERS_NEXT_ID_KEY, String(nextActivePlayerId));
 	} catch (err) {}
+
+	renderActivePlayers();
 }
 
 function clearActivePlayersFromStorage() {
@@ -128,12 +129,12 @@ function clearActivePlayersFromStorage() {
 
 function addActivePlayer(allPlayerId, arrival, playtime) {
 	activePlayers.push({ id: nextActivePlayerId++, allPlayerId: Number(allPlayerId), arrival, playtime });
-	renderActivePlayers();
+	saveActivePlayersToStorage();
 }
 
 function removeActivePlayer(id) {
 	activePlayers = activePlayers.filter(ap => ap.id !== id);
-	renderActivePlayers();
+	saveActivePlayersToStorage();
 }
 
 activePlayerList.addEventListener('click', e => {
@@ -148,9 +149,7 @@ activePlayerTableBody.addEventListener('click', e => {
 document.getElementById('clear-active-players-btn').addEventListener('click', () => {
 	if (activePlayers.length === 0) return;
 	if (confirm('Remove all active players from this tournament?')) {
-		activePlayers      = [];
-		nextActivePlayerId = 1;
-		renderActivePlayers();
+		clearActivePlayersFromStorage();
 	}
 });
 

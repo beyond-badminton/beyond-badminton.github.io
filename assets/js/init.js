@@ -2,7 +2,7 @@
 // DISCARD TOURNAMENT
 // ============================================================
 async function discardTournament() {
-	const hasData = activePlayers.length > 0 || courtBlocks.length > 0 /*|| courtNames.length > 0*/;
+	const hasData = activePlayers.length > 0 || courtBlocks.length > 0 || (schedule != null && Object.keys(schedule).length > 0);
 	if (hasData && !confirm('Discard this tournament? Active players, courts, and availability will be removed. The All players list and the Court names are kept.')) {
 		return;
 	}
@@ -13,7 +13,7 @@ async function discardTournament() {
 }
 
 async function discardLocalStorane() {
-	const hasData = allPlayers.length > 0 || activePlayers.length > 0 || courtBlocks.length > 0 || courtNames.length > 0;
+	const hasData = allPlayers.length > 0 || activePlayers.length > 0 || courtBlocks.length > 0 || courtNames.length > 0 || (schedule != null && Object.keys(schedule).length > 0);
 	if (hasData && !confirm('This will discard all data. Are you sure you want to proceed? To keep All players and Court names, use the "Discard Tournament" button instead.')) {
 		return;
 	}
@@ -91,7 +91,8 @@ async function saveLocalStorageToFile() {
 
 // Load a JSON file (opens a file picker) and write its keys back into localStorage
 async function loadLocalStorageFromFile() {
-	if (!confirm('This will discard all current data. Are you sure you want to proceed?')) {
+	const hasData = allPlayers.length > 0 || activePlayers.length > 0 || courtBlocks.length > 0 || courtNames.length > 0 || (schedule != null && Object.keys(schedule).length > 0);
+	if (hasData && !confirm('This will discard all current data. Are you sure you want to proceed?')) {
 		return;
 	}
 	let file;
