@@ -766,12 +766,6 @@ function renderSchedule() {
 				benchEl.appendChild(slot);
 			});
 
-			// Print-only: comma-separated bench names
-			const printBench = document.createElement('span');
-			printBench.className   = 'print-bench-names';
-			printBench.textContent = round.bench.map(pid => playerName(pid)).join(', ');
-			benchEl.appendChild(printBench);
-
 			roundEl.appendChild(benchEl);
 		}
 
