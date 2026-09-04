@@ -35,7 +35,7 @@ function populateActivePlayerSelect() {
 	const currentSel = new Set(Array.from(activePlayerSelect.selectedOptions).map(opt => opt.value));
 
 	activePlayerSelect.innerHTML = '';
-	allPlayers.forEach(p => {
+	[...allPlayers].sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())).forEach(p => {
 		if (activeIds.has(p.id)) return;
 		const opt = document.createElement('option');
 		opt.value       = String(p.id);
