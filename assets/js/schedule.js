@@ -210,7 +210,7 @@ function workerMain() {
 					canSitNow = canSitNow.slice(0, benchCount + Math.ceil(benchCount * 0.3));
 					
 					// now shuffle ans splice to final benchCount number of players
-					let benchPlayers = shuffle(canSitNow).slice(0, benchCount).sort((a, b) => a.name.localeCompare(b.name));
+					let benchPlayers = shuffle(canSitNow).slice(0, benchCount).sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
 					const benchSet     = new Set(benchPlayers.map(p => p.id));
 					const playingPlayers = eligible.filter(p => !benchSet.has(p.id));
