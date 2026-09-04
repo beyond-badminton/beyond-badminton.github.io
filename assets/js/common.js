@@ -65,10 +65,10 @@ function getSorted(arr, listKey) {
 			if (va > vb) return dir === 'asc' ?  1 : -1;
 			return 0;
 		}
-		const va = a.name.toLowerCase();
-		const vb = b.name.toLowerCase();
-		if (va < vb) return dir === 'asc' ? -1 : 1;
-		if (va > vb) return dir === 'asc' ?  1 : -1;
+
+		const ret = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+		if (ret < 0) return dir === 'asc' ? -1 : 1;
+		if (ret > 0) return dir === 'asc' ?  1 : -1;
 		return 0;
 	});
 }
