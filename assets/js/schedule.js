@@ -1057,9 +1057,7 @@ function renderStatsTable() {
 		(round.bench || []).forEach(id => { if (stats[id]) stats[id].bench++; });
 	});
 
-	const rows = Object.values(stats).sort((a, b) => a.name.localeCompare(b.name));
-
-	genStatsTbody.innerHTML = getSorted(rows, 'stats').map(r => `<tr>
+	genStatsTbody.innerHTML = getSorted(Object.values(stats), 'stats').map(r => `<tr>
 					<td>${r.name}</td>
 					<td>` + renderSkillPillHtml(r.skill) + `</td>
 					<td>${r.playtime}h</td>
