@@ -405,7 +405,7 @@ const MATCHES_PER_HOUR_KEY = 'tournament-generator:matchesPerHour';
 // ── Penalty weights (mirror of worker) ───────────────────────
 const PENALTY_WEIGHTS = {
 	EXTRA_SIT:  10,
-	CONSEC_SIT: 50,
+	CONSEC_SIT: 30,
 	SKILL_1:     2,
 	SKILL_2:     6,
 	SKILL_3:    12,
@@ -991,14 +991,22 @@ function renderScoreboard() {
 	const totalGenerated = generatedPenalties.skill + generatedPenalties.sameTeam + generatedPenalties.opponent + generatedPenalties.consecutiveBench + generatedPenalties.extraBench;
 	const adjustedPenalties = computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS);
 	const totalAdjusted = adjustedPenalties.skill + adjustedPenalties.sameTeam + adjustedPenalties.opponent + adjustedPenalties.consecutiveBench + adjustedPenalties.extraBench;
+
 	const rows = [
-		['Skill imbalance',             generatedPenalties.skill, adjustedPenalties.skill, adjustedPenalties.skill - generatedPenalties.skill],
-		['Same-team repeats',           generatedPenalties.sameTeam, adjustedPenalties.sameTeam, adjustedPenalties.sameTeam - generatedPenalties.sameTeam],
-		['Opponent repeats',            generatedPenalties.opponent, adjustedPenalties.opponent, adjustedPenalties.opponent - generatedPenalties.opponent],
-		['Consecutive bench sits (≥2)', generatedPenalties.consecutiveBench, adjustedPenalties.consecutiveBench, adjustedPenalties.consecutiveBench - generatedPenalties.consecutiveBench],
-		['Sits count imbalance',        generatedPenalties.extraBench, adjustedPenalties.extraBench, adjustedPenalties.extraBench - generatedPenalties.extraBench],
+		['Skill imbalance',             generatedPenalties.skill, adjustedPenalties.skill, adjustedPenalties.skill - generatedPenalties.skill, `Skill imbalance means that the total skill of one team is significantly higher than the other team, which can lead to unfair matches. If the skill difference is 1, a ${PENALTY_WEIGHTS.SKILL_1}-points penalty is applied. If the skill difference is 2, a ${PENALTY_WEIGHTS.SKILL_2}-points penalty is applied. If the skill difference is 3 or more, a ${PENALTY_WEIGHTS.SKILL_3}-points penalty is applied.`],
+		['Same-team repeats',           generatedPenalties.sameTeam, adjustedPenalties.sameTeam, adjustedPenalties.sameTeam - generatedPenalties.sameTeam, `Same-team repeats mean that the same two players are paired together in multiple matches, which can lead to unfair advantages or low match diversity. A ${PENALTY_WEIGHTS.SAME_TEAM}-points penalty is applied for each repeat pairing.`],
+		['Opponent repeats',            generatedPenalties.opponent, adjustedPenalties.opponent, adjustedPenalties.opponent - generatedPenalties.opponent, `Opponent repeats mean that the same two players are matched against each other in multiple matches, which can lead to unfair advantages or low match diversity. A ${PENALTY_WEIGHTS.OPPONENT}-points penalty is applied for each repeat pairing.`],
+		['Consecutive bench sits (≥2)', generatedPenalties.consecutiveBench, adjustedPenalties.consecutiveBench, adjustedPenalties.consecutiveBench - generatedPenalties.consecutiveBench, `Consecutive bench sits mean that a player is benched for two or more consecutive rounds. A ${PENALTY_WEIGHTS.CONSEC_SIT}-points penalty is applied for each player who is benched for two consecutive rounds. The more consecutive rounds a player is benched, the higher the penalty.`],
+		['Sits count imbalance',        generatedPenalties.extraBench, adjustedPenalties.extraBench, adjustedPenalties.extraBench - generatedPenalties.extraBench, `Sits count imbalance means that some players are benched significantly more than others with the same playtime, or when a player with lower playtime sits more times than a player with higher playtime. The more rounds a player is benched above the minimum, the higher the penalty, starting at ${PENALTY_WEIGHTS.EXTRA_SIT}-points penalty.`],
 		['Total',                       totalGenerated, totalAdjusted, totalAdjusted - totalGenerated],
 	];
+
+	// create questionmark with on hover to dislay helptext
+	const helpText = document.createElement('span');
+	helpText.className = 'sb-helptext';
+	helpText.textContent = '?';
+	helpText.title = 'Penalties are calculated based on the generated schedule and the current schedule. The difference column shows how much the penalties have changed since the schedule was generated.';
+
 	genScoreboard.innerHTML = `
 	<table class="sb-table">
 		<thead>
@@ -1010,9 +1018,12 @@ function renderScoreboard() {
 		</tr>
 		</thead>
 		<tbody>
-		${rows.map(([label, val1, val2, val3]) => `
+		${rows.map(([label, val1, val2, val3, desc]) => `
 			<tr>
-			<td>${label}</td>
+			<td>
+				${label}
+				${desc ? `<span class="help-icon" title="${desc}">?</span>` : ''}
+			</td>
 			<td class="sb-val ${penColor(val1)}">${val1}</td>
 			<td class="sb-val ${penColor(val2)}">${val2}</td>
 			<td class="sb-val ${penColor(val3)}">${valueWithSign(val3)}</td>
@@ -1021,14 +1032,6 @@ function renderScoreboard() {
 		</tbody>
 	</table>
 	`;
-
-	// genScoreboard.innerHTML = '<h3 class="gen-section-heading">Tournament penalty score</h3>' +
-	// 	rows.map(([label, val]) =>
-	// 		`<div class="sb-row">
-	// 			 <span class="sb-label">${label}</span>
-	// 			 <span class="sb-val ${penColor(val)}">${val}</span>
-	// 		 </div>`
-	// 	).join('');
 }
 
 // ── Player stats ──────────────────────────────────────────────

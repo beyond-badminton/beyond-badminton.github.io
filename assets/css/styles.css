@@ -1046,6 +1046,28 @@ input[type="file"]{
 .gen-stats-table tr:last-child td { border-bottom:none; }
 .gen-stats-table tr:hover td { background:var(--paper); }
 
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 6px; /* Spaces it away from the text */
+  border-radius: 50%;
+  background-color: var(--line); /* Subtle gray background */
+  color: var(--ink); /* Dark text */
+  font-size: 10px;
+  font-weight: bold;
+  font-family: sans-serif;
+  cursor: help; /* Turns the mouse into a question mark */
+  vertical-align: middle;
+}
+
+.help-icon:hover {
+  background-color: var(--accent); /* Pops to blue when they mouse over */
+  color: white;
+}
+
 /* ============================================================
    PRINT
    ============================================================ */
