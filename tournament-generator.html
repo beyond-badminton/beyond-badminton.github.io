@@ -24,6 +24,7 @@
 				<button class="tab active" data-tab="players">Players</button>
 				<button class="tab" data-tab="courts">Courts</button>
 				<button class="tab" data-tab="schedule">Schedule</button>
+				<button class="tab" data-tab="about">About</button>
 			</div>
 
 			<!-- ===== PLAYERS TAB ===== -->
@@ -302,6 +303,44 @@ Bob,1</pre>
 
 			</div>
 			<!-- end generator tab -->
+			
+			<!-- ===== ABOUT TAB ===== -->
+			<div id="about" class="tab-content">
+				<div class="card">
+					<h3>1. About</h3>
+					<p>This badminton manager tool helps you easily organize badminton tournaments by managing players and courts, and automatically generating schedules based on your parameters.</p>
+					<p>Of course, this is not strictly designed for badminton matches. Feel free to use it for any games that are played in doubles.</p>
+
+					<h3>2. Beyond Badminton</h3>
+					<p>This tool was originally created for "Beyond Badminton", a community of badminton enthusiasts who organize events and tournaments.</p>
+
+					<h3>3. Privacy & Data</h3>
+					<p>Built with privacy in mind, this tool runs entirely locally on your device using JavaScript. All data is saved directly to your browser's local storage. We do not use cookies or upload any information to external servers.</p>
+					<p>You can clear your saved data at any time using the built-in cleanup buttons or through your browser's privacy settings.</p>
+					<p>To access your tournament data on a different browser or device, you can use the Export and Import features.</p>
+
+					<h3>4. How it works</h3>
+					<h4>Players tab</h4>
+					<p>First, add players to the "All Players" list. This serves as your permanent saved roster for future tournaments.</p>
+					<p>Then, select which players will be active for the current tournament and set their arrival times and play durations.</p>
+
+					<h4>Courts tab</h4>
+					<p>Next, add your courts to the Courts list, which also saves permanently for future use.</p>
+					<p>After that, set the court availability by specifying the start time, duration, and which specific courts are open during that time block.</p>
+
+					<h4>Schedule tab</h4>
+					<p>Finally, go to the Schedule tab and click Generate. The tool will create a schedule based on your active players and available courts. You can fine-tune the results by adjusting the number of matches per hour, allowing singles matches, and choosing whether players with only 1 hour of playtime can sit on the bench.</p>
+					<p>The generated schedule displays all matches, player stats, and penalty scores. You can easily print or export the schedule for sharing.</p>
+					
+					<h3>5. Feedback & Support</h3>
+					<p>This tool is completely free to use. If you encounter any bugs, have a feature request, or want to view the source code, please visit the <a href="#">GitHub repository</a> or contact me at <a href="mailto:your@email.com">your@email.com</a>.</p>
+					<p>Please note that this was created as a hobby project in a short amount of time, so there are still a few things that need to be polished.</p>
+					<p>Thank you for using the Tournament Generator!</p>
+
+					<h3>6. Third-Party Software</h3>
+					<p>This project uses the MIT-licensed <a href="https://github.com/exceljs/exceljs" target="_blank" rel="noopener noreferrer">ExcelJS</a> library for exporting data to spreadsheets. A special thanks to all the contributors of that library for their hard work.</p>
+				</div>
+			</div>
 		</div>
 
 		<script src="assets/js/common.js"></script>
