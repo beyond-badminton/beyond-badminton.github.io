@@ -430,7 +430,12 @@ input[type="file"]{
   border-radius:6px;
   transition:background .15s ease, color .15s ease;
 }
-
+.sit-1st-round{
+  width:auto;
+  padding:0;
+  margin:0;
+  accent-color:var(--accent);
+}
 .remove-btn:hover{
   background:#fdf2ef;
   color:#c8503a;
@@ -788,7 +793,7 @@ input[type="file"]{
 .gen-controls-row {
   display:flex;
   align-items:flex-end;
-  gap:16px;
+  gap:30px;
   flex-wrap:wrap;
   margin-bottom:14px;
 }
@@ -807,9 +812,18 @@ input[type="file"]{
   letter-spacing:0;
   padding-bottom:2px;
 }
-.gen-checkbox-label input[type="checkbox"] { width:auto; padding:0; accent-color:var(--accent); }
+.gen-checkbox-label input[type="checkbox"] {
+  width:auto;
+  padding:0;
+  accent-color:var(--accent);
+}
 
-.gen-btn-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:4px; }
+.gen-btn-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:4px;
+}
 
 .gen-primary-btn {
   padding:10px 20px;
@@ -1050,7 +1064,8 @@ input[type="file"]{
   justify-content: center;
   width: 14px;
   height: 14px;
-  margin-left: 6px; /* Spaces it away from the text */
+  margin-left: 4px; /* Spaces it away from the text */
+  margin-bottom: 2px; /* Aligns it better with the text */
   border-radius: 50%;
   background-color: var(--line); /* Subtle gray background */
   color: var(--ink); /* Dark text */

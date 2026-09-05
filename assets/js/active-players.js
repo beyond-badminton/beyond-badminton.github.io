@@ -14,7 +14,6 @@ const activePlaytimeInput   = document.getElementById('active-playtime');
 const activePlayerField     = document.getElementById('active-player-field');
 const activeArrivalField    = document.getElementById('active-arrival-field');
 const activePlaytimeField   = document.getElementById('active-playtime-field');
-const activePlayerList      = document.getElementById('active-player-list');
 const activePlayerTableBody = document.getElementById('active-player-table-body');
 const activePlayersEmpty    = document.getElementById('active-players-empty');
 const activePlayerCount     = document.getElementById('active-player-count');
@@ -63,7 +62,6 @@ activeArrivalInput.addEventListener('change',  () => { if (activeArrivalField.cl
 activePlaytimeInput.addEventListener('input',  () => { if (activePlaytimeField.classList.contains('invalid')) validateActivePlayerForm(); });
 
 function renderActivePlayers() {
-	activePlayerList.innerHTML      = '';
 	activePlayerTableBody.innerHTML = '';
 
 	const enriched = activePlayers.map(ap => {
@@ -72,24 +70,16 @@ function renderActivePlayers() {
 	});
 
 	getSorted(enriched, 'active').forEach(p => {
-
-	const li = document.createElement('li');
-	li.innerHTML = `
-		<div class="info">
-			<span class="name">${p.name}</span>
-			<span class="meta">` + renderSkillPillHtml(p.skill) + ` · ${p.arrival} · ${p.playtime}h</span>
-		</div>
-		<button type="button" class="remove-btn" data-id="${p.id}">Remove</button>`;
-	activePlayerList.appendChild(li);
-
-	const row = document.createElement('tr');
-	row.innerHTML = `
-		<td>${p.name}</td>
-		<td>` + renderSkillPillHtml(p.skill) + `</td>
-		<td>${p.arrival}</td>
-		<td>${p.playtime}h</td>
-		<td><button type="button" class="remove-btn" data-id="${p.id}">Remove</button></td>`;
-	activePlayerTableBody.appendChild(row);
+		const row = document.createElement('tr');
+		row.dataset.id=p.id;
+		row.innerHTML = `
+			<td>${p.name}</td>
+			<td>` + renderSkillPillHtml(p.skill) + `</td>
+			<td>${p.arrival}</td>
+			<td>${p.playtime}h</td>
+			<td><input type="checkbox" class="sit-1st-round"${p.sit1stRound ? ' checked' : ''}></td>
+			<td><button type="button" class="remove-btn">Remove</button></td>`;
+		activePlayerTableBody.appendChild(row);
 	});
 
 	activePlayerCount.textContent = `(${activePlayers.length})`;
@@ -108,13 +98,13 @@ function loadActivePlayersFromStorage() {
 	renderActivePlayers();
 }
 
-function saveActivePlayersToStorage() {
+function saveActivePlayersToStorage(render = true) {
 	try {
 		localStorage.setItem(ACTIVE_PLAYERS_KEY,         JSON.stringify(activePlayers));
 		localStorage.setItem(ACTIVE_PLAYERS_NEXT_ID_KEY, String(nextActivePlayerId));
 	} catch (err) {}
 
-	renderActivePlayers();
+	if (render) renderActivePlayers();
 }
 
 function clearActivePlayersFromStorage() {
@@ -137,13 +127,26 @@ function removeActivePlayer(id) {
 	saveActivePlayersToStorage();
 }
 
-activePlayerList.addEventListener('click', e => {
-	const btn = e.target.closest('.remove-btn');
-	if (btn) removeActivePlayer(Number(btn.dataset.id));
-});
 activePlayerTableBody.addEventListener('click', e => {
-	const btn = e.target.closest('.remove-btn');
-	if (btn) removeActivePlayer(Number(btn.dataset.id));
+	const row = e.target.closest('tr');
+	if (!row) return;
+
+	const playerId = Number(row.dataset.id);
+
+	// 1. Handle the Remove Button
+	if (e.target.closest('.remove-btn')) {
+		removeActivePlayer(playerId);
+		return
+	} 
+
+	// 2. Handle a Checkbox click
+	const checkbox = e.target.closest('input[type="checkbox"]');
+	if (checkbox) {
+		const isChecked = checkbox.checked; // true or false
+		const player = activePlayers.find(p => p.id === Number(playerId));
+		player.sit1stRound = isChecked; // Update the property in the activePlayers array
+		saveActivePlayersToStorage(false); // Save the updated array to localStorage
+	}
 });
 
 document.getElementById('clear-active-players-btn').addEventListener('click', () => {
@@ -153,13 +156,6 @@ document.getElementById('clear-active-players-btn').addEventListener('click', ()
 	}
 });
 
-// document.getElementById('active-player-form').addEventListener('submit', e => {
-//   e.preventDefault();
-//   if (!validateActivePlayerForm()) return;
-//   addActivePlayer(activePlayerSelect.value, activeArrivalInput.value, activePlaytimeInput.value);
-//   document.getElementById('active-player-form').reset();
-//   [activePlayerField, activeArrivalField, activePlaytimeField].forEach(f => f.classList.remove('invalid'));
-// });
 document.getElementById('active-player-form').addEventListener('submit', e => {
 	e.preventDefault();
 	if (!validateActivePlayerForm()) return;

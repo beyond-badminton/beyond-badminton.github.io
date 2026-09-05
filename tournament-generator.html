@@ -132,7 +132,6 @@ Bob,1</pre>
 								<button type="button" class="clear-btn" id="clear-active-players-btn">Clear all</button>
 							</div>
 							<p class="empty" id="active-players-empty">No active players added yet.</p>
-							<ul class="player-list" id="active-player-list"></ul>
 							<table class="player-table" id="active-player-table">
 							<thead>
 								<tr>
@@ -140,6 +139,7 @@ Bob,1</pre>
 									<th class="sortable" data-list="active" data-field="skill">Skill <span class="sort-icon">↕</span></th>
 									<th class="sortable" data-list="active" data-field="arrival">Arrival <span class="sort-icon">↕</span></th>
 									<th class="sortable" data-list="active" data-field="playtime">Play time <span class="sort-icon">↕</span></th>
+									<th class="sortable" data-list="active" data-field="sit1stRound">Sit 1st round<span class="help-icon" title="Is someone running late? Put them on the bench for their first round :) This option is ignored if there are not enough players to form a bench.">?</span> <span class="sort-icon">↕</span></th>
 									<th></th>
 								</tr>
 							</thead>
@@ -244,11 +244,11 @@ Bob,1</pre>
 						<div>
 							<label class="gen-checkbox-label">
 								<input type="checkbox" id="allow-singles" checked>
-								Allow singles (players on bench can play singles matches)
+								Allow singles matches<span class="help-icon" title="When enabled, the generator will create singles matches if there aren't enough players to form doubles and a court is available.">?</span>
 							</label>
 							<label class="gen-checkbox-label">
 								<input type="checkbox" id="gen-1h-playtime-should-play" checked>
-								Players with 1 hour of playtime should not sit on the bench
+								Players with 1 hour of playtime should not sit on the bench<span class="help-icon" title="This option is partially ignored if there are not enough other players to form a bench. It is fully ignored if the player is already sitting out their first round after arriving (configured in 'Active players' tab).">?</span>
 							</label>
 						</div>
 						<div>

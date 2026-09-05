@@ -44,9 +44,10 @@ function getSorted(arr, listKey) {
 			if (va > vb) return dir === 'asc' ?  1 : -1;
 			return 0;
 		}
-		if (field === 'playtime' || field === 'matches' || field === 'bench') {
-			const va = a[field];
-			const vb = b[field];
+		if (field === 'playtime' || field === 'matches' || field === 'bench' || field === 'sit1stRound') {
+			const va = a[field] || false;
+			const vb = b[field] || false;
+			console.log(`Sorting by ${field}:`, a.name, va, b.name, vb);
 			if (va < vb) return dir === 'asc' ? -1 : 1;
 			if (va > vb) return dir === 'asc' ?  1 : -1;
 			return 0;
