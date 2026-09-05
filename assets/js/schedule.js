@@ -45,9 +45,118 @@ function workerMain() {
 		return array;
 	}
 
+	function fillBench(sitCount, lastSitRound, roundId, eligiblePlayers, doublesMatchCount, singlesMatchCount, playersWith1hPlaytimeShouldPlay) {
+	
+		const totalPlayingCount = doublesMatchCount * 4 + singlesMatchCount * 2;
+		//console.log("eligibleForBench:", eligibleForBench.map(p => p.name));
+		const benchCount   = Math.max(0, eligiblePlayers.length - totalPlayingCount);
+		//console.log("benchCount:", benchCount, "eligiblePlayers.length:", eligiblePlayers.length, "totalPlayingCount:", totalPlayingCount);
+
+		// in case, we have not enough player
+
+		// ── Phase 1: deterministic bench assignment ─────────────
+
+		// filter those, that should always play
+		const shouldPlay = eligiblePlayers.filter(p => p.playtime == 1 && playersWith1hPlaytimeShouldPlay);
+		//console.log("shouldPlay:", shouldPlay.map(p => p.name));
+
+		// filter out those that sat last round
+		const satRoundBefore = eligiblePlayers.filter(p => lastSitRound[p.id] === roundId - 1 && !shouldPlay.includes(p));
+		//console.log("satRoundBefore:", satRoundBefore.map(p => p.name));
+		// filter those that sat 2 rounds before
+		const sat2RoundsBefore = eligiblePlayers.filter(p => lastSitRound[p.id] === roundId - 2 && !shouldPlay.includes(p));
+		//console.log("sat2RoundsBefore:", sat2RoundsBefore.map(p => p.name));
+		
+		// filter trose that sat more than fair share of rounds (i.e. those that sat more than 1 round more than the player with the same playtime)
+		let sitMoreWithPlaytime = [];
+
+		// find max playtime
+		const maxPlaytime = eligiblePlayers.reduce((max, p) => Math.max(max, p.playtime), 1);
+
+		for (let i = 1; i <= maxPlaytime; i++) {
+			const playtimePlayers = eligiblePlayers.filter(p => p.playtime == i);
+			if (playtimePlayers.length === 0) continue;
+
+			const maxP = playtimePlayers.reduce((max, p) => { return sitCount[max.id] > sitCount[p.id] ? max : p; });
+			const minP = playtimePlayers.reduce((min, p) => { return sitCount[min.id] < sitCount[p.id] ? min : p; });
+			if (sitCount[maxP.id] - sitCount[minP.id] > 1) {
+				sitMoreWithPlaytime.push(eligiblePlayers.filter(p => sitCount[p.id] == maxP && !shouldPlay.includes(p)));
+			}
+		}
+		//console.log("sitMoreWithPlaytime:", sitMoreWithPlaytime.map(arr => arr.map(p => p.name)));
+
+		// now filter out those that matched previous excluding criteria
+		//console.log("eligible:", eligiblePlayers.map(p => p.name), "shouldPlay:", shouldPlay.map(p => p.name), "satRoundBefore:", satRoundBefore.map(p => p.name), "sat2RoundsBefore:", sat2RoundsBefore.map(p => p.name), "sitMoreWithPlaytime:", sitMoreWithPlaytime.map(arr => arr.map(p => p.name)));
+		let canSitNow = eligiblePlayers.filter(p => !shouldPlay.includes(p) && !satRoundBefore.includes(p) && !sat2RoundsBefore.includes(p) && !sitMoreWithPlaytime[p.playtime]?.includes(p));
+		//console.log("canSitNow:", canSitNow.map(p => p.name));
+
+		let mustPlayWillAlsoSit = false;
+
+		if (canSitNow.length < benchCount) {
+			//console.log("not enough players to sit, need to fallback to other criteria", "canSitNow:", canSitNow.map(p => p.name), "benchCount:", benchCount);
+			// now we have to return some players that sat 2 rounds before
+			const fallback = sat2RoundsBefore.filter(p => !canSitNow.includes(p));
+			canSitNow = canSitNow.concat(fallback);
+			
+			while (canSitNow.length < benchCount && sitMoreWithPlaytime.length > 0) {
+				// now we have to return some players that have high number of sits with same playtime
+				const fallback = sitMoreWithPlaytime.pop().filter(p => !canSitNow.includes(p));
+				canSitNow = canSitNow.concat(fallback);
+			}
+			
+			// if still not enough, return some players that sat last round
+			if (canSitNow.length < benchCount) {
+				//console.log("not enough players to sit, need to fallback to last round sits", "canSitNow:", canSitNow.map(p => p.name), "benchCount:", benchCount);
+				const fallback = satRoundBefore.filter(p => !canSitNow.includes(p));
+				canSitNow = canSitNow.concat(fallback);
+
+				// if still not enough, return some players that should otherwise play
+				if (canSitNow.length < benchCount) {
+					//console.log("not enough players to sit, need to fallback to should play");
+					mustPlayWillAlsoSit = true;
+				}
+			}
+		}
+		
+		// Sort ascending by:
+		// → last sit round (earliest sit first)
+		// → tie-break by sits (fewest sits first )
+		// → tie-break by playtime (longest playtime first)
+		canSitNow.sort((a, b) => lastSitRound[a.id] - lastSitRound[b.id] || sitCount[a.id] - sitCount[b.id] || b.playtime - a.playtime);
+		if (mustPlayWillAlsoSit) {
+			shouldPlay.sort((a, b) => lastSitRound[a.id] - lastSitRound[b.id] || sitCount[a.id] - sitCount[b.id] || b.playtime - a.playtime);
+		}
+
+		//console.log("canSitNow sorted:", canSitNow.map(p => p.name));
+
+		// +30% bench count for better randomization
+		const extraBenchCount = Math.ceil(benchCount * 1.3);
+		
+		// now splice the canSitNow array to only have benchCount number of players (plus 30% more for better randomization)
+		canSitNow = canSitNow.slice(0, extraBenchCount);
+		//console.log("canSitNow spliced:", canSitNow.map(p => p.name));
+		
+		// now shuffle and splice to final benchCount number of players
+		let benchPlayers = shuffle(canSitNow).slice(0, benchCount);
+		//console.log("benchPlayers:", benchPlayers.map(p => p.name));
+		if (benchPlayers.length < benchCount) {
+			benchPlayers = benchPlayers.concat(shouldPlay.slice(0, benchCount - benchPlayers.length));
+			//console.log("not enough players to sit, need to fallback to must play", "benchPlayers:", benchPlayers.map(p => p.name), "shouldPlay:", shouldPlay.map(p => p.name));
+		}
+
+		benchPlayers.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+		
+		benchPlayers.forEach(p => {
+			sitCount[p.id]++;
+			lastSitRound[p.id] = roundId;
+		});
+
+		return benchPlayers;
+	}
+
 	// ── Main message handler ──────────────────────────────────────
 	self.onmessage = function (e) {
-		const { activePlayers, allPlayers, courtBlocks, roundDuration, allowSingles } = e.data;
+		const { activePlayers, allPlayers, courtBlocks, roundDuration, allowSingles, playersWith1hPlaytimeShouldPlay } = e.data;
 
 		// Build allPlayer lookup by id
 		const allMap = {};
@@ -84,9 +193,6 @@ function workerMain() {
 			totalIretations += rc;
 		});
 
-		// find max playtime
-		const maxPlaytime = Math.max(...players.map(p => p.playtime));
-
 		//console.log("courtBlocks:", courtBlocks);
 
 		totalIretations *= SCHEDULES_GEN_COUNT;
@@ -99,17 +205,17 @@ function workerMain() {
 		for (let genIdx = 0; genIdx < SCHEDULES_GEN_COUNT; genIdx++) {
 
 			// Global history matrices (accumulated across all courtBlocks within a single schedule)
-			const sameTeamMat = Array.from({ length: n }, () => new Array(n).fill(0));
-			const oppMat      = Array.from({ length: n }, () => new Array(n).fill(0));
+			const sameTeamMatrix = Array.from({ length: n }, () => new Array(n).fill(0));
+			const opponentMatrix = Array.from({ length: n }, () => new Array(n).fill(0));
+
+			// Track sitting history for each player (accumulated across all courtBlocks within a single schedule)
+			const sitCount     = {}; // Tracks how many times each player has sat
+			const lastSitRound = {}; // Tracks the last round in which each player sat (0 is invalid - no sitting, sit round starts at 1)
+
+			players.forEach(p => { sitCount[p.id] = 0; lastSitRound[p.id] = -99; });
 
 			let roundId = 0
 			const rounds = [];
-
-			const sitCount     = {};
-			const lastSitRound = {}; // Tracks the last round in which each player sat (0 is invalid - no sitting, sit round starts at 1)
-
-			// Per-block sit-count tracking for Phase 1 bench assignment
-			players.forEach(p => { sitCount[p.id] = 0; lastSitRound[p.id] = -99; });
 
 			for (const courtBlock of courtBlocks) {
 				if (courtBlock.duration < 5) continue;
@@ -126,7 +232,7 @@ function workerMain() {
 					const slotEnd   = slotStart + roundDuration;
 
 					// Players whose availability window fully covers this slot
-					const eligible = players.filter(p => p.startMin <= slotStart && p.endMin >= slotEnd);
+					const eligiblePlayers = players.filter(p => p.startMin <= slotStart && p.endMin >= slotEnd);
 
 					const reportProgress = () => {
 						doneIterations++;
@@ -136,166 +242,55 @@ function workerMain() {
 						});
 					};
 
-					if (eligible.length < 4) { reportProgress(); continue; }
+					if (eligiblePlayers.length < 4) { reportProgress(); continue; }
 
 					//console.log("courts:", courtBlock.courts);
 					//console.log("courts length:", courtBlock.courts.length);
 
 					// How many matches fit?
 					// start with doubles assumption, then adjust if singles are allowed
-					let matchCount = Math.min(courtBlock.courts.length, Math.floor(eligible.length / 4));
+					const doublesMatchCount = Math.min(courtBlock.courts.length, Math.floor(eligiblePlayers.length / 4));
 
-					const remainingPlayers = eligible.length - matchCount * 4;
-					const remainingCourts = courtBlock.courts.length - matchCount;
-					const doublesMatchCount = matchCount;
+					const remainingPlayers = eligiblePlayers.length - doublesMatchCount * 4;
+					const remainingCourts = courtBlock.courts.length - doublesMatchCount;
 					const singlesMatchCount = allowSingles ? Math.min(remainingCourts, Math.floor(remainingPlayers / 2)) : 0;
 					const totalMatchCount = doublesMatchCount + singlesMatchCount;
-					const totalPlayingCount = doublesMatchCount * 4 + singlesMatchCount * 2;
 
 					if (totalMatchCount === 0) { reportProgress(); continue; }
 
-					//console.log("eligible:", eligible.map(p => p.name));
-					//console.log("courts:", courtBlock.courts);
-					//console.log("doublesMatchCount:", matchCount, "singlesMatchCount:", singlesMatchCount, "totalMatchCount:", totalMatchCount);
-
-					// const eligibleForBench = eligible.filter(p => p.playtime > 1 || !PLAYTIME_1H_NO_BENCH);
-					// const requiredToPlay = eligible.filter(p => p.playtime == 1 && PLAYTIME_1H_NO_BENCH);
-
-					//console.log("eligibleForBench:", eligibleForBench.map(p => p.name));
-					const doublesPlayingCount = doublesMatchCount * 4;
-					const benchCount   = Math.max(0, eligible.length - totalPlayingCount);
-					//console.log("benchCount:", benchCount, "eligible.length:", eligible.length, "totalPlayingCount:", totalPlayingCount);
-
-					// in case, we have not enough player
-
-					// ── Phase 1: deterministic bench assignment ─────────────
-
-					// filter those, that should always play
-					const mustPlay = eligible.filter(p => p.playtime == 1 && PLAYTIME_1H_NO_BENCH);
-					//console.log("mustPlay:", mustPlay.map(p => p.name));
-
-					// filter out those that sat last round
-					const satRoundBefore = eligible.filter(p => lastSitRound[p.id] === roundId && !mustPlay.includes(p));
-					//console.log("satRoundBefore:", satRoundBefore.map(p => p.name));
-					// filter those that sat 2 rounds before
-					const sat2RoundsBefore = eligible.filter(p => lastSitRound[p.id] === roundId - 1 && !mustPlay.includes(p));
-					//console.log("sat2RoundsBefore:", sat2RoundsBefore.map(p => p.name));
-					
-					// filter trose that sat more than fair share of rounds (i.e. those that sat more than 1 round more than the player with the same playtime)
-					let sitMoreWithPlaytime = [];
-					for (let i = 1; i <= maxPlaytime; i++) {
-						const playtimePlayers = eligible.filter(p => p.playtime == i);
-						if (playtimePlayers.length === 0) continue;
-
-						const maxP = playtimePlayers.reduce((max, p) => { return sitCount[max.id] > sitCount[p.id] ? max : p; });
-						const minP = playtimePlayers.reduce((min, p) => { return sitCount[min.id] < sitCount[p.id] ? min : p; });
-						if (sitCount[maxP.id] - sitCount[minP.id] > 1) {
-							sitMoreWithPlaytime.push(eligible.filter(p => sitCount[p.id] == maxP && !mustPlay.includes(p)));
-						}
-					}
-					//console.log("sitMoreWithPlaytime:", sitMoreWithPlaytime.map(arr => arr.map(p => p.name)));
-
-					// now filter out those that matched previous excluding criteria
-					//console.log("eligible:", eligible.map(p => p.name), "mustPlay:", mustPlay.map(p => p.name), "satRoundBefore:", satRoundBefore.map(p => p.name), "sat2RoundsBefore:", sat2RoundsBefore.map(p => p.name), "sitMoreWithPlaytime:", sitMoreWithPlaytime.map(arr => arr.map(p => p.name)));
-					let canSitNow = eligible.filter(p => !mustPlay.includes(p) && !satRoundBefore.includes(p) && !sat2RoundsBefore.includes(p) && !sitMoreWithPlaytime[p.playtime]?.includes(p));
-					//console.log("canSitNow:", canSitNow.map(p => p.name));
-
-					let mustPlayWillAlsoSit = false;
-
-					if (canSitNow.length < benchCount) {
-						//console.log("not enough players to sit, need to fallback to other criteria", "canSitNow:", canSitNow.map(p => p.name), "benchCount:", benchCount);
-						// now we have to return some players that sat 2 rounds before
-						const fallback = sat2RoundsBefore.filter(p => !canSitNow.includes(p));
-						canSitNow = canSitNow.concat(fallback);
-						
-						while (canSitNow.length < benchCount && sitMoreWithPlaytime.length > 0) {
-							// now we have to return some players that have high number of sits with same playtime
-							const fallback = sitMoreWithPlaytime.pop().filter(p => !canSitNow.includes(p));
-							canSitNow = canSitNow.concat(fallback);
-						}
-						
-						// if still not enough, return some players that sat last round
-						if (canSitNow.length < benchCount) {
-							//console.log("not enough players to sit, need to fallback to last round sits", "canSitNow:", canSitNow.map(p => p.name), "benchCount:", benchCount);
-							const fallback = satRoundBefore.filter(p => !canSitNow.includes(p));
-							canSitNow = canSitNow.concat(fallback);
-
-							// if still not enough, return some players that must play
-							if (canSitNow.length < benchCount) {
-								//console.log("not enough players to sit, need to fallback to must play");
-								mustPlayWillAlsoSit = true;
-							}
-						}
-					}
-					
-					// Sort ascending by:
-					// → last sit round (earliest sit first)
-					// → tie-break by sits (fewest sits first )
-					// → tie-break by playtime (longest playtime first)
-					canSitNow.sort((a, b) => lastSitRound[a.id] - lastSitRound[b.id] || sitCount[a.id] - sitCount[b.id] || b.playtime - a.playtime);
-					if (mustPlayWillAlsoSit) {
-						mustPlay.sort((a, b) => lastSitRound[a.id] - lastSitRound[b.id] || sitCount[a.id] - sitCount[b.id] || b.playtime - a.playtime);
-					}
-
-					//console.log("canSitNow sorted:", canSitNow.map(p => p.name));
-
-					// +30% bench count for better randomization
-					const extraBenchCount = Math.ceil(benchCount * 1.3);
-					
-					// now splice the canSitNow array to only have benchCount number of players (plus 30% more for better randomization)
-					canSitNow = canSitNow.slice(0, extraBenchCount);
-					//console.log("canSitNow spliced:", canSitNow.map(p => p.name));
-					
-					// now shuffle and splice to final benchCount number of players
-					let benchPlayers = shuffle(canSitNow).slice(0, benchCount);
-					//console.log("benchPlayers:", benchPlayers.map(p => p.name));
-					if (benchPlayers.length < benchCount) {
-						benchPlayers = benchPlayers.concat(mustPlay.slice(0, benchCount - benchPlayers.length));
-						//console.log("not enough players to sit, need to fallback to must play", "benchPlayers:", benchPlayers.map(p => p.name), "mustPlay:", mustPlay.map(p => p.name));
-					}
-
-					benchPlayers.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+					const benchPlayers = fillBench(sitCount, lastSitRound, roundId, eligiblePlayers, doublesMatchCount, singlesMatchCount, playersWith1hPlaytimeShouldPlay);
 
 					const benchSet     = new Set(benchPlayers.map(p => p.id));
-					const playingPlayers = eligible.filter(p => !benchSet.has(p.id));
-					//console.log("roundId:", roundId + 1, "eligible:", eligible.map(p => p.name), "playingPlayers:", playingPlayers.map(p => p.name), "benchPlayers:", benchPlayers.map(p => p.name));
+					const playingPlayers = eligiblePlayers.filter(p => !benchSet.has(p.id));
 
-					//console.log(roundId + 1, "Bench players:", benchPlayers.map(p => p.name));
-
-					// ── Phase 2+3: seeded init + Monte Carlo ────────────────
-					let matches = findBestTeams(
+					let matches = findBestDoublesMatches(
 						playingPlayers, doublesMatchCount, courtBlock.courts.slice(0, doublesMatchCount),
-						sameTeamMat, oppMat, idxOf, skillOf,
+						sameTeamMatrix, opponentMatrix, idxOf, skillOf,
 					);
 
 					// Update global history matrices after committing these matches
 					matches.forEach(m => {
-						incMatrix(sameTeamMat, idxOf, m.teamA[0], m.teamA[1]);
-						incMatrix(sameTeamMat, idxOf, m.teamB[0], m.teamB[1]);
-						incMatrix(oppMat, idxOf, m.teamA[0], m.teamB[0]);
-						incMatrix(oppMat, idxOf, m.teamA[0], m.teamB[1]);
-						incMatrix(oppMat, idxOf, m.teamA[1], m.teamB[0]);
-						incMatrix(oppMat, idxOf, m.teamA[1], m.teamB[1]);
+						incMatrix(sameTeamMatrix, idxOf, m.teamA[0], m.teamA[1]);
+						incMatrix(sameTeamMatrix, idxOf, m.teamB[0], m.teamB[1]);
+						incMatrix(opponentMatrix, idxOf, m.teamA[0], m.teamB[0]);
+						incMatrix(opponentMatrix, idxOf, m.teamA[0], m.teamB[1]);
+						incMatrix(opponentMatrix, idxOf, m.teamA[1], m.teamB[0]);
+						incMatrix(opponentMatrix, idxOf, m.teamA[1], m.teamB[1]);
 					});
 
 					if (singlesMatchCount > 0) {
 
 						//console.log("eligible:", eligible.map(p => p.name), "matches:", matches, "benchPlayers:", benchPlayers.map(p => p.name));
-						const singlesPlayingPlayers = eligible.filter(p => !matches.some(m => m.teamA.includes(p.id) || m.teamB.includes(p.id)) && !benchSet.has(p.id));
+						const singlesPlayingPlayers = eligiblePlayers.filter(p => !matches.some(m => m.teamA.includes(p.id) || m.teamB.includes(p.id)) && !benchSet.has(p.id));
 						//console.log("singlesPlayingPlayers:", singlesPlayingPlayers.map(p => p.name), "singlesMatchCount:", singlesMatchCount, "benchPlayers:", benchPlayers.map(p => p.name));
 						
-						const singlesMatches = findBestSingles(singlesPlayingPlayers, singlesMatchCount, courtBlock.courts.slice(doublesMatchCount, doublesMatchCount + singlesMatchCount))
+						const singlesMatches = findBestSinglesMatches(singlesPlayingPlayers, singlesMatchCount, courtBlock.courts.slice(doublesMatchCount, doublesMatchCount + singlesMatchCount))
 						matches = matches.concat(singlesMatches)
 
 						singlesMatches.forEach(m => {
-							incMatrix(oppMat, idxOf, m.teamA[0], m.teamB[0]);
+							incMatrix(opponentMatrix, idxOf, m.teamA[0], m.teamB[0]);
 						});
 					}
-					
-					benchPlayers.forEach(p => {
-						sitCount[p.id]++;
-						lastSitRound[p.id] = roundId + 1;
-					});
 
 					rounds.push({
 						roundId: roundId++,
@@ -308,7 +303,7 @@ function workerMain() {
 				}
 			}
 
-			let schedule = { rounds: rounds };
+			const schedule = { rounds: rounds };
 
 			const penalties = computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS);
 			const totalPenalty = penalties.skill + penalties.sameTeam + penalties.opponent + penalties.consecutiveBench + penalties.extraBench;
@@ -327,15 +322,15 @@ function workerMain() {
 		self.postMessage({ type: 'done', schedule: lastSchedule });
 	};
 
-	// ── Team assignment ───────────────────────────────────────────
-	function findBestTeams(players, matchCount, courts, sameTeamMat, oppMat, idxOf, skillOf) {
+	// ── Doubles Team assignment ───────────────────────────────────────────
+	function findBestDoublesMatches(players, matchCount, courts, sameTeamMatrix, opponentMatrix, idxOf, skillOf) {
 
 		let best      = seedTeams(players, matchCount);
-		let bestScore = scoreTeams(best, sameTeamMat, oppMat, idxOf, skillOf);
+		let bestScore = scoreTeams(best, sameTeamMatrix, opponentMatrix, idxOf, skillOf);
 
 		for (let i = 0; i < BEST_TEAMS_ITER; i++) {
 			const candidate = mutate(best);
-			const s = scoreTeams(candidate, sameTeamMat, oppMat, idxOf, skillOf);
+			const s = scoreTeams(candidate, sameTeamMatrix, opponentMatrix, idxOf, skillOf);
 			if (s < bestScore) { best = candidate; bestScore = s; }
 		}
 
@@ -359,8 +354,8 @@ function workerMain() {
 		return matches;
 	}
 
-	// ── Team assignment ───────────────────────────────────────────
-	function findBestSingles(players, matchCount, courts) {
+	// ── Singles Team assignment ───────────────────────────────────────────
+	function findBestSinglesMatches(players, matchCount, courts) {
 		const sorted = [...players].sort((a, b) => b.skill - a.skill);
 		const matches = [];
 		
@@ -415,16 +410,16 @@ function workerMain() {
 		return arr;
 	}
 
-	function scoreTeams(arrangement, sameTeamMat, oppMat, idxOf, skillOf) {
+	function scoreTeams(arrangement, sameTeamMatrix, opponentMatrix, idxOf, skillOf) {
 		let score = 0;
 		for (const m of arrangement) {
 			const [a0, a1, b0, b1] = [...m.teamA, ...m.teamB];
 			// Same-team repeat
-			score += getMatrix(sameTeamMat, idxOf, a0, a1) * PENALTY_WEIGHTS.SAME_TEAM;
-			score += getMatrix(sameTeamMat, idxOf, b0, b1) * PENALTY_WEIGHTS.SAME_TEAM;
+			score += getMatrix(sameTeamMatrix, idxOf, a0, a1) * PENALTY_WEIGHTS.SAME_TEAM;
+			score += getMatrix(sameTeamMatrix, idxOf, b0, b1) * PENALTY_WEIGHTS.SAME_TEAM;
 			// Opponent repeat
-			score += (getMatrix(oppMat, idxOf, a0, b0) + getMatrix(oppMat, idxOf, a0, b1) +
-					      getMatrix(oppMat, idxOf, a1, b0) + getMatrix(oppMat, idxOf, a1, b1)) * PENALTY_WEIGHTS.OPPONENT;
+			score += (getMatrix(opponentMatrix, idxOf, a0, b0) + getMatrix(opponentMatrix, idxOf, a0, b1) +
+					      getMatrix(opponentMatrix, idxOf, a1, b0) + getMatrix(opponentMatrix, idxOf, a1, b1)) * PENALTY_WEIGHTS.OPPONENT;
 			// Skill imbalance
 			const sa   = (skillOf[a0] || 1) + (skillOf[a1] || 1);
 			const sb   = (skillOf[b0] || 1) + (skillOf[b1] || 1);
@@ -467,21 +462,21 @@ const MATCHES_PER_HOUR_OPTIONS = [2, 3, 4, 5, 6, 7, 8]; // Options for matches p
 const MATCHES_PER_HOUR_DEFDAULT = 5; // Default value for matches per hour
 
 // ── DOM refs ──────────────────────────────────────────────────
-const genMatchesPerHourSel = document.getElementById('matches-per-hour');
-const genAllowSinglesCb   = document.getElementById('allow-singles');
-const genGenerateBtn      = document.getElementById('gen-generate-btn');
-const genClearBtn         = document.getElementById('gen-clear-btn');
-const genDatePicker       = document.getElementById('gen-date-picker');
-const genPrintBtn         = document.getElementById('gen-print-btn');
-const genExportBtn        = document.getElementById('gen-export-btn');
-const genProgress         = document.getElementById('gen-progress');
-const genProgressBar      = document.getElementById('gen-progress-bar');
-const genScoreboard       = document.getElementById('gen-scoreboard');
-const genScheduleOut      = document.getElementById('gen-schedule-output');
-const genStatsOut         = document.getElementById('gen-stats-output');
-const genStatsTbody       = document.getElementById('gen-stats-tbody');
-const genEmpty            = document.getElementById('gen-empty');
-const genPlaytime1hNoBenchCb = document.getElementById('playtime-1h-no-bench');
+const genMatchesPerHourSel    = document.getElementById('matches-per-hour');
+const genAllowSinglesCb       = document.getElementById('allow-singles');
+const gen1hPlaytimeShouldPlay = document.getElementById('gen-1h-playtime-should-play');
+const genGenerateBtn          = document.getElementById('gen-generate-btn');
+const genClearBtn             = document.getElementById('gen-clear-btn');
+const genDatePicker           = document.getElementById('gen-date-picker');
+const genPrintBtn             = document.getElementById('gen-print-btn');
+const genExportBtn            = document.getElementById('gen-export-btn');
+const genProgress             = document.getElementById('gen-progress');
+const genProgressBar          = document.getElementById('gen-progress-bar');
+const genScoreboard           = document.getElementById('gen-scoreboard');
+const genScheduleOut          = document.getElementById('gen-schedule-output');
+const genStatsOut             = document.getElementById('gen-stats-output');
+const genStatsTbody           = document.getElementById('gen-stats-tbody');
+const genEmpty                = document.getElementById('gen-empty');
 
 // ── Utility ───────────────────────────────────────────────────
 function timeToMins(t) {
@@ -631,7 +626,6 @@ function runGeneration() {
 	// This works under file:// origins — no fetch or external file needed.
 	const blob = new Blob([`
 		const PENALTY_WEIGHTS = ${JSON.stringify(PENALTY_WEIGHTS)};
-		const PLAYTIME_1H_NO_BENCH = ${genPlaytime1hNoBenchCb.checked};
 		${computePenalties.toString()};
 		(${workerMain.toString()})()
 	`], { type: 'application/javascript' });
@@ -678,6 +672,7 @@ function runGeneration() {
 		courtBlocks: normalizeBlock(courtBlocks),
 		roundDuration: Math.floor(60 / Number(genMatchesPerHourSel.value)),
 		allowSingles:  genAllowSinglesCb.checked,
+		playersWith1hPlaytimeShouldPlay: gen1hPlaytimeShouldPlay.checked,
 	});
 }
 
@@ -885,7 +880,7 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 	ids.forEach((id, i) => { idx[id] = i; });
 
 	const stMat  = Array.from({ length: n }, () => new Array(n).fill(0));
-	const oppMat = Array.from({ length: n }, () => new Array(n).fill(0));
+	const opponentMatrix = Array.from({ length: n }, () => new Array(n).fill(0));
 
 	function incM(mat, id1, id2) {
 		if (id1 === id2) return;
@@ -954,12 +949,12 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 			stPen += getM(stMat, a0, a1) * penaltyWeights.SAME_TEAM;
 			stPen += getM(stMat, b0, b1) * penaltyWeights.SAME_TEAM;
 			// Opponent repeat
-			oppPen += (getM(oppMat, a0, b0) + getM(oppMat, a0, b1) +
-							getM(oppMat, a1, b0) + getM(oppMat, a1, b1)) * penaltyWeights.OPPONENT;
+			oppPen += (getM(opponentMatrix, a0, b0) + getM(opponentMatrix, a0, b1) +
+							getM(opponentMatrix, a1, b0) + getM(opponentMatrix, a1, b1)) * penaltyWeights.OPPONENT;
 			// Now accumulate
 			incM(stMat,  a0, a1); incM(stMat,  b0, b1);
-			incM(oppMat, a0, b0); incM(oppMat, a0, b1);
-			incM(oppMat, a1, b0); incM(oppMat, a1, b1);
+			incM(opponentMatrix, a0, b0); incM(opponentMatrix, a0, b1);
+			incM(opponentMatrix, a1, b0); incM(opponentMatrix, a1, b1);
 		});
 	});
 
