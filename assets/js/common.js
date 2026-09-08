@@ -86,6 +86,14 @@ function updateSortUI(listKey) {
 	});
 }
 
+function cancelSortUI(listKey) {
+	document.querySelectorAll(`th.sortable[data-list="${listKey}"]`).forEach(th => {
+		th.classList.remove('sort-active');
+		const icon = th.querySelector('.sort-icon');
+		if (icon) icon.textContent = '↕';
+	});
+}
+
 function handleSort(listKey, field) {
 	if (sortState[listKey].field === field) {
 		sortState[listKey].dir = sortState[listKey].dir === 'asc' ? 'desc' : 'asc';

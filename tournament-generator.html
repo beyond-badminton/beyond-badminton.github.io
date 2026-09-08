@@ -39,6 +39,7 @@
 					<div class="players-layout">
 						<div class="card form-card">
 							<h2>Add player</h2>
+							<p class="section-hint">Add players to the master list, which serves as your permanent roster for all tournaments.</p>
 							<form id="all-player-form">
 								<div class="field" id="ap-name-field">
 									<label for="ap-name">Name</label>
@@ -81,12 +82,11 @@ Bob,1</pre>
 								<button type="button" class="clear-btn" id="clear-all-players-btn">Clear all</button>
 							</div>
 							<p class="empty" id="all-players-empty">No players added yet.</p>
-							<ul class="player-list" id="all-player-list"></ul>
 							<table class="player-table" id="all-player-table">
 							<thead>
 								<tr>
 									<th class="sortable" data-list="all" data-field="name">Name <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="all" data-field="skill">Skill <span class="sort-icon">↕</span></th>
+									<th class="sortable" data-list="all" data-field="skill">Skill <span class="sort-icon">↕</span>&nbsp;&nbsp;<span class="help-icon" onclick="event.stopPropagation();" title="Click a skill to edit it directly. Changing skills will not re-sort the table automatically - click this header to re-sort anytime.">?</span></th>
 									<th></th>
 								</tr>
 							</thead>

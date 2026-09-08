@@ -14,7 +14,6 @@ const allPlayerForm      = document.getElementById('all-player-form');
 const apNameInput        = document.getElementById('ap-name');
 const apSkillInput       = document.getElementById('ap-skill');
 const apNameField        = document.getElementById('ap-name-field');
-const allPlayerList      = document.getElementById('all-player-list');
 const allPlayerTableBody = document.getElementById('all-player-table-body');
 const allPlayersEmpty    = document.getElementById('all-players-empty');
 const allPlayerCount     = document.getElementById('all-player-count');
@@ -49,19 +48,9 @@ apNameInput.addEventListener('input', () => {
 });
 
 function renderAllPlayers() {
-	allPlayerList.innerHTML      = '';
 	allPlayerTableBody.innerHTML = '';
 
 	getSorted(allPlayers, 'all').forEach(p => {
-		const li = document.createElement('li');
-		li.innerHTML = `
-		<div class="info">
-			<span class="name">${p.name}</span>
-			<span class="meta">` + renderSkillPillHtml(p.skill) + `</span>
-		</div>
-		<button type="button" class="remove-btn" data-id="${p.id}">Remove</button>`;
-		allPlayerList.appendChild(li);
-
 		const row = document.createElement('tr');
 		row.innerHTML = `
 		<td>${p.name}</td>
@@ -126,13 +115,9 @@ function clearAllPlayersFromStorage() {
 }
 
 
-allPlayerList.addEventListener('click', e => {
-  const btn = e.target.closest('.remove-btn');
-  if (btn) removeAllPlayer(Number(btn.dataset.id));
-});
 allPlayerTableBody.addEventListener('click', e => {
-  const btn = e.target.closest('.remove-btn');
-  if (btn) removeAllPlayer(Number(btn.dataset.id));
+	const btn = e.target.closest('.remove-btn');
+	if (btn) removeAllPlayer(Number(btn.dataset.id));
 });
 
 document.getElementById('clear-all-players-btn').addEventListener('click', () => {
@@ -263,7 +248,12 @@ function openSkillPicker(targetPill) {
 			// Update target pill UI
 
 			// Callback hook for backend/API update
-			onSkillChanged(targetPill, playerId, skillId);
+			if (onSkillChanged(targetPill, playerId, skillId)) {
+			 	// Reset sort UI since skill change may affect order, we do not wont to apply sort because
+				// it would change the order of the list and confuse the user.
+				// Instead we just update the pill and let the user sort manually if they want.
+				cancelSortUI('all');
+			}
 
 			closeSkillPicker();
 		});
@@ -285,7 +275,7 @@ function closeSkillPicker() {
 // 3. Backend callback placeholder
 function onSkillChanged(targetPillElement, playerId, skillId) {
 	const player = allPlayers.find(p => p.id === Number(playerId));
-	if (player) {
+	if (player && player.skill !== skillId) {
 		player.skill = skillId;
 		saveAllPlayersToStorage(false);
 
@@ -294,7 +284,11 @@ function onSkillChanged(targetPillElement, playerId, skillId) {
 		
 		renderActivePlayers();
 		renderGeneratedSchedule();
+
+		return true;
 	}
+
+	return false;
 }
 
 // 4. Close popover on Escape key
