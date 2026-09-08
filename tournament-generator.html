@@ -242,20 +242,29 @@ Bob,1</pre>
 							<input type="date" id="gen-date-picker" />
 						</div>
 						<div>
-							<label class="gen-checkbox-label">
-								<input type="checkbox" id="allow-singles" checked>
-								Allow singles matches<span class="help-icon" title="When enabled, the generator will create singles matches if there aren't enough players to form doubles and a court is available.">?</span>
-							</label>
-							<label class="gen-checkbox-label">
-								<input type="checkbox" id="gen-1h-playtime-should-play" checked>
-								Players with 1 hour of playtime should not sit on the bench<span class="help-icon" title="This option is partially ignored if there are not enough other players to form a bench. It is fully ignored if the player is already sitting out their first round after arriving (configured in 'Active players' tab).">?</span>
-							</label>
+							<div class="checkbox-group">
+								<label class="gen-checkbox-label" for="allow-singles">
+									<input type="checkbox" id="allow-singles" checked>
+									Allow singles matches
+								</label>
+								<span class="help-icon" title="When enabled, the generator will create singles matches if there aren't enough players to form doubles and a court is available.">?</span>
+							</div>
+							<div class="checkbox-group">
+								<label class="gen-checkbox-label">
+									<input type="checkbox" id="gen-1h-playtime-should-play" checked>
+									Players with 1 hour of playtime should not sit on the bench
+								</label>
+								<span class="help-icon" title="Partially ignored if there aren't enough players to form a bench; fully ignored if player has to sit out their 1st round after arriving (configured in 'Active players' tab).">?</span>
+							</div>
 						</div>
 						<div>
-							<label class="gen-checkbox-label">
-								<input type="checkbox" id="print-extra-match" checked>
-								Print extra empty round<span class="help-icon" title="Add a final round of blank matches at the bottom of the sheet, just in case you have extra time to play.">?</span>
-							</label>
+							<div class="checkbox-group">
+								<label class="gen-checkbox-label">
+									<input type="checkbox" id="print-extra-match" checked>
+									Print extra empty round
+								</label>
+								<span class="help-icon" title="Add a final round of blank matches at the bottom of the sheet, just in case you have extra time to play.">?</span>
+							</div>
 						</div>
 					</div>
 					<div class="gen-btn-row">
