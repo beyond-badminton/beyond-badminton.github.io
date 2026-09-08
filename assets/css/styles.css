@@ -851,6 +851,7 @@ input[type="file"]{
 .gen-progress-wrap {
   margin-top:14px;
   height:22px;
+  width: 100%;
   background:var(--paper);
   border:1px solid var(--line);
   border-radius:999px;

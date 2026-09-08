@@ -6,15 +6,6 @@ function workerMain() {
 	const BEST_TEAMS_ITER = 100;
 
 	// ── Utilities ─────────────────────────────────────────────────
-	function timeToMins(t) {
-		const [h, m] = t.split(':').map(Number);
-		return h * 60 + m;
-	}
-
-	function minsToTime(total) {
-		return String(Math.floor(total / 60) % 24).padStart(2, '0') + ':' +
-					 String(total % 60).padStart(2, '0');
-	}
 
 	function randInt(n) { return Math.floor(Math.random() * n); }
 
@@ -253,11 +244,6 @@ function workerMain() {
 						});
 					};
 
-					if (eligiblePlayers.length < 4) { reportProgress(); continue; }
-
-					//console.log("courts:", courtBlock.courts);
-					//console.log("courts length:", courtBlock.courts.length);
-
 					// How many matches fit?
 					// start with doubles assumption, then adjust if singles are allowed
 					const doublesMatchCount = Math.min(courtBlock.courts.length, Math.floor(eligiblePlayers.length / 4));
@@ -267,45 +253,54 @@ function workerMain() {
 					const singlesMatchCount = allowSingles ? Math.min(remainingCourts, Math.floor(remainingPlayers / 2)) : 0;
 					const totalMatchCount = doublesMatchCount + singlesMatchCount;
 
-					if (totalMatchCount === 0) { reportProgress(); continue; }
+					let benchPlayers = null;
+					let matches = null;
 
-					const benchPlayers = fillBench(sitCount, lastSitRound, roundId, eligiblePlayers, doublesMatchCount, singlesMatchCount, playersWith1hPlaytimeShouldPlay);
+					if (totalMatchCount === 0) {
+						// not enough players for any matches, so all eligible players sit this round
+						benchPlayers = eligiblePlayers;
+						matches = [];
+					}
+					else {
+						benchPlayers = fillBench(sitCount, lastSitRound, roundId, eligiblePlayers, doublesMatchCount, singlesMatchCount, playersWith1hPlaytimeShouldPlay);
 
-					const benchSet     = new Set(benchPlayers.map(p => p.id));
-					const playingPlayers = eligiblePlayers.filter(p => !benchSet.has(p.id));
+						const benchSet     = new Set(benchPlayers.map(p => p.id));
+						const playingPlayers = eligiblePlayers.filter(p => !benchSet.has(p.id));
 
-					let matches = findBestDoublesMatches(
-						playingPlayers, doublesMatchCount, courtBlock.courts.slice(0, doublesMatchCount),
-						sameTeamMatrix, opponentMatrix, indexOfPlayer, skillOfPlayer,
-					);
+						matches = findBestDoublesMatches(
+							playingPlayers, doublesMatchCount, courtBlock.courts.slice(0, doublesMatchCount),
+							sameTeamMatrix, opponentMatrix, indexOfPlayer, skillOfPlayer,
+						);
 
-					// Update global history matrices after committing these matches
-					matches.forEach(m => {
-						incMatrix(sameTeamMatrix, indexOfPlayer, m.teamA[0], m.teamA[1]);
-						incMatrix(sameTeamMatrix, indexOfPlayer, m.teamB[0], m.teamB[1]);
-						incMatrix(opponentMatrix, indexOfPlayer, m.teamA[0], m.teamB[0]);
-						incMatrix(opponentMatrix, indexOfPlayer, m.teamA[0], m.teamB[1]);
-						incMatrix(opponentMatrix, indexOfPlayer, m.teamA[1], m.teamB[0]);
-						incMatrix(opponentMatrix, indexOfPlayer, m.teamA[1], m.teamB[1]);
-					});
-
-					if (singlesMatchCount > 0) {
-
-						//console.log("eligible:", eligible.map(p => p.name), "matches:", matches, "benchPlayers:", benchPlayers.map(p => p.name));
-						const singlesPlayingPlayers = eligiblePlayers.filter(p => !matches.some(m => m.teamA.includes(p.id) || m.teamB.includes(p.id)) && !benchSet.has(p.id));
-						//console.log("singlesPlayingPlayers:", singlesPlayingPlayers.map(p => p.name), "singlesMatchCount:", singlesMatchCount, "benchPlayers:", benchPlayers.map(p => p.name));
-						
-						const singlesMatches = findBestSinglesMatches(singlesPlayingPlayers, singlesMatchCount, courtBlock.courts.slice(doublesMatchCount, doublesMatchCount + singlesMatchCount))
-						matches = matches.concat(singlesMatches)
-
-						singlesMatches.forEach(m => {
+						// Update global history matrices after committing these matches
+						matches.forEach(m => {
+							incMatrix(sameTeamMatrix, indexOfPlayer, m.teamA[0], m.teamA[1]);
+							incMatrix(sameTeamMatrix, indexOfPlayer, m.teamB[0], m.teamB[1]);
 							incMatrix(opponentMatrix, indexOfPlayer, m.teamA[0], m.teamB[0]);
+							incMatrix(opponentMatrix, indexOfPlayer, m.teamA[0], m.teamB[1]);
+							incMatrix(opponentMatrix, indexOfPlayer, m.teamA[1], m.teamB[0]);
+							incMatrix(opponentMatrix, indexOfPlayer, m.teamA[1], m.teamB[1]);
 						});
+
+						if (singlesMatchCount > 0) {
+
+							//console.log("eligible:", eligible.map(p => p.name), "matches:", matches, "benchPlayers:", benchPlayers.map(p => p.name));
+							const singlesPlayingPlayers = eligiblePlayers.filter(p => !matches.some(m => m.teamA.includes(p.id) || m.teamB.includes(p.id)) && !benchSet.has(p.id));
+							//console.log("singlesPlayingPlayers:", singlesPlayingPlayers.map(p => p.name), "singlesMatchCount:", singlesMatchCount, "benchPlayers:", benchPlayers.map(p => p.name));
+							
+							const singlesMatches = findBestSinglesMatches(singlesPlayingPlayers, singlesMatchCount, courtBlock.courts.slice(doublesMatchCount, doublesMatchCount + singlesMatchCount))
+							matches = matches.concat(singlesMatches)
+
+							singlesMatches.forEach(m => {
+								incMatrix(opponentMatrix, indexOfPlayer, m.teamA[0], m.teamB[0]);
+							});
+						}
 					}
 
 					rounds.push({
 						roundId: roundId++,
 						slotStart:  minsToTime(slotStart),
+						courtBlockStart: courtBlock.start,
 						matches : matches,
 						bench: benchPlayers.map(p => p.id),
 					});
@@ -547,18 +542,6 @@ genMatchesPerHourSel.addEventListener('change', () => {
 });
 
 function normalizeBlock(blocks) {
-	// Helper: Convert "HH:MM" to total minutes since midnight
-	const timeToMins = (time) => {
-		const [hours, minutes] = time.split(':').map(Number);
-		return hours * 60 + minutes;
-	};
-
-	// Helper: Convert total minutes back to "HH:MM"
-	const minsToTime = (mins) => {
-		const hours = String(Math.floor(mins / 60)).padStart(2, '0');
-		const minutes = String(mins % 60).padStart(2, '0');
-		return `${hours}:${minutes}`;
-	};
 
 	// 1. Gather all unique time boundaries (starts and ends)
 	const boundaries = new Set();
@@ -639,6 +622,8 @@ function runGeneration() {
 	// This works under file:// origins — no fetch or external file needed.
 	const blob = new Blob([`
 		const PENALTY_WEIGHTS = ${JSON.stringify(PENALTY_WEIGHTS)};
+		${minsToTime.toString()};
+		${timeToMins.toString()};
 		${computePenalties.toString()};
 		(${workerMain.toString()})()
 	`], { type: 'application/javascript' });
@@ -649,6 +634,7 @@ function runGeneration() {
 	worker.onmessage = e => {
 		const msg = e.data;
 		if (msg.type === 'progress') {
+		//console.log("Generation progress:", msg.pct + '%');
 			setProgress(msg.pct);
 		} else if (msg.type === 'done') {
 			worker = null;
@@ -732,14 +718,21 @@ function renderSchedule() {
 	const blockEl = document.createElement('section');
 	blockEl.className = 'gen-block';
 
+	// with round, we will print time for each whole hour
+	// this is sufficient since we are generating matches per hour
+	let courtBlockStart = timeToMins(schedule.rounds[0].courtBlockStart || 0);
+
 	schedule.rounds.forEach(round => {
 		const roundEl = document.createElement('div');
 		roundEl.className = 'gen-round';
 		roundEl.dataset.roundId = round.roundId;
 
+		const roundTime = courtBlockStart !== round.courtBlockStart ? `<span style='margin-left:20px'>[ ${round.courtBlockStart} ]</span>` : '';
+		courtBlockStart = round.courtBlockStart;
+
 		const rLabel = document.createElement('p');
 		rLabel.className = 'gen-round-label';
-		rLabel.textContent = `Round ${round.roundId + 1}`;
+		rLabel.innerHTML = `Round ${round.roundId + 1}${roundTime}`;
 		roundEl.appendChild(rLabel);
 
 		const matchesRow = document.createElement('div');
@@ -908,13 +901,6 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 		return mat[i][j];
 	}
 
-	function playerName(allPlayers, activePlayers, activeId) {
-		const ap = activePlayers.find(p => p.id === activeId);
-		if (!ap) return "?";
-		const p = allPlayers.find(p => p.id === ap.allPlayerId);
-		return p ? p.name : "?";
-	}
-	
 	function playerSkill(allPlayers, activePlayers, activeId) {
 		const ap = activePlayers.find(p => p.id === activeId);
 		if (!ap) return 1;
