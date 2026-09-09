@@ -817,12 +817,6 @@ function buildMatchCard(match, roundId) {
 			teamEl.appendChild(slot);
 		});
 
-		// Print-only: comma-separated names
-		const printSpan = document.createElement('span');
-		printSpan.className   = 'print-team';
-		printSpan.textContent = match[teamKey].map(pid => playerName(pid)).join(', ');
-		teamEl.appendChild(printSpan);
-
 		card.appendChild(teamEl);
 
 		// Score box between teams
