@@ -1,0 +1,24 @@
+name: Code Quality Check
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-site:
+    name: HTML & Site Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify index.html exists
+        run: |
+          if [ ! -f index.html ]; then
+            echo "CRITICAL ERROR: index.html is missing from the root directory!"
+            exit 1
+          fi
+          echo "index.html found."
+
+      - name: Check HTML syntax
+        run: npx htmlhint **/*.html
