@@ -9,7 +9,7 @@ Tournament Generator is a client-side application designed to help organize tour
 - **Schedule Generation**: Automatically generate a schedule for doubles matches (2 vs 2) based on player availability and court slots.
 - **Customizable Options**: Adjust parameters like matches per hour, allow singles matches, and more.
 - **Privacy-Focused**: All data is stored locally in the browser's `localStorage`. No external servers or cookies are used.
-- **Import/Export**: Easily transfer data between devices or browsers using CSV files.
+- **Import/Export**: Easily transfer data between devices or browsers using CSV/JSON files.
 
 ## How It Works
 1. **Players Tab**: Add players to the master list and select active players for the current tournament.
@@ -22,4 +22,4 @@ Tournament Generator is a client-side application designed to help organize tour
 - Data can be cleared at any time using the built-in cleanup buttons or browser settings.
 
 ## Feedback & Support
-This tool is free to use. For feedback, feature requests, or to view the source code, visit the GitHub repository.
+This tool is free to use. For feedback, feature requests, or to view the source code, visit the GitHub repository https://github.com/beyond-badminton/beyond-badminton.github.io
