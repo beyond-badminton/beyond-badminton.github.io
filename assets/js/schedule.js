@@ -464,7 +464,7 @@ let scores   = {};     // { [matchId]: { a: number|null, b: number|null } }
 let generatedPenalties = {};
 let worker   = null;
 let scheduleDate = null; // Date object representing the date of the schedule
-let matchesPerHour = 0;
+//let matchesPerHour = 0;
 
 const MATCHES_PER_HOUR_OPTIONS = [2, 3, 4, 5, 6, 7, 8]; // Options for matches per hour
 const MATCHES_PER_HOUR_DEFDAULT = 5; // Default value for matches per hour
@@ -535,11 +535,11 @@ genDatePicker.addEventListener('change', () => {
 	saveGeneratedScheduleToStorage(false);
 });
 
-genMatchesPerHourSel.addEventListener('change', () => {
-	if (hasSchedule()) return;
-	matchesPerHour = parseInt(genMatchesPerHourSel.value, 10);
-	saveGeneratedScheduleToStorage(false);
-});
+// genMatchesPerHourSel.addEventListener('change', () => {
+// 	if (hasSchedule()) return;
+// 	matchesPerHour = parseInt(genMatchesPerHourSel.value, 10);
+// 	saveGeneratedScheduleToStorage(false);
+// });
 
 function normalizeBlock(blocks) {
 
@@ -688,7 +688,7 @@ function hasSchedule() {
 function renderGeneratedSchedule() {
 	const hasScheduleValue = hasSchedule();
 
-	genMatchesPerHourSel.disabled = hasScheduleValue; // Disable matches per hour selection if a schedule exists
+	//genMatchesPerHourSel.disabled = hasScheduleValue; // Disable matches per hour selection if a schedule exists
 	genEmpty.hidden          = hasScheduleValue;
 	genScoreboard.hidden     = !hasScheduleValue;
 	genScheduleOut.hidden    = !hasScheduleValue;
@@ -698,7 +698,7 @@ function renderGeneratedSchedule() {
 	genExportBtn.hidden      = !hasScheduleValue;
 	
 	genDatePicker.valueAsDate = null; // it will be set in renderSchedule() if scheduleDate is available
-	genMatchesPerHourSel.value = String(MATCHES_PER_HOUR_DEFDAULT); // it will be set in renderSchedule() if matchesPerHour is available
+	//genMatchesPerHourSel.value = String(MATCHES_PER_HOUR_DEFDAULT); // it will be set in renderSchedule() if matchesPerHour is available
 
 	if (!hasScheduleValue) return;
 
@@ -781,9 +781,9 @@ function renderSchedule() {
 		genDatePicker.valueAsDate = scheduleDate; // Format as YYYY-MM-DD for input[type=date]
 	}
 
-	if (matchesPerHour) {
-		genMatchesPerHourSel.value = String(matchesPerHour);
-	}
+	// if (matchesPerHour) {
+	// 	genMatchesPerHourSel.value = String(matchesPerHour);
+	// }
 }
 
 function buildMatchCard(match, roundId) {
@@ -1113,8 +1113,8 @@ function loadGeneratedScheduleFromStorage() {
 		const c = localStorage.getItem(SCORES_KEY);
 		const p = localStorage.getItem(GEN_PENALTIES_KEY);
 		const d = localStorage.getItem(SCHEULE_DATE_KEY);
-		const m = localStorage.getItem(MATCHES_PER_HOUR_KEY);
-		if (m) matchesPerHour = Number(m);
+		//const m = localStorage.getItem(MATCHES_PER_HOUR_KEY);
+		//if (m) matchesPerHour = Number(m);
 		if (s) schedule       = JSON.parse(s);
 		if (c) scores         = JSON.parse(c);
 		if (p) generatedPenalties = JSON.parse(p);
@@ -1140,7 +1140,7 @@ function saveGeneratedScheduleToStorage(render = true) {
 		localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
 		localStorage.setItem(GEN_PENALTIES_KEY, JSON.stringify(generatedPenalties));
 		localStorage.setItem(SCHEULE_DATE_KEY, scheduleDate.toISOString());
-		localStorage.setItem(MATCHES_PER_HOUR_KEY, String(matchesPerHour));
+		//localStorage.setItem(MATCHES_PER_HOUR_KEY, String(matchesPerHour));
 	} catch (_) {}
 
 	if (render) renderGeneratedSchedule();
@@ -1326,7 +1326,8 @@ function swapPlayerOrBench(src, dst) {
 		const opt = document.createElement('option');
 		opt.value = String(i);
 		opt.textContent = String(i);
-		opt.selected = i === matchesPerHour;
+		opt.selected = i === MATCHES_PER_HOUR_DEFDAULT;
+		//opt.selected = i === matchesPerHour;
 		genMatchesPerHourSel.appendChild(opt);
 	});
 })();
