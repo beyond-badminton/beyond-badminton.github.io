@@ -670,6 +670,11 @@ const genEmpty = document.getElementById("gen-empty");
 
 // ── Utility ───────────────────────────────────────────────────
 function timeToMins(t) {
+	console.assert(
+		typeof t === "string" && t.includes(":"),
+		"Invalid time format:",
+		t,
+	);
 	const [h, m] = t.split(":").map(Number);
 	return h * 60 + m;
 }
@@ -931,7 +936,7 @@ function renderSchedule() {
 
 	// with round, we will print time for each whole hour
 	// this is sufficient since we are generating matches per hour
-	let courtBlockStart = timeToMins(schedule.rounds[0].courtBlockStart || 0);
+	let courtBlockStart = null;
 
 	schedule.rounds.forEach((round) => {
 		const roundEl = document.createElement("div");
@@ -939,7 +944,7 @@ function renderSchedule() {
 		roundEl.dataset.roundId = round.roundId;
 
 		const roundTime =
-			courtBlockStart !== round.courtBlockStart
+			round.courtBlockStart && round.courtBlockStart !== courtBlockStart
 				? `<span style='margin-left:20px'>[ ${round.courtBlockStart} ]</span>`
 				: "";
 		courtBlockStart = round.courtBlockStart;
@@ -1469,7 +1474,18 @@ function loadGeneratedScheduleFromStorage() {
 			activePlayers,
 			PENALTY_WEIGHTS,
 		);
-	//console.log("Loaded schedule from storage:", generatedPenalties, computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS));
+	// console.log(
+	// 	"Loaded schedule from storage:",
+	// 	schedule,
+	// 	scores,
+	// 	generatedPenalties,
+	// 	scheduleDate,
+	// );
+	// console.log(
+	// 	"Loaded schedule from storage:",
+	// 	generatedPenalties,
+	// 	computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS),
+	//);
 	renderGeneratedSchedule();
 }
 
