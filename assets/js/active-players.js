@@ -18,17 +18,6 @@ const activePlayerTableBody = document.getElementById('active-player-table-body'
 const activePlayersEmpty    = document.getElementById('active-players-empty');
 const activePlayerCount     = document.getElementById('active-player-count');
 
-// Populate arrival dropdown (08:00 – 20:00 in 30-min steps)
-(function() {
-	for (let mins = 8 * 60; mins <= 20 * 60; mins += 30) {
-		const h = String(Math.floor(mins / 60)).padStart(2, '0');
-		const m = String(mins % 60).padStart(2, '0');
-		const opt = document.createElement('option');
-		opt.value = opt.textContent = `${h}:${m}`;
-		activeArrivalInput.appendChild(opt);
-	}
-})();
-
 function populateActivePlayerSelect() {
 	const activeIds  = new Set(activePlayers.map(ap => ap.allPlayerId));
 	const currentSel = new Set(Array.from(activePlayerSelect.selectedOptions).map(opt => opt.value));
@@ -172,3 +161,4 @@ document.getElementById('active-player-form').addEventListener('submit', e => {
 // ============================================================
 loadActivePlayersFromStorage();
 populateActivePlayerSelect();
+populateTimeSelect(activeArrivalInput);
