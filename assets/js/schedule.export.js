@@ -1,43 +1,50 @@
-'use strict';
+// biome-ignore lint/suspicious/noRedundantUseStrict: required for global scripts loaded via <script> tags
+"use strict";
 
-async function downloadScheduleSpreadsheet() {
+async function _downloadScheduleSpreadsheet() {
 	// 1. Initialize Workbook and Worksheet
 	const workbook = new ExcelJS.Workbook();
 
 	if (schedule != null && schedule.rounds != null) {
-		const worksheet = workbook.addWorksheet('Matches');
+		const worksheet = workbook.addWorksheet("Matches");
 
 		worksheet.addRow([]);
 
 		// 2. Define Columns with widths (to handle those long placeholder names)
 		worksheet.columns = [
-			{ header: 'Round', key: 'round', width: 8 },
-			{ header: 'Court', key: 'court', width: 8 },
-			{ header: 'Team A', key: 'teamA', width: 30 },
-			{ header: 'Score', key: 'score', width: 15 },
-			{ header: 'Team B', key: 'teamB', width: 30 }
+			{ header: "Round", key: "round", width: 8 },
+			{ header: "Court", key: "court", width: 8 },
+			{ header: "Team A", key: "teamA", width: 30 },
+			{ header: "Score", key: "score", width: 15 },
+			{ header: "Team B", key: "teamB", width: 30 },
 		];
 
 		// Format for the headers
-		let firstRow = worksheet.getRow(1)
+		const firstRow = worksheet.getRow(1);
 		firstRow.font = { bold: true };
-		firstRow.alignment = { vertical: 'middle', horizontal: 'center' };
-		
+		firstRow.alignment = { vertical: "middle", horizontal: "center" };
+
 		// Define the border style we want to apply
 		const borderStyle = {
-			top: { style: 'thin' },
-			left: { style: 'thin' },
-			bottom: { style: 'thin' },
-			right: { style: 'thin' }
+			top: { style: "thin" },
+			left: { style: "thin" },
+			bottom: { style: "thin" },
+			right: { style: "thin" },
 		};
 
 		// 3. Process the Data
-		schedule.rounds.forEach(round => {
+		schedule.rounds.forEach((round) => {
 			let firstMatch = true;
 			const roundStartRow = worksheet.rowCount;
 
-			round.matches.forEach(match => {
-				let row = worksheet.addRow([firstMatch ? round.roundId + 1 : '', match.court, match.teamA.map(pid => playerName(pid)).join(', '), '', match.teamB.map(pid => playerName(pid)).join(', ')]);
+			round.matches.forEach((match) => {
+				const row = worksheet.addRow([
+					firstMatch ? round.roundId + 1 : "",
+					match.court,
+					match.teamA.map((pid) => playerName(pid)).join(", "),
+					"",
+					match.teamB.map((pid) => playerName(pid)).join(", "),
+				]);
 
 				if (firstMatch) {
 					row.getCell(1).font = { bold: true };
@@ -50,7 +57,7 @@ async function downloadScheduleSpreadsheet() {
 				// Apply borders and center alignment ONLY to cells that have data
 				row.eachCell({ includeEmpty: false }, (cell) => {
 					cell.border = borderStyle;
-					cell.alignment = { vertical: 'middle', horizontal: 'center' };
+					cell.alignment = { vertical: "middle", horizontal: "center" };
 				});
 				firstMatch = false;
 			});
@@ -60,83 +67,100 @@ async function downloadScheduleSpreadsheet() {
 				return;
 			}
 
-			worksheet.getRow(roundStartRow + 1).eachCell({ includeEmpty: false }, (cell) => {
-				cell.border = { ...(cell.border || {}), top: { style: 'medium' }};
-			});
+			worksheet
+				.getRow(roundStartRow + 1)
+				.eachCell({ includeEmpty: false }, (cell) => {
+					cell.border = { ...(cell.border || {}), top: { style: "medium" } };
+				});
 
-
-			worksheet.getRow(worksheet.rowCount).eachCell({ includeEmpty: false }, (cell) => {
-				cell.border = { ...(cell.border || {}), bottom: { style: 'medium' }};
-			});
+			worksheet
+				.getRow(worksheet.rowCount)
+				.eachCell({ includeEmpty: false }, (cell) => {
+					cell.border = { ...(cell.border || {}), bottom: { style: "medium" } };
+				});
 
 			for (let i = roundStartRow + 1; i <= worksheet.rowCount; i++) {
 				let cell = worksheet.getRow(i).getCell(1);
-				let cellBorder = { ...(cell.border || {}), left: { style: 'medium' }, right: { style: 'medium' }};
+				let cellBorder = {
+					...(cell.border || {}),
+					left: { style: "medium" },
+					right: { style: "medium" },
+				};
 				if (i === roundStartRow + 1) {
-					cellBorder.top = { style: 'medium' };
-				}
-				else if (i === worksheet.rowCount) {
-					cellBorder.bottom = { style: 'medium' };
-				}
-				else {
-					cellBorder.bottom = { style: 'thin' };
+					cellBorder.top = { style: "medium" };
+				} else if (i === worksheet.rowCount) {
+					cellBorder.bottom = { style: "medium" };
+				} else {
+					cellBorder.bottom = { style: "thin" };
 				}
 				cell.border = cellBorder;
 
 				cell = worksheet.getRow(i).getCell(2);
-				cell.border = { ...(cell.border || {}), left: { style: 'medium' }, right: { style: 'medium' }};
+				cell.border = {
+					...(cell.border || {}),
+					left: { style: "medium" },
+					right: { style: "medium" },
+				};
 
 				cell = worksheet.getRow(i).getCell(5);
-				cellBorder = { ...(cell.border || {}), right: { style: 'medium' }};
+				cellBorder = { ...(cell.border || {}), right: { style: "medium" } };
 				if (i === roundStartRow + 1) {
-					cellBorder.top = { style: 'medium' };
-				}
-				else if (i === worksheet.rowCount) {
-					cellBorder.bottom = { style: 'medium' };
-				}
-				else {
+					cellBorder.top = { style: "medium" };
+				} else if (i === worksheet.rowCount) {
+					cellBorder.bottom = { style: "medium" };
+				} else {
 					cellBorder.bottom = {};
 				}
 				cell.border = cellBorder;
 			}
 
-			let row = worksheet.addRow(['', 'Bench:', round.bench.map(pid => playerName(pid)).join(', '), '', '']);
+			const row = worksheet.addRow([
+				"",
+				"Bench:",
+				round.bench.map((pid) => playerName(pid)).join(", "),
+				"",
+				"",
+			]);
 			// Apply borders and center alignment ONLY to cells that have data
 			for (let i = 1; i <= 5; i++) {
-				let cell = row.getCell(i);
+				const cell = row.getCell(i);
 				cell.fill = {
-					type: 'pattern',
-					pattern: 'solid',
-					fgColor: { argb: 'FFEEEEEE' }
+					type: "pattern",
+					pattern: "solid",
+					fgColor: { argb: "FFEEEEEE" },
 				};
-				let cellBorder = { ...(cell.border || {}), top: { style: 'medium' }, bottom: { style: 'medium' }};
+				const cellBorder = {
+					...(cell.border || {}),
+					top: { style: "medium" },
+					bottom: { style: "medium" },
+				};
 				if (i === 1) {
-					cellBorder.left = { style: 'medium' };
-				}
-				else if (i === 5) {
-					cellBorder.right = { style: 'medium' };
+					cellBorder.left = { style: "medium" };
+				} else if (i === 5) {
+					cellBorder.right = { style: "medium" };
 				}
 				cell.border = cellBorder;
-				cell.alignment = { vertical: 'middle', horizontal: 'left' };
+				cell.alignment = { vertical: "middle", horizontal: "left" };
 			}
 
 			worksheet.addRow([]);
 		});
 	}
 
-
 	// 4. Generate the File and Trigger Download
 	const buffer = await workbook.xlsx.writeBuffer();
-	const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-	
+	const blob = new Blob([buffer], {
+		type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+	});
+
 	// Create a temporary hidden link to download the blob
 	const url = window.URL.createObjectURL(blob);
-	const a = document.createElement('a');
+	const a = document.createElement("a");
 	a.href = url;
-	a.download = 'tournament.xlsx';
+	a.download = "tournament.xlsx";
 	document.body.appendChild(a);
 	a.click();
-	
+
 	// Cleanup
 	document.body.removeChild(a);
 	window.URL.revokeObjectURL(url);
@@ -145,17 +169,26 @@ async function downloadScheduleSpreadsheet() {
 function printScheduleRound(round, emptyTable = false) {
 	if (round.matches.length === 0) return;
 
-	let matchRows = round.matches.map((match, idx) => {
-		const matchScore = scores[match.matchId] || null;
-		const matchScoreStr = matchScore && matchScore['a'] && matchScore['b']  ? `${matchScore['a']} : ${matchScore['b']}` : '';
-		const teamA = emptyTable ? '' : match.teamA.map(pid => playerName(pid)).join(', ');
-		const teamB = emptyTable ? '' : match.teamB.map(pid => playerName(pid)).join(', ');
-		const topCellClass = idx === 0 ? 'top-cell' : '';
-		const roundCell = idx === 0
-			? `<td class="round-cell left-cell right-cell top-cell bottom-cell ${topCellClass}" rowspan="${round.matches.length}">${round.roundId + 1}</td>`
-			: '';
-		
-		return `
+	const matchRows = round.matches
+		.map((match, idx) => {
+			const matchScore = scores[match.matchId] || null;
+			const matchScoreStr =
+				matchScore?.a || matchScore?.b
+					? `${matchScore.a || 0} : ${matchScore.b || 0}`
+					: "";
+			const teamA = emptyTable
+				? ""
+				: match.teamA.map((pid) => playerName(pid)).join(", ");
+			const teamB = emptyTable
+				? ""
+				: match.teamB.map((pid) => playerName(pid)).join(", ");
+			const topCellClass = idx === 0 ? "top-cell" : "";
+			const roundCell =
+				idx === 0
+					? `<td class="round-cell left-cell right-cell top-cell bottom-cell ${topCellClass}" rowspan="${round.matches.length}">${round.roundId + 1}</td>`
+					: "";
+
+			return `
 			<tr>
 				${roundCell}
 				<td class="court-cell ${topCellClass}">${match.court}</td>
@@ -163,31 +196,37 @@ function printScheduleRound(round, emptyTable = false) {
 				<td class="score-cell ${topCellClass}">${matchScoreStr}</td>
 				<td class="team-cell right-cell ${topCellClass}">${teamB}</td>
 			</tr>`;
-	}).join('');
+		})
+		.join("");
 
 	const benchRow = `
 		<tr class="bench-row">
 			<td class="colspan-cell left-cell top-cell bottom-cell"></td>
 			<td class="bench-label colspan-cell top-cell bottom-cell">Bench:</td>
-			<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${emptyTable ? '' : round.bench.map(pid => playerName(pid)).join(', ')}</td>
+			<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${emptyTable ? "" : round.bench.map((pid) => playerName(pid)).join(", ")}</td>
 		</tr>`;
-	
-	return `<tbody class="round-block">${matchRows}${benchRow}<tr><td colspan="5" class="round-spacer"></td></tr></tbody>`;
 
+	return `<tbody class="round-block">${matchRows}${benchRow}<tr><td colspan="5" class="round-spacer"></td></tr></tbody>`;
 }
 
-function printSchedule() {
+function _printSchedule() {
 	if (schedule == null || schedule.rounds == null) return;
 
 	// 1. Build the HTML for the table, mirroring the Excel layout
-	let rowsHtml = '';
+	let rowsHtml = "";
 
-	schedule.rounds.forEach(round => {
+	schedule.rounds.forEach((round) => {
 		rowsHtml += printScheduleRound(round);
 	});
 
-	if (schedule.rounds.length > 0 && document.getElementById('print-extra-match').checked) {
-		rowsHtml += printScheduleRound(schedule.rounds[schedule.rounds.length - 1], true);
+	if (
+		schedule.rounds.length > 0 &&
+		document.getElementById("print-extra-match").checked
+	) {
+		rowsHtml += printScheduleRound(
+			schedule.rounds[schedule.rounds.length - 1],
+			true,
+		);
 	}
 
 	const html = `
@@ -302,16 +341,16 @@ function printSchedule() {
 		</body>
 		</html>`;
 
-		//console.log("Printing schedule HTML:", html);
+	//console.log("Printing schedule HTML:", html);
 	// 2. Create a hidden iframe
-	const iframe = document.createElement('iframe');
-	iframe.style.position = 'fixed';
-	iframe.style.right = '0';
-	iframe.style.bottom = '0';
-	iframe.style.width = '0';
-	iframe.style.height = '0';
-	iframe.style.border = '0';
-	iframe.style.visibility = 'hidden';
+	const iframe = document.createElement("iframe");
+	iframe.style.position = "fixed";
+	iframe.style.right = "0";
+	iframe.style.bottom = "0";
+	iframe.style.width = "0";
+	iframe.style.height = "0";
+	iframe.style.border = "0";
+	iframe.style.visibility = "hidden";
 
 	document.body.appendChild(iframe);
 
@@ -324,9 +363,9 @@ function printSchedule() {
 	iframe.onload = () => {
 		let cleaned = false;
 		const cleanup = () => {
-		  if (cleaned) return;
-		  cleaned = true;
-		  document.body.removeChild(iframe);
+			if (cleaned) return;
+			cleaned = true;
+			document.body.removeChild(iframe);
 		};
 
 		iframe.contentWindow.onafterprint = cleanup;

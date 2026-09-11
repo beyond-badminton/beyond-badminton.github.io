@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="3613" height="529" viewBox="0 -6 3613 541">
+	<title>beyond-badminton</title>
 	<defs>
 		<!--filter id="grey-border" x="-10%" y="-10%" width="120%" height="120%">
 			<feComponentTransfer in="SourceAlpha" result="solidAlpha">
