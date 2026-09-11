@@ -21,17 +21,17 @@
 			</header>
 
 			<div class="tabs">
-				<button class="tab active" data-tab="players">Players</button>
-				<button class="tab" data-tab="courts">Courts</button>
-				<button class="tab" data-tab="schedule">Schedule</button>
-				<button class="tab" data-tab="about">About</button>
+				<button type="button" class="tab active" data-tab="players">Players</button>
+				<button type="button" class="tab" data-tab="courts">Courts</button>
+				<button type="button" class="tab" data-tab="schedule">Schedule</button>
+				<button type="button" class="tab" data-tab="about">About</button>
 			</div>
 
 			<!-- ===== PLAYERS TAB ===== -->
 			<div id="players" class="tab-content active">
 				<div class="sub-tabs">
-					<button class="sub-tab active" data-subtab="all-players-section">All players</button>
-					<button class="sub-tab" data-subtab="active-players-section">Active players</button>
+					<button type="button" class="sub-tab active" data-subtab="all-players-section">All players</button>
+					<button type="button" class="sub-tab" data-subtab="active-players-section">Active players</button>
 				</div>
 
 				<!-- All Players -->
@@ -85,8 +85,8 @@ Bob,1</pre>
 							<table class="player-table" id="all-player-table">
 							<thead>
 								<tr>
-									<th class="sortable" data-list="all" data-field="name">Name <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="all" data-field="skill">Skill <span class="sort-icon">↕</span>&nbsp;&nbsp;<span class="help-icon" onclick="event.stopPropagation();" title="Click a skill to edit it directly. Changing skills will not re-sort the table automatically - click this header to re-sort anytime.">?</span></th>
+									<th><span class="sortable" data-list="all" data-field="name">Name <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="all" data-field="skill">Skill <span class="sort-icon">↕</span></span>&nbsp;&nbsp;<span class="help-icon" title="Click a skill to edit it directly. Changing skills will not re-sort the table automatically - click this header to re-sort anytime.">?</span></th>
 									<th></th>
 								</tr>
 							</thead>
@@ -135,11 +135,11 @@ Bob,1</pre>
 							<table class="player-table" id="active-player-table">
 							<thead>
 								<tr>
-									<th class="sortable" data-list="active" data-field="name">Name <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="active" data-field="skill">Skill <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="active" data-field="arrival">Arrival <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="active" data-field="playtime">Play time <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="active" data-field="sit1stRound">Sit 1st round <span class="sort-icon">↕</span>&nbsp;&nbsp;<span class="help-icon" title="Is someone running late? Put them on the bench for their first round :) This option is ignored if there are not enough players to form a bench." onclick="event.stopPropagation()">?</span></th>
+									<th><span class="sortable" data-list="active" data-field="name">Name <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="active" data-field="skill">Skill <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="active" data-field="arrival">Arrival <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="active" data-field="playtime">Play time <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="active" data-field="sit1stRound">Sit 1st round <span class="sort-icon">↕</span></span>&nbsp;&nbsp;<span class="help-icon" title="Is someone running late? Put them on the bench for their first round :) This option is ignored if there are not enough players to form a bench.">?</span></th>
 									<th></th>
 								</tr>
 							</thead>
@@ -190,7 +190,7 @@ Bob,1</pre>
 								</div>
 
 								<div class="field" id="court-select-field">
-									<label>Courts available</label>
+									<label for="">Courts available</label>
 									<div class="checkbox-list" id="court-checkbox-list">
 										<p class="empty" id="no-courts-hint">Add a court above first.</p>
 									</div>
@@ -297,13 +297,13 @@ Bob,1</pre>
 						<table class="gen-stats-table">
 							<thead>
 								<tr>
-									<th class="sortable" data-list="stats" data-field="name">Player <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="stats" data-field="skill">Skill <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="stats" data-field="playtime">Play time <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="stats" data-field="matches">Matches <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="stats" data-field="bench">Bench <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="stats" data-field="partners">Unique partners <span class="sort-icon">↕</span></th>
-									<th class="sortable" data-list="stats" data-field="opponents">Unique opponents <span class="sort-icon">↕</span></th>
+									<th><span class="sortable" data-list="stats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="stats" data-field="skill">Skill <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="stats" data-field="playtime">Play time <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="stats" data-field="matches">Matches <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="stats" data-field="bench">Bench <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="stats" data-field="partners">Unique partners <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="stats" data-field="opponents">Unique opponents <span class="sort-icon">↕</span></span></th>
 								</tr>
 							</thead>
 							<tbody id="gen-stats-tbody">

@@ -1,9 +1,20 @@
+// biome-ignore lint/suspicious/noRedundantUseStrict: required for global scripts loaded via <script> tags
+"use strict";
+
 // ============================================================
 // DISCARD TOURNAMENT
 // ============================================================
 async function discardTournament() {
-	const hasData = activePlayers.length > 0 || courtBlocks.length > 0 || (schedule != null && Object.keys(schedule).length > 0);
-	if (hasData && !confirm('Discard this tournament? Active players, courts, and availability will be removed. The All players list and the Court names are kept.')) {
+	const hasData =
+		activePlayers.length > 0 ||
+		courtBlocks.length > 0 ||
+		(schedule != null && Object.keys(schedule).length > 0);
+	if (
+		hasData &&
+		!confirm(
+			"Discard this tournament? Active players, courts, and availability will be removed. The All players list and the Court names are kept.",
+		)
+	) {
 		return;
 	}
 
@@ -13,14 +24,24 @@ async function discardTournament() {
 }
 
 async function discardLocalStorane() {
-	const hasData = allPlayers.length > 0 || activePlayers.length > 0 || courtBlocks.length > 0 || courtNames.length > 0 || (schedule != null && Object.keys(schedule).length > 0);
-	if (hasData && !confirm('This will discard all data. Are you sure you want to proceed? To keep All players and Court names, use the "Discard Tournament" button instead.')) {
+	const hasData =
+		allPlayers.length > 0 ||
+		activePlayers.length > 0 ||
+		courtBlocks.length > 0 ||
+		courtNames.length > 0 ||
+		(schedule != null && Object.keys(schedule).length > 0);
+	if (
+		hasData &&
+		!confirm(
+			'This will discard all data. Are you sure you want to proceed? To keep All players and Court names, use the "Discard Tournament" button instead.',
+		)
+	) {
 		return;
 	}
 
 	clearGeneratedScheduleFromStorage();
 	clearCourtsFromStorage();
-	clearCourtNamesFromStorage();
+	_clearCourtNamesFromStorage();
 	clearActivePlayersFromStorage();
 	clearAllPlayersFromStorage();
 }
@@ -36,7 +57,7 @@ const STORAGE_KEYS = [
 	COURTS_NEXT_ID_KEY,
 	SCHEDULE_KEY,
 	SCORES_KEY,
-	GEN_PENALTIES_KEY
+	GEN_PENALTIES_KEY,
 ];
 
 // Save selected localStorage keys to a JSON file (opens a save dialog)
@@ -59,28 +80,30 @@ async function saveLocalStorageToFile() {
 	if (window.showSaveFilePicker) {
 		try {
 			const handle = await window.showSaveFilePicker({
-				suggestedName: 'tournament-full-backup.json',
-				types: [{
-					description: 'JSON File',
-					accept: { 'application/json': ['.json'] }
-				}]
+				suggestedName: "tournament-full-backup.json",
+				types: [
+					{
+						description: "JSON File",
+						accept: { "application/json": [".json"] },
+					},
+				],
 			});
 			const writable = await handle.createWritable();
 			await writable.write(jsonString);
 			await writable.close();
 			return true;
 		} catch (err) {
-			if (err.name === 'AbortError') return false; // user cancelled
-			console.error('Save failed:', err);
+			if (err.name === "AbortError") return false; // user cancelled
+			console.error("Save failed:", err);
 			throw err;
 		}
 	} else {
 		// Fallback: trigger a normal browser download
-		const blob = new Blob([jsonString], { type: 'application/json' });
+		const blob = new Blob([jsonString], { type: "application/json" });
 		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
+		const a = document.createElement("a");
 		a.href = url;
-		a.download = 'tournament-full-backup.json';
+		a.download = "tournament-full-backup.json";
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
@@ -91,8 +114,18 @@ async function saveLocalStorageToFile() {
 
 // Load a JSON file (opens a file picker) and write its keys back into localStorage
 async function loadLocalStorageFromFile() {
-	const hasData = allPlayers.length > 0 || activePlayers.length > 0 || courtBlocks.length > 0 || courtNames.length > 0 || (schedule != null && Object.keys(schedule).length > 0);
-	if (hasData && !confirm('This will discard all current data. Are you sure you want to proceed?')) {
+	const hasData =
+		allPlayers.length > 0 ||
+		activePlayers.length > 0 ||
+		courtBlocks.length > 0 ||
+		courtNames.length > 0 ||
+		(schedule != null && Object.keys(schedule).length > 0);
+	if (
+		hasData &&
+		!confirm(
+			"This will discard all current data. Are you sure you want to proceed?",
+		)
+	) {
 		return;
 	}
 	let file;
@@ -101,24 +134,26 @@ async function loadLocalStorageFromFile() {
 	if (window.showOpenFilePicker) {
 		try {
 			const [handle] = await window.showOpenFilePicker({
-				types: [{
-					description: 'JSON File',
-					accept: { 'application/json': ['.json'] }
-				}],
-				multiple: false
+				types: [
+					{
+						description: "JSON File",
+						accept: { "application/json": [".json"] },
+					},
+				],
+				multiple: false,
 			});
 			file = await handle.getFile();
 		} catch (err) {
-			if (err.name === 'AbortError') return false; // user cancelled
-			console.error('Open failed:', err);
+			if (err.name === "AbortError") return false; // user cancelled
+			console.error("Open failed:", err);
 			throw err;
 		}
 	} else {
 		// Fallback: use a hidden <input type="file">
-		file = await new Promise((resolve, reject) => {
-			const input = document.createElement('input');
-			input.type = 'file';
-			input.accept = 'application/json';
+		file = await new Promise((resolve) => {
+			const input = document.createElement("input");
+			input.type = "file";
+			input.accept = "application/json";
 			input.onchange = () => resolve(input.files[0] || null);
 			input.click();
 		});
@@ -131,7 +166,7 @@ async function loadLocalStorageFromFile() {
 	for (const key of STORAGE_KEYS) {
 		if (key in data) {
 			const value = data[key];
-			const toStore = typeof value === 'string' ? value : JSON.stringify(value);
+			const toStore = typeof value === "string" ? value : JSON.stringify(value);
 			localStorage.setItem(key, toStore);
 		}
 	}
@@ -145,8 +180,21 @@ async function loadLocalStorageFromFile() {
 	return true;
 }
 
-document.getElementById('export-storage-btn').addEventListener('click', () => { saveLocalStorageToFile().catch(err => alert('Error saving file: ' + err.message)); });
-document.getElementById('import-storage-btn').addEventListener('click', () => { loadLocalStorageFromFile().catch(err => alert('Error loading file: ' + err.message)); });
-document.getElementById('discard-storage-btn').addEventListener('click', () => { discardLocalStorane(); });
-document.getElementById('discard-tournament-btn').addEventListener('click', () => { discardTournament(); });
-
+document.getElementById("export-storage-btn").addEventListener("click", () => {
+	saveLocalStorageToFile().catch((err) => {
+		alert(`Error saving file: ${err.message}`);
+	});
+});
+document.getElementById("import-storage-btn").addEventListener("click", () => {
+	loadLocalStorageFromFile().catch((err) => {
+		alert(`Error loading file: ${err.message}`);
+	});
+});
+document.getElementById("discard-storage-btn").addEventListener("click", () => {
+	discardLocalStorane();
+});
+document
+	.getElementById("discard-tournament-btn")
+	.addEventListener("click", () => {
+		discardTournament();
+	});
