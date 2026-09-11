@@ -1,0 +1,8 @@
+# Ignore specific vendor libraries
+assets/js/exceljs.min.js
+
+# Ignore minified JS files (just for safety)
+**/*.min.js
+
+# Ignore dependencies (just for safety)
+node_modules/

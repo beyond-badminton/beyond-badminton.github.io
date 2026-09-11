@@ -22,3 +22,8 @@ jobs:
 
       - name: Check HTML syntax
         run: npx htmlhint **/*.html
+
+      - name: Check HTML & JS & CSS Quality
+        env:
+          FORCE_COLOR: "3"
+        run: npx @biomejs/biome check . --colors=force
