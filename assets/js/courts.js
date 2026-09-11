@@ -178,17 +178,6 @@ const courtTableBody     = document.getElementById('court-table-body');
 const courtsEmptyState   = document.getElementById('courts-empty-state');
 const courtBlockCount    = document.getElementById('court-block-count');
 
-// Populate time & duration dropdowns
-(function populateCourtTimeOptions() {
-	for (let mins = 8 * 60; mins <= 20 * 60; mins += 30) {
-		const h = String(Math.floor(mins / 60)).padStart(2, '0');
-		const m = String(mins % 60).padStart(2, '0');
-		const opt = document.createElement('option');
-		opt.value = opt.textContent = `${h}:${m}`;
-		courtTimeInput.appendChild(opt);
-	}
-})();
-
 function formatDuration(mins) {
 	const h = Math.floor(mins / 60), m = mins % 60;
 	if (h === 0) return `${m} min`;
@@ -303,3 +292,4 @@ courtForm.addEventListener('submit', e => {
 // ============================================================
 loadCourtNamesFromStorage();
 loadCourtsFromStorage();
+populateTimeSelect(courtTimeInput);

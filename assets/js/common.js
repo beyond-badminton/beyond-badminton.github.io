@@ -25,6 +25,22 @@ document.querySelectorAll('.sub-tabs').forEach(subTabGroup => {
   });
 });
 
+
+// ============================================================
+// SELECT UTILITIES
+// ============================================================
+
+// Populate time dropdown (07:00 – 20:00 in 30-min steps)
+function populateTimeSelect(selectEl) {
+	for (let mins = 7 * 60; mins <= 20 * 60; mins += 30) {
+		const h = String(Math.floor(mins / 60)).padStart(2, '0');
+		const m = String(mins % 60).padStart(2, '0');
+		const opt = document.createElement('option');
+		opt.value = opt.textContent = `${h}:${m}`;
+		selectEl.appendChild(opt);
+	}
+};
+
 // ============================================================
 // SORT UTILITIES
 // ============================================================
