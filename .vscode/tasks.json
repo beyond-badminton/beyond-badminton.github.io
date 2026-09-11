@@ -1,0 +1,60 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Biome: Run Check",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"@biomejs/biome",
+				"check",
+				".",
+				"--reporter=github",
+				"--max-diagnostics=200"
+			],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"problemMatcher": {
+				"owner": "biome",
+				"fileLocation": ["relative", "${workspaceFolder}"],
+				"pattern": [
+					{
+						"regexp": "^::(error|warning|notice)\\s+title=([^,]+),file=([^,]+),line=(\\d+),endLine=(\\d+),col=(\\d+),endColumn=(\\d+)::(.*)$",
+						"severity": 1,
+						"code": 2,
+						"file": 3,
+						"line": 4,
+						"endLine": 5,
+						"column": 6,
+						"endColumn": 7,
+						"message": 8
+					}
+				]
+			}
+		},
+		{
+			"label": "Biome: Format Active File",
+			"type": "shell",
+			"command": "npx",
+			"args": ["@biomejs/biome", "format", "--write", "${file}"],
+			"group": {
+				"kind": "none",
+				"isDefault": false
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "HTMLHint: Check HTML",
+			"type": "shell",
+			"command": "npx",
+			"args": ["htmlhint", "**/*.html"],
+			"group": {
+				"kind": "test",
+				"isDefault": false
+			},
+			"problemMatcher": []
+		}
+	]
+}
