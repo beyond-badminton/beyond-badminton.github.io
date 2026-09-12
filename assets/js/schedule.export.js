@@ -1,28 +1,137 @@
 // biome-ignore lint/suspicious/noRedundantUseStrict: required for global scripts loaded via <script> tags
 "use strict";
 
-async function _downloadScheduleSpreadsheet() {
+// ---------------------------------------------------------------------------
+// Shared schedule "view model" builder
+// ---------------------------------------------------------------------------
+// Both exports (Excel via downloadScheduleSpreadsheet, and print/PDF via
+// printSchedule) turn a `schedule` into the same sequence of "round
+// blocks": a round number, its matches (with a formatted score string and
+// joined team names), its bench players, and whether the bench row should
+// be shown at all - plus the optional synthetic "extra match" round
+// appended at the end. Centralizing that computation here means the two
+// renderers can't drift apart on scoring / extra-match / empty-bench
+// behavior; only the actual rendering (HTML table vs. XLSX rows) differs.
+
+function buildScheduleRoundViewModels(
+	schedule,
+	scores,
+	printExtraMatch = true,
+	printEmptyBench = false,
+) {
+	if (schedule == null || schedule.rounds == null) return [];
+
+	function formatMatchScore(match, scores) {
+		const matchScore = scores ? scores[match.matchId] || null : null;
+		return matchScore?.a || matchScore?.b
+			? `${matchScore.a || 0} : ${matchScore.b || 0}`
+			: "";
+	}
+
+	const buildRound = (
+		roundNumber,
+		matches,
+		bench,
+		roundScores,
+		forceShowBench,
+	) => ({
+		roundNumber,
+		matches: matches.map((match) => ({
+			court: match.court,
+			teamAName: match.teamA.map((pid) => playerName(pid)).join(", "),
+			teamBName: match.teamB.map((pid) => playerName(pid)).join(", "),
+			scoreStr: formatMatchScore(match, roundScores),
+		})),
+		benchNames: bench.map((pid) => playerName(pid)),
+		showBench: bench.length > 0 || forceShowBench,
+	});
+
+	const roundVMs = schedule.rounds.map((round) =>
+		buildRound(
+			round.roundId + 1,
+			round.matches,
+			round.bench,
+			scores,
+			printEmptyBench,
+		),
+	);
+
+	if (schedule.rounds.length > 0 && printExtraMatch) {
+		const lastRound = schedule.rounds[schedule.rounds.length - 1];
+		roundVMs.push(
+			buildRound(
+				schedule.rounds.length + 1,
+				lastRound.matches.map((match) => ({
+					court: match.court,
+					teamA: [],
+					teamB: [],
+				})),
+				[],
+				null,
+				lastRound.bench.length > 0 || printEmptyBench,
+			),
+		);
+	}
+
+	return roundVMs;
+}
+
+// biome-ignore lint/correctness/noUnusedVariables: function is used in schedule.js
+async function downloadScheduleSpreadsheet(
+	schedule,
+	scheduleDate,
+	scores,
+	printExtraMatch = true,
+	printEmptyBench = false,
+) {
 	// 1. Initialize Workbook and Worksheet
 	const workbook = new ExcelJS.Workbook();
 
 	if (schedule != null && schedule.rounds != null) {
 		const worksheet = workbook.addWorksheet("Matches");
 
-		worksheet.addRow([]);
-
 		// 2. Define Columns with widths (to handle those long placeholder names)
+		// (no `header` field here - we write the header row ourselves below so
+		// row 1 can hold the title/date, mirroring the header in printSchedule)
 		worksheet.columns = [
-			{ header: "Round", key: "round", width: 8 },
-			{ header: "Court", key: "court", width: 8 },
-			{ header: "Team A", key: "teamA", width: 30 },
-			{ header: "Score", key: "score", width: 15 },
-			{ header: "Team B", key: "teamB", width: 30 },
+			{ key: "round", width: 8 },
+			{ key: "court", width: 8 },
+			{ key: "teamA", width: 30 },
+			{ key: "score", width: 15 },
+			{ key: "teamB", width: 30 },
 		];
 
-		// Format for the headers
-		const firstRow = worksheet.getRow(1);
-		firstRow.font = { bold: true };
-		firstRow.alignment = { vertical: "middle", horizontal: "center" };
+		// Title + date header row, mirroring the .header/.title/.date block
+		// in printSchedule (title on the left, date on the right, with a
+		// rule underneath standing in for the <hr>).
+		const titleRow = worksheet.addRow(["Beyond Badminton"]);
+		worksheet.mergeCells(`A${titleRow.number}:D${titleRow.number}`);
+		titleRow.getCell(1).font = { bold: true };
+		titleRow.getCell(1).alignment = { vertical: "middle", horizontal: "left" };
+		if (scheduleDate) {
+			titleRow.getCell(5).value = scheduleDate.toLocaleDateString("sk-SK");
+		}
+		titleRow.getCell(5).font = { bold: true };
+		titleRow.getCell(5).alignment = {
+			vertical: "middle",
+			horizontal: "right",
+		};
+		titleRow.eachCell({ includeEmpty: true }, (cell) => {
+			cell.border = { ...(cell.border || {}), bottom: { style: "thin" } };
+		});
+
+		worksheet.addRow([]);
+
+		// Column header row
+		const headerRow = worksheet.addRow([
+			"Round",
+			"Court",
+			"Team A",
+			"Score",
+			"Team B",
+		]);
+		headerRow.font = { bold: true };
+		headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
 		// Define the border style we want to apply
 		const borderStyle = {
@@ -32,18 +141,29 @@ async function _downloadScheduleSpreadsheet() {
 			right: { style: "thin" },
 		};
 
-		// 3. Process the Data
-		schedule.rounds.forEach((round) => {
+		// 3. Process the Data - built once via the shared view-model builder so
+		// scoring, the extra-match round, and empty-bench handling stay in
+		// sync with printSchedule.
+		const rounds = buildScheduleRoundViewModels(
+			schedule,
+			scores,
+			printExtraMatch,
+			printEmptyBench,
+		);
+
+		rounds.forEach((round) => {
+			if (round.matches.length === 0) return;
+
 			let firstMatch = true;
 			const roundStartRow = worksheet.rowCount;
 
 			round.matches.forEach((match) => {
 				const row = worksheet.addRow([
-					firstMatch ? round.roundId + 1 : "",
+					firstMatch ? round.roundNumber : "",
 					match.court,
-					match.teamA.map((pid) => playerName(pid)).join(", "),
-					"",
-					match.teamB.map((pid) => playerName(pid)).join(", "),
+					match.teamAName,
+					match.scoreStr,
+					match.teamBName,
 				]);
 
 				if (firstMatch) {
@@ -52,6 +172,9 @@ async function _downloadScheduleSpreadsheet() {
 
 				row.getCell(2).font = { bold: true };
 				row.getCell(3).font = { bold: true };
+				// Bold to match printSchedule, where the score cell inherits the
+				// page's bold body font (only the bench row is set non-bold there).
+				row.getCell(4).font = { bold: true };
 				row.getCell(5).font = { bold: true };
 
 				// Apply borders and center alignment ONLY to cells that have data
@@ -61,11 +184,6 @@ async function _downloadScheduleSpreadsheet() {
 				});
 				firstMatch = false;
 			});
-
-			if (firstMatch) {
-				// If there were no matches, skip
-				return;
-			}
 
 			worksheet
 				.getRow(roundStartRow + 1)
@@ -114,33 +232,35 @@ async function _downloadScheduleSpreadsheet() {
 				cell.border = cellBorder;
 			}
 
-			const row = worksheet.addRow([
-				"",
-				"Bench:",
-				round.bench.map((pid) => playerName(pid)).join(", "),
-				"",
-				"",
-			]);
-			// Apply borders and center alignment ONLY to cells that have data
-			for (let i = 1; i <= 5; i++) {
-				const cell = row.getCell(i);
-				cell.fill = {
-					type: "pattern",
-					pattern: "solid",
-					fgColor: { argb: "FFEEEEEE" },
-				};
-				const cellBorder = {
-					...(cell.border || {}),
-					top: { style: "medium" },
-					bottom: { style: "medium" },
-				};
-				if (i === 1) {
-					cellBorder.left = { style: "medium" };
-				} else if (i === 5) {
-					cellBorder.right = { style: "medium" };
+			if (round.showBench) {
+				const row = worksheet.addRow([
+					"",
+					"Bench:",
+					round.benchNames.join(", "),
+					"",
+					"",
+				]);
+				// Apply borders and center alignment ONLY to cells that have data
+				for (let i = 1; i <= 5; i++) {
+					const cell = row.getCell(i);
+					cell.fill = {
+						type: "pattern",
+						pattern: "solid",
+						fgColor: { argb: "FFEEEEEE" },
+					};
+					const cellBorder = {
+						...(cell.border || {}),
+						top: { style: "medium" },
+						bottom: { style: "medium" },
+					};
+					if (i === 1) {
+						cellBorder.left = { style: "medium" };
+					} else if (i === 5) {
+						cellBorder.right = { style: "medium" };
+					}
+					cell.border = cellBorder;
+					cell.alignment = { vertical: "middle", horizontal: "left" };
 				}
-				cell.border = cellBorder;
-				cell.alignment = { vertical: "middle", horizontal: "left" };
 			}
 
 			worksheet.addRow([]);
@@ -166,96 +286,67 @@ async function _downloadScheduleSpreadsheet() {
 	window.URL.revokeObjectURL(url);
 }
 
-function printScheduleRound(
-	roundNumber,
-	matches,
-	bench,
-	scores,
-	printEmptyBench = false,
-) {
-	if (matches.length === 0) return;
-
-	const matchRows = matches
-		.map((match, idx) => {
-			const matchScore = scores ? scores[match.matchId] || null : null;
-			const matchScoreStr =
-				matchScore?.a || matchScore?.b
-					? `${matchScore.a || 0} : ${matchScore.b || 0}`
-					: "";
-			const teamA = match.teamA.map((pid) => playerName(pid)).join(", ");
-			const teamB = match.teamB.map((pid) => playerName(pid)).join(", ");
-			const topCellClass = idx === 0 ? "top-cell" : "";
-			const bottomCellClass = idx === matches.length - 1 ? "bottom-cell" : "";
-			const roundCell =
-				idx === 0
-					? `<td class="round-cell left-cell right-cell top-cell bottom-cell ${topCellClass}" rowspan="${matches.length}">${roundNumber}</td>`
-					: "";
-
-			return `
-			<tr>
-				${roundCell}
-				<td class="court-cell ${topCellClass} ${bottomCellClass}">${match.court}</td>
-				<td class="team-cell left-cell ${topCellClass} ${bottomCellClass}">${teamA}</td>
-				<td class="score-cell ${topCellClass} ${bottomCellClass}">${matchScoreStr}</td>
-				<td class="team-cell right-cell ${topCellClass} ${bottomCellClass}">${teamB}</td>
-			</tr>`;
-		})
-		.join("");
-
-	const benchRow =
-		bench.length === 0 && !printEmptyBench
-			? ""
-			: `
-		<tr class="bench-row">
-			<td class="colspan-cell left-cell top-cell bottom-cell"></td>
-			<td class="bench-label colspan-cell top-cell bottom-cell">Bench:</td>
-			<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${bench.map((pid) => playerName(pid)).join(", ")}</td>
-		</tr>`;
-
-	return `<tbody class="round-block">${matchRows}${benchRow}<tr><td colspan="5" class="round-spacer"></td></tr></tbody>`;
-}
-
-function _printSchedule(
+// biome-ignore lint/correctness/noUnusedVariables: function is used in schedule.js
+function printSchedule(
 	schedule,
 	scheduleDate,
 	scores,
 	printExtraMatch = true,
 	printEmptyBench = false,
 ) {
+	function printScheduleRound(round) {
+		const matches = round.matches;
+		if (matches.length === 0) return "";
+
+		const matchRows = matches
+			.map((match, idx) => {
+				const topCellClass = idx === 0 ? "top-cell" : "";
+				const bottomCellClass = idx === matches.length - 1 ? "bottom-cell" : "";
+				const roundCell =
+					idx === 0
+						? `<td class="round-cell left-cell right-cell top-cell bottom-cell ${topCellClass}" rowspan="${matches.length}">${round.roundNumber}</td>`
+						: "";
+
+				return `
+				<tr>
+					${roundCell}
+					<td class="court-cell ${topCellClass} ${bottomCellClass}">${match.court}</td>
+					<td class="team-cell left-cell ${topCellClass} ${bottomCellClass}">${match.teamAName}</td>
+					<td class="score-cell ${topCellClass} ${bottomCellClass}">${match.scoreStr}</td>
+					<td class="team-cell right-cell ${topCellClass} ${bottomCellClass}">${match.teamBName}</td>
+				</tr>`;
+			})
+			.join("");
+
+		const benchRow = !round.showBench
+			? ""
+			: `
+			<tr class="bench-row">
+				<td class="colspan-cell left-cell top-cell bottom-cell"></td>
+				<td class="bench-label colspan-cell top-cell bottom-cell">Bench:</td>
+				<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${round.benchNames.join(", ")}</td>
+			</tr>`;
+
+		return `<tbody class="round-block">${matchRows}${benchRow}<tr><td colspan="5" class="round-spacer"></td></tr></tbody>`;
+	}
+
 	if (schedule == null || schedule.rounds == null) return;
 
-	// 1. Build the HTML for the table, mirroring the Excel layout
+	// 1. Build the HTML for the table, mirroring the Excel layout. The round
+	// data (scores, the extra-match round, empty-bench handling) comes from
+	// the same shared builder downloadScheduleSpreadsheet uses, so the two
+	// exports can't drift apart on that logic.
+	const rounds = buildScheduleRoundViewModels(
+		schedule,
+		scores,
+		printExtraMatch,
+		printEmptyBench,
+	);
+
 	let rowsHtml = "";
-
-	schedule.rounds.forEach((round) => {
-		rowsHtml += printScheduleRound(
-			round.roundId + 1,
-			round.matches,
-			round.bench,
-			scores,
-			printEmptyBench,
-		);
+	rounds.forEach((round) => {
+		rowsHtml += printScheduleRound(round);
 	});
-
-	if (
-		schedule.rounds.length > 0 &&
-		printExtraMatch
-		//document.getElementById("print-extra-match").checked
-	) {
-		const lastRound = schedule.rounds[schedule.rounds.length - 1];
-		rowsHtml += printScheduleRound(
-			schedule.rounds.length + 1,
-			lastRound.matches.map((match) => ({
-				court: match.court,
-				teamA: [],
-				teamB: [],
-			})),
-			[],
-			null,
-			lastRound.bench.length > 0 || printEmptyBench,
-			true,
-		);
-	}
 
 	const html = `
 		<!DOCTYPE html>

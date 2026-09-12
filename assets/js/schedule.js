@@ -713,7 +713,7 @@ genClearBtn.addEventListener("click", () => {
 });
 
 genPrintBtn.addEventListener("click", () => {
-	_printSchedule(
+	printSchedule(
 		schedule,
 		scheduleDate,
 		scores,
@@ -723,7 +723,13 @@ genPrintBtn.addEventListener("click", () => {
 });
 
 genExportBtn.addEventListener("click", () => {
-	_downloadScheduleSpreadsheet();
+	downloadScheduleSpreadsheet(
+		schedule,
+		scheduleDate,
+		scores,
+		document.getElementById("print-extra-match").checked,
+		false,
+	);
 });
 
 genDatePicker.addEventListener("change", () => {
