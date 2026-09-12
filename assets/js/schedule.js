@@ -303,7 +303,6 @@ function workerMain() {
 			const rounds = [];
 
 			for (const courtBlock of courtBlocks) {
-
 				// Rounds per courtBlock (if there is some time left over, treat it as a pause - no extraround)
 				// if rounds per hour is odd, then for 30 minutes it cannot be divided
 				// 5 r/h will result in 2r/30min
