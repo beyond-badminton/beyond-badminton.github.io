@@ -216,10 +216,12 @@ function workerMain() {
 			activePlayers,
 			allPlayers,
 			courtBlocks,
-			roundDuration,
+			matchesPerHour,
 			allowSingles,
 			playersWith1hPlaytimeShouldPlay,
 		} = e.data;
+
+		const roundDuration = Math.floor(60 / matchesPerHour);
 
 		// Build allPlayer lookup by id
 		const allPlayersMap = {};
@@ -301,13 +303,14 @@ function workerMain() {
 			const rounds = [];
 
 			for (const courtBlock of courtBlocks) {
-				if (courtBlock.duration < 5) continue;
 
-				// Rounds per courtBlock (lenient rounding rule)
-				let roundsPerBlock = Math.floor(courtBlock.duration / roundDuration);
-				if (courtBlock.duration % roundDuration >= roundDuration * 0.5)
-					roundsPerBlock++;
-				if (roundsPerBlock === 0) roundsPerBlock = 1;
+				// Rounds per courtBlock (if there is some time left over, treat it as a pause - no extraround)
+				// if rounds per hour is odd, then for 30 minutes it cannot be divided
+				// 5 r/h will result in 2r/30min
+				// 1 r/h will result in 0r/30min
+				// user should select even number of rounds per hour to avoid this issue if he has 30min blocks
+				const roundsPerBlock = Math.floor(courtBlock.duration / roundDuration);
+				if (roundsPerBlock === 0) continue;
 
 				const blockStartMin = timeToMins(courtBlock.start);
 
@@ -807,10 +810,29 @@ function normalizeBlock(blocks) {
 		mergedResult.push(current);
 	}
 
-	//console.log("Original court blocks:", blocks);
-	//console.log("Normalized court blocks:", mergedResult);
+	// 4. Split blocks that last more than 1 hour to ensure no block exceeds 1 hour
+	const finalResult = [];
+	for (const block of mergedResult) {
+		let remainingDuration = block.duration;
+		let currentStartMins = timeToMins(block.start);
 
-	return mergedResult;
+		while (remainingDuration > 0) {
+			const segmentDuration = Math.min(remainingDuration, 60); // max 1 hour
+			finalResult.push({
+				start: minsToTime(currentStartMins),
+				duration: segmentDuration,
+				courts: block.courts,
+			});
+			currentStartMins += segmentDuration;
+			remainingDuration -= segmentDuration;
+		}
+	}
+
+	console.log("Original court blocks:", blocks);
+	console.log("Normalized court blocks:", mergedResult);
+	console.log("Final court blocks after splitting:", finalResult);
+
+	return finalResult;
 }
 
 function runGeneration() {
@@ -896,7 +918,7 @@ function runGeneration() {
 		activePlayers,
 		allPlayers,
 		courtBlocks: normalizeBlock(courtBlocks),
-		roundDuration: Math.floor(60 / Number(genMatchesPerHourSel.value)),
+		matchesPerHour: Number(genMatchesPerHourSel.value),
 		allowSingles: genAllowSinglesCb.checked,
 		playersWith1hPlaytimeShouldPlay: gen1hPlaytimeShouldPlay.checked,
 	});
@@ -955,15 +977,18 @@ function renderSchedule() {
 		roundEl.className = "gen-round";
 		roundEl.dataset.roundId = round.roundId;
 
-		const roundTime =
-			round.courtBlockStart && round.courtBlockStart !== courtBlockStart
-				? `<span style='margin-left:20px'>[ ${round.courtBlockStart} ]</span>`
-				: "";
+		if (round.courtBlockStart && round.courtBlockStart !== courtBlockStart) {
+			const bHeader = document.createElement("div");
+			bHeader.className = "gen-block-header";
+			bHeader.textContent = round.courtBlockStart;
+			blockEl.appendChild(bHeader);
+		}
+
 		courtBlockStart = round.courtBlockStart;
 
 		const rLabel = document.createElement("p");
 		rLabel.className = "gen-round-label";
-		rLabel.innerHTML = `Round ${round.roundId + 1}${roundTime}`;
+		rLabel.innerHTML = `Round ${round.roundId + 1}`;
 		roundEl.appendChild(rLabel);
 
 		const matchesRow = document.createElement("div");

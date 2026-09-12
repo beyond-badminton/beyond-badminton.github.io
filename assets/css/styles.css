@@ -1014,16 +1014,15 @@ span.sort-active .sort-icon {
 	color: #c8503a;
 }
 
-.gen-block {
-	margin-bottom: 24px;
-}
 .gen-block-header {
-	font-size: 0.9rem;
+	width: 100%;
+	text-align: left;
+	font-size: 1.0rem;
 	font-weight: 700;
 	color: var(--ink-soft);
 	text-transform: uppercase;
 	letter-spacing: 0.05em;
-	margin: 0 0 10px;
+	margin: 20px 14px 10px;
 }
 
 .gen-round {
@@ -1033,6 +1032,7 @@ span.sort-active .sort-icon {
 	padding: 14px;
 	margin-bottom: 10px;
 }
+
 .gen-round-label {
 	font-size: 0.78rem;
 	font-weight: 700;
