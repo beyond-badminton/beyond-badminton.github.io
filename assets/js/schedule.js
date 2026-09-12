@@ -713,7 +713,13 @@ genClearBtn.addEventListener("click", () => {
 });
 
 genPrintBtn.addEventListener("click", () => {
-	_printSchedule();
+	_printSchedule(
+		schedule,
+		scheduleDate,
+		scores,
+		document.getElementById("print-extra-match").checked,
+		false,
+	);
 });
 
 genExportBtn.addEventListener("click", () => {

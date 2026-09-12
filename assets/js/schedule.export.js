@@ -166,65 +166,93 @@ async function _downloadScheduleSpreadsheet() {
 	window.URL.revokeObjectURL(url);
 }
 
-function printScheduleRound(round, emptyTable = false) {
-	if (round.matches.length === 0) return;
+function printScheduleRound(
+	roundNumber,
+	matches,
+	bench,
+	scores,
+	printEmptyBench = false,
+) {
+	if (matches.length === 0) return;
 
-	const matchRows = round.matches
+	const matchRows = matches
 		.map((match, idx) => {
-			const matchScore = scores[match.matchId] || null;
+			const matchScore = scores ? scores[match.matchId] || null : null;
 			const matchScoreStr =
 				matchScore?.a || matchScore?.b
 					? `${matchScore.a || 0} : ${matchScore.b || 0}`
 					: "";
-			const teamA = emptyTable
-				? ""
-				: match.teamA.map((pid) => playerName(pid)).join(", ");
-			const teamB = emptyTable
-				? ""
-				: match.teamB.map((pid) => playerName(pid)).join(", ");
+			const teamA = match.teamA.map((pid) => playerName(pid)).join(", ");
+			const teamB = match.teamB.map((pid) => playerName(pid)).join(", ");
 			const topCellClass = idx === 0 ? "top-cell" : "";
+			const bottomCellClass = idx === matches.length - 1 ? "bottom-cell" : "";
 			const roundCell =
 				idx === 0
-					? `<td class="round-cell left-cell right-cell top-cell bottom-cell ${topCellClass}" rowspan="${round.matches.length}">${round.roundId + 1}</td>`
+					? `<td class="round-cell left-cell right-cell top-cell bottom-cell ${topCellClass}" rowspan="${matches.length}">${roundNumber}</td>`
 					: "";
 
 			return `
 			<tr>
 				${roundCell}
-				<td class="court-cell ${topCellClass}">${match.court}</td>
-				<td class="team-cell left-cell ${topCellClass}">${teamA}</td>
-				<td class="score-cell ${topCellClass}">${matchScoreStr}</td>
-				<td class="team-cell right-cell ${topCellClass}">${teamB}</td>
+				<td class="court-cell ${topCellClass} ${bottomCellClass}">${match.court}</td>
+				<td class="team-cell left-cell ${topCellClass} ${bottomCellClass}">${teamA}</td>
+				<td class="score-cell ${topCellClass} ${bottomCellClass}">${matchScoreStr}</td>
+				<td class="team-cell right-cell ${topCellClass} ${bottomCellClass}">${teamB}</td>
 			</tr>`;
 		})
 		.join("");
 
-	const benchRow = `
+	const benchRow =
+		bench.length === 0 && !printEmptyBench
+			? ""
+			: `
 		<tr class="bench-row">
 			<td class="colspan-cell left-cell top-cell bottom-cell"></td>
 			<td class="bench-label colspan-cell top-cell bottom-cell">Bench:</td>
-			<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${emptyTable ? "" : round.bench.map((pid) => playerName(pid)).join(", ")}</td>
+			<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${bench.map((pid) => playerName(pid)).join(", ")}</td>
 		</tr>`;
 
 	return `<tbody class="round-block">${matchRows}${benchRow}<tr><td colspan="5" class="round-spacer"></td></tr></tbody>`;
 }
 
-function _printSchedule() {
+function _printSchedule(
+	schedule,
+	scheduleDate,
+	scores,
+	printExtraMatch = true,
+	printEmptyBench = false,
+) {
 	if (schedule == null || schedule.rounds == null) return;
 
 	// 1. Build the HTML for the table, mirroring the Excel layout
 	let rowsHtml = "";
 
 	schedule.rounds.forEach((round) => {
-		rowsHtml += printScheduleRound(round);
+		rowsHtml += printScheduleRound(
+			round.roundId + 1,
+			round.matches,
+			round.bench,
+			scores,
+			printEmptyBench,
+		);
 	});
 
 	if (
 		schedule.rounds.length > 0 &&
-		document.getElementById("print-extra-match").checked
+		printExtraMatch
+		//document.getElementById("print-extra-match").checked
 	) {
+		const lastRound = schedule.rounds[schedule.rounds.length - 1];
 		rowsHtml += printScheduleRound(
-			schedule.rounds[schedule.rounds.length - 1],
+			schedule.rounds.length + 1,
+			lastRound.matches.map((match) => ({
+				court: match.court,
+				teamA: [],
+				teamB: [],
+			})),
+			[],
+			null,
+			lastRound.bench.length > 0 || printEmptyBench,
 			true,
 		);
 	}
