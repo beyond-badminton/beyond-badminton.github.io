@@ -30,12 +30,16 @@ function buildScheduleRoundViewModels(
 
 	const buildRound = (
 		roundNumber,
+		courtBlockStart,
 		matches,
 		bench,
 		roundScores,
 		forceShowBench,
+		printCourtBlockStart,
 	) => ({
 		roundNumber,
+		courtBlockStart,
+		printCourtBlockStart,
 		matches: matches.map((match) => ({
 			court: match.court,
 			teamAName: match.teamA.map((pid) => playerName(pid)).join(", "),
@@ -46,21 +50,28 @@ function buildScheduleRoundViewModels(
 		showBench: bench.length > 0 || forceShowBench,
 	});
 
-	const roundVMs = schedule.rounds.map((round) =>
-		buildRound(
+	let courtBlockStart = null;
+
+	const roundVMs = schedule.rounds.map((round) => {
+		const r = buildRound(
 			round.roundId + 1,
+			round.courtBlockStart,
 			round.matches,
 			round.bench,
 			scores,
 			printEmptyBench,
-		),
-	);
+			round.courtBlockStart && courtBlockStart !== round.courtBlockStart,
+		);
+		courtBlockStart = round.courtBlockStart;
+		return r;
+	});
 
 	if (schedule.rounds.length > 0 && printExtraMatch) {
 		const lastRound = schedule.rounds[schedule.rounds.length - 1];
 		roundVMs.push(
 			buildRound(
 				schedule.rounds.length + 1,
+				"",
 				lastRound.matches.map((match) => ({
 					court: match.court,
 					teamA: [],
@@ -69,10 +80,12 @@ function buildScheduleRoundViewModels(
 				[],
 				null,
 				lastRound.bench.length > 0 || printEmptyBench,
+				false,
 			),
 		);
 	}
 
+	console.log("Built schedule round view models:", roundVMs);
 	return roundVMs;
 }
 
@@ -133,6 +146,12 @@ async function downloadScheduleSpreadsheet(
 		headerRow.font = { bold: true };
 		headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
+		headerRow.eachCell({ includeEmpty: true }, (cell) => {
+			cell.border = { ...(cell.border || {}), bottom: { style: "medium" } };
+		});
+
+		worksheet.addRow([]);
+
 		// Define the border style we want to apply
 		const borderStyle = {
 			top: { style: "thin" },
@@ -153,6 +172,13 @@ async function downloadScheduleSpreadsheet(
 
 		rounds.forEach((round) => {
 			if (round.matches.length === 0) return;
+
+			if (round.printCourtBlockStart) {
+				const row = worksheet.addRow([round.courtBlockStart]);
+				worksheet.mergeCells(`A${row.number}:E${row.number}`);
+				row.getCell(1).font = { bold: true };
+				row.getCell(1).alignment = { vertical: "middle", horizontal: "center" };
+			}
 
 			let firstMatch = true;
 			const roundStartRow = worksheet.rowCount;
@@ -327,7 +353,11 @@ function printSchedule(
 				<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${round.benchNames.join(", ")}</td>
 			</tr>`;
 
-		return `<tbody class="round-block">${matchRows}${benchRow}<tr><td colspan="5" class="round-spacer"></td></tr></tbody>`;
+		const blockStart = round.printCourtBlockStart
+			? `<tr><td colspan="5" class="block-start">${round.courtBlockStart}</td></tr>`
+			: "";
+
+		return `<tbody class="round-block"><tr><td colspan="5" class="round-spacer"></td></tr>${blockStart}${matchRows}${benchRow}</tbody>`;
 	}
 
 	if (schedule == null || schedule.rounds == null) return;
@@ -391,6 +421,11 @@ function printSchedule(
 					text-align: center;
 					vertical-align: middle;
 				}
+				.block-start {
+					font-weight: bold;
+					text-align: center;
+					border: 0px solid #000;
+				}
 				.round-block {
 					page-break-inside: avoid;
 				}
@@ -447,7 +482,7 @@ function printSchedule(
 			<hr>
 			<table>
 				<thead>
-					<tr>
+					<tr class="bottom-cell">
 						<th>Round</th>
 						<th>Court</th>
 						<th>Team A</th>

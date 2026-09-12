@@ -1017,7 +1017,7 @@ span.sort-active .sort-icon {
 .gen-block-header {
 	width: 100%;
 	text-align: left;
-	font-size: 1.0rem;
+	font-size: 1rem;
 	font-weight: 700;
 	color: var(--ink-soft);
 	text-transform: uppercase;
