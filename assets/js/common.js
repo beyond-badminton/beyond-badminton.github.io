@@ -37,6 +37,28 @@ document.querySelectorAll(".sub-tabs").forEach((subTabGroup) => {
 });
 
 // ============================================================
+// TIME UTILITIES
+// ============================================================
+
+function timeToMins(t) {
+	console.assert(
+		typeof t === "string" && t.includes(":"),
+		"Invalid time format:",
+		t,
+	);
+	const [h, m] = t.split(":").map(Number);
+	return h * 60 + m;
+}
+
+function minsToTime(total) {
+	return (
+		String(Math.floor(total / 60) % 24).padStart(2, "0") +
+		":" +
+		String(total % 60).padStart(2, "0")
+	);
+}
+
+// ============================================================
 // SELECT UTILITIES
 // ============================================================
 
@@ -64,14 +86,8 @@ function _getSorted(arr, listKey) {
 	const { field, dir } = sortState[listKey];
 	return [...arr].sort((a, b) => {
 		if (field === "arrival") {
-			const va = a[field]
-				.split(":")
-				.map(Number)
-				.reduce((h, m) => h * 60 + m, 0);
-			const vb = b[field]
-				.split(":")
-				.map(Number)
-				.reduce((h, m) => h * 60 + m, 0);
+			const va = timeToMins(a[field]);
+			const vb = timeToMins(b[field]);
 			if (va < vb) return dir === "asc" ? -1 : 1;
 			if (va > vb) return dir === "asc" ? 1 : -1;
 			return 0;
@@ -84,7 +100,14 @@ function _getSorted(arr, listKey) {
 		) {
 			const va = a[field] || false;
 			const vb = b[field] || false;
-			//console.log(`Sorting by ${field}:`, a.name, va, b.name, vb);
+			console.log(`Sorting by ${field}:`, a.name, va, b.name, vb);
+			if (va < vb) return dir === "asc" ? -1 : 1;
+			if (va > vb) return dir === "asc" ? 1 : -1;
+			return 0;
+		}
+		if (field === "playrate") {
+			const va = a.matches / (a.matches + a.bench);
+			const vb = b.matches / (b.matches + b.bench);
 			if (va < vb) return dir === "asc" ? -1 : 1;
 			if (va > vb) return dir === "asc" ? 1 : -1;
 			return 0;
