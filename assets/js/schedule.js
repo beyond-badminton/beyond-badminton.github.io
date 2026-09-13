@@ -810,9 +810,9 @@ function normalizeBlock(blocks) {
 		}
 	}
 
-	console.log("Original court blocks:", blocks);
-	console.log("Normalized court blocks:", mergedResult);
-	console.log("Final court blocks after splitting:", finalResult);
+	// console.log("Original court blocks:", blocks);
+	// console.log("Normalized court blocks:", mergedResult);
+	// console.log("Final court blocks after splitting:", finalResult);
 
 	return finalResult;
 }
