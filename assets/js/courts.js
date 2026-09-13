@@ -195,14 +195,6 @@ const courtTableBody = document.getElementById("court-table-body");
 const courtsEmptyState = document.getElementById("courts-empty-state");
 const courtBlockCount = document.getElementById("court-block-count");
 
-function formatDuration(mins) {
-	const h = Math.floor(mins / 60),
-		m = mins % 60;
-	if (h === 0) return `${m} min`;
-	if (m === 0) return `${h}h`;
-	return `${h}h ${m}m`;
-}
-
 (function populateCourtDurationOptions() {
 	for (let mins = 30; mins <= 8 * 60; mins += 30) {
 		const opt = document.createElement("option");
@@ -211,12 +203,6 @@ function formatDuration(mins) {
 		courtDurationInput.appendChild(opt);
 	}
 })();
-
-function addMinutesToTime(time, minsToAdd) {
-	const [h, m] = time.split(":").map(Number);
-	const total = h * 60 + m + minsToAdd;
-	return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
-}
 
 function setCourtValid(field, isValid) {
 	field.classList.toggle("invalid", !isValid);
@@ -257,7 +243,7 @@ function renderCourts() {
 		a.start.localeCompare(b.start),
 	);
 	sorted.forEach((block) => {
-		const end = addMinutesToTime(block.start, block.duration);
+		const end = addMinsToTime(block.start, block.duration);
 		const courtsLabel = block.courts.join(", ") || "—";
 		const count = block.courts.length;
 
@@ -332,4 +318,4 @@ courtForm.addEventListener("submit", (e) => {
 // ============================================================
 loadCourtNamesFromStorage();
 loadCourtsFromStorage();
-_populateTimeSelect(courtTimeInput);
+populateTimeSelect(courtTimeInput);

@@ -58,12 +58,27 @@ function minsToTime(total) {
 	);
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: function is used
+function addMinsToTime(time, minsToAdd) {
+	return minsToTime(timeToMins(time) + minsToAdd);
+}
+
+// biome-ignore lint/correctness/noUnusedVariables: function is used
+function formatDuration(mins) {
+	const h = Math.floor(mins / 60),
+		m = mins % 60;
+	if (h === 0) return `${m} min`;
+	if (m === 0) return `${h}h`;
+	return `${h}h ${m}m`;
+}
+
 // ============================================================
 // SELECT UTILITIES
 // ============================================================
 
 // Populate time dropdown (07:00 – 20:00 in 30-min steps)
-function _populateTimeSelect(selectEl) {
+// biome-ignore lint/correctness/noUnusedVariables: function is used
+function populateTimeSelect(selectEl) {
 	for (let mins = 7 * 60; mins <= 20 * 60; mins += 30) {
 		const h = String(Math.floor(mins / 60)).padStart(2, "0");
 		const m = String(mins % 60).padStart(2, "0");
@@ -82,7 +97,8 @@ const sortState = {
 	stats: { field: "name", dir: "asc" },
 };
 
-function _getSorted(arr, listKey) {
+// biome-ignore lint/correctness/noUnusedVariables: function is used
+function getSorted(arr, listKey) {
 	const { field, dir } = sortState[listKey];
 	return [...arr].sort((a, b) => {
 		if (field === "arrival") {
@@ -134,7 +150,8 @@ function _getSorted(arr, listKey) {
 	});
 }
 
-function _updateSortUI(listKey) {
+// biome-ignore lint/correctness/noUnusedVariables: function is used
+function updateSortUI(listKey) {
 	const { field, dir } = sortState[listKey];
 	const arrow = dir === "asc" ? "↑" : "↓";
 
@@ -148,7 +165,8 @@ function _updateSortUI(listKey) {
 		});
 }
 
-function _cancelSortUI(listKey) {
+// biome-ignore lint/correctness/noUnusedVariables: function is used
+function cancelSortUI(listKey) {
 	document
 		.querySelectorAll(`span.sortable[data-list="${listKey}"]`)
 		.forEach((span) => {
