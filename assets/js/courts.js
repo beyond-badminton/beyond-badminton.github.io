@@ -48,7 +48,6 @@ const courtNameInput = document.getElementById("court-name");
 const courtNameField = document.getElementById("court-name-field");
 const courtNameList = document.getElementById("court-name-list");
 const courtNameCount = document.getElementById("court-name-count");
-const courtCheckboxList = document.getElementById("court-checkbox-list");
 const noCourtsHint = document.getElementById("no-courts-hint");
 
 function renderCourtCheckboxes() {
@@ -71,15 +70,6 @@ function renderCourtCheckboxes() {
 		courtCheckboxList.appendChild(label);
 	});
 }
-
-courtCheckboxList.addEventListener("change", (e) => {
-	if (e.target.matches('input[type="checkbox"]')) {
-		e.target
-			.closest(".checkbox-pill")
-			.classList.toggle("checked", e.target.checked);
-		if (courtSelectField.classList.contains("invalid")) validateCourtForm();
-	}
-});
 
 function renderCourtNames() {
 	courtNameList.innerHTML = "";
@@ -123,6 +113,7 @@ function validateCourtNameForm() {
 		!courtNames.some((c) => c.name.toLowerCase() === value.toLowerCase());
 	const isValid = nameOk && uniqueOk;
 	setCourtValid(courtNameField, isValid);
+
 	return isValid ? value : null;
 }
 
@@ -190,19 +181,22 @@ const courtDurationInput = document.getElementById("court-duration");
 const courtTimeField = document.getElementById("court-time-field");
 const courtDurationField = document.getElementById("court-duration-field");
 const courtSelectField = document.getElementById("court-select-field");
+const courtCheckboxList = document.getElementById("court-checkbox-list");
+const courtSubmitField = document.getElementById("court-submit-field");
+const courtOverlapErrMsg = document.getElementById("court-overlap-errmsg");
 const courtList = document.getElementById("court-list");
 const courtTableBody = document.getElementById("court-table-body");
 const courtsEmptyState = document.getElementById("courts-empty-state");
 const courtBlockCount = document.getElementById("court-block-count");
 
-(function populateCourtDurationOptions() {
+function populateCourtDurationOptions() {
 	for (let mins = 30; mins <= 8 * 60; mins += 30) {
 		const opt = document.createElement("option");
 		opt.value = String(mins);
 		opt.textContent = formatDuration(mins);
 		courtDurationInput.appendChild(opt);
 	}
-})();
+}
 
 function setCourtValid(field, isValid) {
 	field.classList.toggle("invalid", !isValid);
@@ -218,17 +212,95 @@ function validateCourtForm() {
 	const timeOk = courtTimeInput.value !== "";
 	const durationOk = courtDurationInput.value !== "";
 	const selectedOk = getSelectedCourtNames().length > 0;
+
 	setCourtValid(courtTimeField, timeOk);
 	setCourtValid(courtDurationField, durationOk);
 	setCourtValid(courtSelectField, selectedOk);
 	return timeOk && durationOk && selectedOk;
 }
 
+function validateCourtAvailabilityForm() {
+	const selectedCourts = getSelectedCourtNames();
+
+	const timeOk = courtTimeInput.value !== "";
+	const durationOk = courtDurationInput.value !== "";
+	const selectedOk = selectedCourts.length > 0;
+
+	if (!timeOk || !durationOk || !selectedOk) {
+		setCourtValid(courtSubmitField, true);
+		return true; // If any field is invalid, skip availability check
+	}
+
+	const startTime = courtTimeInput.value;
+	const duration = Number(courtDurationInput.value);
+
+	const failedCourts = courtBlocks.flatMap((block) => {
+		const courtsInterection = selectedCourts.filter((name) =>
+			block.courts.includes(name),
+		);
+
+		if (courtsInterection.length === 0) return [];
+
+		const blockStart = timeToMins(block.start);
+		const blockEnd = blockStart + block.duration;
+		const newStart = timeToMins(startTime);
+		const newEnd = newStart + duration;
+		if (blockStart >= newEnd || blockEnd <= newStart) return [];
+		return courtsInterection;
+	});
+
+	const orderedFailedCourts = [...new Set(failedCourts)].sort((a, b) =>
+		a.localeCompare(b),
+	);
+
+	setCourtValid(courtSubmitField, failedCourts.length === 0);
+
+	if (failedCourts.length > 0) {
+		const failedCourtsList = orderedFailedCourts.join(", ");
+		courtOverlapErrMsg.innerText = `${orderedFailedCourts.length > 1 ? "Courts" : "Court"} ${failedCourtsList} ${orderedFailedCourts.length > 1 ? "are" : "is"} already booked during this time`;
+	}
+
+	return failedCourts.length === 0;
+}
+
 courtTimeInput.addEventListener("change", () => {
 	if (courtTimeField.classList.contains("invalid")) validateCourtForm();
+	validateCourtAvailabilityForm();
 });
+
 courtDurationInput.addEventListener("change", () => {
 	if (courtDurationField.classList.contains("invalid")) validateCourtForm();
+	validateCourtAvailabilityForm();
+});
+
+courtCheckboxList.addEventListener("change", (e) => {
+	if (e.target.matches('input[type="checkbox"]')) {
+		e.target
+			.closest(".checkbox-pill")
+			.classList.toggle("checked", e.target.checked);
+		if (courtSelectField.classList.contains("invalid")) validateCourtForm();
+		validateCourtAvailabilityForm();
+	}
+});
+
+courtForm.addEventListener("submit", (e) => {
+	e.preventDefault();
+	if (!validateCourtForm() || !validateCourtAvailabilityForm()) return;
+	addCourtBlock(
+		courtTimeInput.value,
+		courtDurationInput.value,
+		getSelectedCourtNames(),
+	);
+	courtForm.reset();
+	renderCourtCheckboxes();
+	[
+		courtTimeField,
+		courtDurationField,
+		courtSelectField,
+		courtSubmitField,
+	].forEach((f) => {
+		f.classList.remove("invalid");
+	});
 });
 
 function updateCourtCount() {
@@ -239,8 +311,8 @@ function updateCourtCount() {
 function renderCourts() {
 	courtList.innerHTML = "";
 	courtTableBody.innerHTML = "";
-	const sorted = [...courtBlocks].sort((a, b) =>
-		a.start.localeCompare(b.start),
+	const sorted = [...courtBlocks].sort(
+		(a, b) => a.start.localeCompare(b.start) || a.duration - b.duration,
 	);
 	sorted.forEach((block) => {
 		const end = addMinsToTime(block.start, block.duration);
@@ -298,24 +370,10 @@ document.getElementById("clear-courts-btn").addEventListener("click", () => {
 	}
 });
 
-courtForm.addEventListener("submit", (e) => {
-	e.preventDefault();
-	if (!validateCourtForm()) return;
-	addCourtBlock(
-		courtTimeInput.value,
-		courtDurationInput.value,
-		getSelectedCourtNames(),
-	);
-	courtForm.reset();
-	renderCourtCheckboxes();
-	[courtTimeField, courtDurationField, courtSelectField].forEach((f) => {
-		f.classList.remove("invalid");
-	});
-});
-
 // ============================================================
 // INIT — initial render on page load
 // ============================================================
 loadCourtNamesFromStorage();
 loadCourtsFromStorage();
 populateTimeSelect(courtTimeInput);
+populateCourtDurationOptions();
