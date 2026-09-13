@@ -61,7 +61,7 @@ apNameInput.addEventListener("input", () => {
 function renderAllPlayers() {
 	allPlayerTableBody.innerHTML = "";
 
-	_getSorted(allPlayers, "all").forEach((p) => {
+	getSorted(allPlayers, "all").forEach((p) => {
 		const row = document.createElement("tr");
 		row.innerHTML = `
 		<td>${p.name}</td>
@@ -72,7 +72,7 @@ function renderAllPlayers() {
 
 	allPlayerCount.textContent = `(${allPlayers.length})`;
 	allPlayersEmpty.style.display = allPlayers.length === 0 ? "block" : "none";
-	_updateSortUI("all");
+	updateSortUI("all");
 }
 
 function addAllPlayer(name, skill) {
@@ -300,7 +300,7 @@ function openSkillPicker(targetPill) {
 				// Reset sort UI since skill change may affect order, we do not wont to apply sort because
 				// it would change the order of the list and confuse the user.
 				// Instead we just update the pill and let the user sort manually if they want.
-				_cancelSortUI("all");
+				cancelSortUI("all");
 			}
 
 			closeSkillPicker();

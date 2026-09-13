@@ -77,7 +77,7 @@ function renderActivePlayers() {
 		return { ...ap, name: p ? p.name : "(removed)", skill: p ? p.skill : "0" };
 	});
 
-	_getSorted(enriched, "active").forEach((p) => {
+	getSorted(enriched, "active").forEach((p) => {
 		const row = document.createElement("tr");
 		row.dataset.id = p.id;
 		row.innerHTML = `
@@ -93,7 +93,7 @@ function renderActivePlayers() {
 	activePlayerCount.textContent = `(${activePlayers.length})`;
 	activePlayersEmpty.style.display =
 		activePlayers.length === 0 ? "block" : "none";
-	_updateSortUI("active");
+	updateSortUI("active");
 	populateActivePlayerSelect();
 }
 
@@ -204,4 +204,4 @@ document
 // ============================================================
 loadActivePlayersFromStorage();
 populateActivePlayerSelect();
-_populateTimeSelect(activeArrivalInput);
+populateTimeSelect(activeArrivalInput);
