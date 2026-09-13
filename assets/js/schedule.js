@@ -671,23 +671,6 @@ const genStatsTbody = document.getElementById("gen-stats-tbody");
 const genEmpty = document.getElementById("gen-empty");
 
 // ── Utility ───────────────────────────────────────────────────
-function timeToMins(t) {
-	console.assert(
-		typeof t === "string" && t.includes(":"),
-		"Invalid time format:",
-		t,
-	);
-	const [h, m] = t.split(":").map(Number);
-	return h * 60 + m;
-}
-
-function minsToTime(total) {
-	return (
-		String(Math.floor(total / 60) % 24).padStart(2, "0") +
-		":" +
-		String(total % 60).padStart(2, "0")
-	);
-}
 
 function playerName(activeId) {
 	const ap = activePlayers.find((p) => p.id === activeId);
@@ -1474,6 +1457,7 @@ function renderStatsTable() {
 					<td>${r.playtime}h</td>
 					<td>${r.matches}</td>
 					<td>${r.bench}</td>
+					<td>${Math.floor(r.matches/(r.matches+r.bench)*100)}%</td>
 					<td>${r.partners.size}</td>
 					<td>${r.opponents.size}</td>
 				</tr>`,
