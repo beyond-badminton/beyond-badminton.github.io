@@ -16,14 +16,14 @@
 					<button type="button" class="imp-exp-button" id="export-storage-btn">Export Storage</button>
 					<button type="button" class="imp-exp-button" id="import-storage-btn">Import Storage </button>
 					<button type="button" class="discard-btn" id="discard-storage-btn">Discard Storage</button>
-					<button type="button" class="discard-btn" id="discard-tournament-btn">Discard Tournament</button>
+					<button type="button" class="discard-btn" id="discard-event-btn">Discard Event</button>
 				</div>
 			</header>
 
 			<div class="tabs">
 				<button type="button" class="tab active" data-tab="players">Players</button>
 				<button type="button" class="tab" data-tab="courts">Courts</button>
-				<button type="button" class="tab" data-tab="schedule">Schedule</button>
+				<button type="button" class="tab" data-tab="training">Training</button>
 				<button type="button" class="tab" data-tab="about">About</button>
 			</div>
 
@@ -39,7 +39,7 @@
 					<div class="players-layout">
 						<div class="card form-card">
 							<h2>Add player</h2>
-							<p class="section-hint">Add players to the master list, which serves as your permanent roster for all tournaments.</p>
+							<p class="section-hint">Add players to the master list, which serves as your permanent roster for all events.</p>
 							<form id="all-player-form">
 								<div class="field" id="ap-name-field">
 									<label for="ap-name">Name</label>
@@ -118,7 +118,7 @@ Pikachu,3,x</pre>
 					<div class="players-layout">
 						<div class="card form-card">
 							<h2>Add active player</h2>
-							<p class="section-hint">Select players from the All players list and set their arrival time and play duration for this tournament.</p>
+							<p class="section-hint">Select players from the All players list and set their arrival time and play duration for this event.</p>
 							<form id="active-player-form">
 							<div class="field" id="active-player-field">
 								<label for="active-player-select">Players</label>
@@ -248,10 +248,10 @@ Pikachu,3,x</pre>
 			</div>
 
 			<!-- ===== SCHEDULE TAB ===== -->
-			<div id="schedule" class="tab-content">
+			<div id="training" class="tab-content">
 
 				<div class="card gen-controls-card">
-					<h2>Generate schedule</h2>
+					<h2>Generate training schedule</h2>
 
 					<div class="gen-controls-row">
 						<div class="field gen-field-inline">
@@ -260,7 +260,7 @@ Pikachu,3,x</pre>
 							</select>
 						</div>
 						<div class="field gen-field-inline">
-							<label for="gen-date-picker">Date of the tournament</label>
+							<label for="gen-date-picker">Date of the training</label>
 							<input type="date" id="gen-date-picker" />
 						</div>
 						<div>
@@ -309,7 +309,7 @@ Pikachu,3,x</pre>
 					<h3 class="gen-section-heading">Penalty score</h3>
 				</div>
 
-				<div id="gen-schedule-output" hidden></div>
+				<div id="gen-training-output" hidden></div>
 
 				<div class="card" id="gen-stats-output" hidden>
 					<h3 class="gen-stats-heading">Player stats</h3>
@@ -340,7 +340,7 @@ Pikachu,3,x</pre>
 			<div id="about" class="tab-content">
 				<div class="card">
 					<h3>1. About</h3>
-					<p>This badminton manager tool helps you easily organize badminton tournaments by managing players and courts, and automatically generating schedules based on your parameters.</p>
+					<p>This badminton manager tool helps you easily organize badminton events by managing players and courts, and automatically generating schedules based on your parameters.</p>
 					<p>This tool was created to provide a generator that builds randomized matches while still following specific rules, such as keeping teams balanced in skill.</p>
 					<p>Of course, this is not strictly designed for badminton matches. Feel free to use it for any games that are played in doubles.</p>
 
@@ -350,21 +350,21 @@ Pikachu,3,x</pre>
 					<h3>3. Privacy & Data</h3>
 					<p>Built with privacy in mind, this tool runs entirely locally on your device using JavaScript. All data is saved directly to your browser's local storage. We do not use cookies or upload any information to external servers.</p>
 					<p>You can clear your saved data at any time using the built-in cleanup buttons or through your browser's privacy settings.</p>
-					<p>To access your tournament data on a different browser or device, you can use the Export and Import features.</p>
+					<p>To access your application data on a different browser or device, you can use the Export and Import features.</p>
 
 					<h3>4. How it works</h3>
 					<h4>Players tab</h4>
-					<p>First, add players to the "All Players" list. This serves as your permanent saved roster for future tournaments.</p>
-					<p>Then, select which players will be active for the current tournament and set their arrival times and play durations.</p>
+					<p>First, add players to the "All Players" list. This serves as your permanent saved roster for future events.</p>
+					<p>Then, select which players will be active for the current event and set their arrival times and play durations.</p>
 
 					<h4>Courts tab</h4>
 					<p>Next, add your courts to the Courts list, which also saves permanently for future use.</p>
 					<p>After that, set the court availability by specifying the start time, duration, and which specific courts are open during that time block.</p>
 
-					<h4>Schedule tab</h4>
-					<p>Finally, go to the Schedule tab and click Generate. The tool will create a schedule based on your active players and available courts. You can fine-tune the results by adjusting the number of matches per hour, allowing singles matches, and more.</p>
-					<p>The generated schedule displays all matches, player stats, and penalty scores. It also supports drag-and-drop, allowing you to easily rearrange matches while keeping an eye on how penalty scores change.</p>
-					<p>You can print or export the schedule to share it or bring it with you to the courts. If you enter the scores in the tool, they will be printed; otherwise, the score fields will be left blank so you can write them in as you play.</p>
+					<h4>Training tab</h4>
+					<p>Finally, go to the Training tab and click Generate. The tool will create a training schedule based on your active players and available courts. You can fine-tune the results by adjusting the number of matches per hour, allowing singles matches, and more.</p>
+					<p>The generated training schedule displays all matches, player stats, and penalty scores. It also supports drag-and-drop, allowing you to easily rearrange matches while keeping an eye on how penalty scores change.</p>
+					<p>You can print or export the training schedule to share it or bring it with you to the courts. If you enter the scores in the tool, they will be printed; otherwise, the score fields will be left blank so you can write them in as you play.</p>
 
 					<h3>5. Feedback & Support</h3>
 					<p>This tool is completely free to use. If you encounter any bugs, have a feature request, or want to view the source code, please visit the <a href="https://github.com/beyond-badminton/beyond-badminton.github.io" target="_blank" rel="noopener noreferrer">GitHub repository</a>.</p>
@@ -381,8 +381,8 @@ Pikachu,3,x</pre>
 		<script src="assets/js/all-players.js"></script>
 		<script src="assets/js/active-players.js"></script>
 		<script src="assets/js/courts.js"></script>
-		<script src="assets/js/schedule.js"></script>
-		<script src="assets/js/schedule.export.js"></script>
+		<script src="assets/js/training.js"></script>
+		<script src="assets/js/training.export.js"></script>
 		<script src="assets/js/exceljs.min.js"></script>
 		<script src="assets/js/init.js"></script>
 	</body>
