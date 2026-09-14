@@ -196,8 +196,6 @@ document.getElementById("import-storage-btn").addEventListener("click", () => {
 document.getElementById("discard-storage-btn").addEventListener("click", () => {
 	discardLocalStorane();
 });
-document
-	.getElementById("discard-event-btn")
-	.addEventListener("click", () => {
-		discardEvent();
-	});
+document.getElementById("discard-event-btn").addEventListener("click", () => {
+	discardEvent();
+});

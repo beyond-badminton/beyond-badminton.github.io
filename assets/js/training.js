@@ -32,14 +32,6 @@ function workerMain() {
 		return mat[i][j];
 	}
 
-	function shuffle(array) {
-		for (let i = array.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[array[i], array[j]] = [array[j], array[i]];
-		}
-		return array;
-	}
-
 	function sortPlayersByName(players) {
 		return players.sort((a, b) =>
 			a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
@@ -845,6 +837,7 @@ function runGeneration() {
 		[
 			`
 		const PENALTY_WEIGHTS = ${JSON.stringify(PENALTY_WEIGHTS)};
+		${shuffle.toString()};
 		${minsToTime.toString()};
 		${timeToMins.toString()};
 		${computePenalties.toString()};
@@ -988,28 +981,7 @@ function renderTraining() {
 
 		// Bench
 		if (round.bench && round.bench.length > 0) {
-			const benchEl = document.createElement("div");
-			benchEl.className = "gen-bench";
-			benchEl.dataset.roundId = round.roundId;
-
-			const bLabel = document.createElement("span");
-			bLabel.className = "gen-bench-label";
-			bLabel.textContent = "Bench:";
-			benchEl.appendChild(bLabel);
-
-			round.bench.forEach((pid, bi) => {
-				const slot = document.createElement("div");
-				slot.className = "gen-player-slot bench-slot";
-				slot.draggable = true;
-				slot.dataset.playerId = pid;
-				slot.dataset.bench = "true";
-				slot.dataset.pos = bi;
-				slot.dataset.roundId = round.roundId;
-				slot.innerHTML = buildPlayerSlotInnerHtml(pid);
-				benchEl.appendChild(slot);
-			});
-
-			roundEl.appendChild(benchEl);
+			roundEl.appendChild(buildBenchCard(round.bench, round.roundId));
 		}
 
 		blockEl.appendChild(roundEl);
@@ -1028,7 +1000,12 @@ function renderTraining() {
 	// }
 }
 
-function buildMatchCard(match, roundId) {
+function buildMatchCard(
+	match,
+	roundId,
+	draggable = true,
+	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
+) {
 	const sc = scores[match.matchId] || { a: null, b: null };
 
 	const card = document.createElement("div");
@@ -1048,14 +1025,14 @@ function buildMatchCard(match, roundId) {
 
 		match[teamKey].forEach((pid, pi) => {
 			const slot = document.createElement("div");
-			slot.className = "gen-player-slot";
-			slot.draggable = true;
+			slot.className = `gen-player-slot ${draggable ? "gen-player-slot-draggable" : ""}`;
+			slot.draggable = draggable;
 			slot.dataset.playerId = pid;
 			slot.dataset.team = teamKey;
 			slot.dataset.pos = pi;
 			slot.dataset.matchId = match.matchId;
 			slot.dataset.roundId = roundId;
-			slot.innerHTML = buildPlayerSlotInnerHtml(pid);
+			slot.innerHTML = buildPlayerSlotFunc(pid);
 			teamEl.appendChild(slot);
 		});
 
@@ -1097,6 +1074,39 @@ function buildMatchCard(match, roundId) {
 	});
 
 	return card;
+}
+
+function buildBenchCard(
+	bench,
+	roundId,
+	draggable = true,
+	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
+) {
+	if (!bench || bench.length === 0) {
+		return null;
+	}
+	const benchEl = document.createElement("div");
+	benchEl.className = "gen-bench";
+	benchEl.dataset.roundId = roundId;
+
+	const bLabel = document.createElement("span");
+	bLabel.className = "gen-bench-label";
+	bLabel.textContent = "Bench:";
+	benchEl.appendChild(bLabel);
+
+	bench.forEach((pid, bi) => {
+		const slot = document.createElement("div");
+		slot.className = `gen-player-slot ${draggable ? "gen-player-slot-draggable" : ""} bench-slot`;
+		slot.draggable = draggable;
+		slot.dataset.playerId = pid;
+		slot.dataset.bench = "true";
+		slot.dataset.pos = bi;
+		slot.dataset.roundId = roundId;
+		slot.innerHTML = buildPlayerSlotFunc(pid);
+		benchEl.appendChild(slot);
+	});
+
+	return benchEl;
 }
 
 // ── Score input handler ───────────────────────────────────────
@@ -1474,10 +1484,14 @@ function renderStatsTable() {
 // ── Persistence ───────────────────────────────────────────────
 function loadGeneratedTrainingFromStorage() {
 	try {
-		const s = localStorage.getItem(TRAINING_KEY) || localStorage.getItem(LEGACY_TRAINING_KEY);
+		const s =
+			localStorage.getItem(TRAINING_KEY) ||
+			localStorage.getItem(LEGACY_TRAINING_KEY);
 		const c = localStorage.getItem(SCORES_KEY);
 		const p = localStorage.getItem(GEN_PENALTIES_KEY);
-		const d = localStorage.getItem(TRAINING_DATE_KEY) || localStorage.getItem(LEGACY_TRAINING_DATE_KEY);
+		const d =
+			localStorage.getItem(TRAINING_DATE_KEY) ||
+			localStorage.getItem(LEGACY_TRAINING_DATE_KEY);
 		//const m = localStorage.getItem(MATCHES_PER_HOUR_KEY);
 		//if (m) matchesPerHour = Number(m);
 		if (s) training = JSON.parse(s);

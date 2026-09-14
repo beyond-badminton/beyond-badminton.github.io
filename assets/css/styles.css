@@ -1136,7 +1136,6 @@ span.sort-active .sort-icon {
 	font-size: 0.82rem;
 	font-weight: 500;
 	background: var(--card);
-	cursor: grab;
 	user-select: none;
 	white-space: nowrap;
 	transition:
@@ -1144,14 +1143,18 @@ span.sort-active .sort-icon {
 		border-color 0.12s ease,
 		opacity 0.12s ease;
 }
-.gen-player-slot:hover {
+
+.gen-player-slot-draggable {
+	cursor: grab;
+}
+.gen-player-slot-draggable:hover {
 	border-color: var(--accent);
 	background: var(--accent-soft);
 }
-.gen-player-slot.dragging {
+.gen-player-slot-draggable.dragging {
 	opacity: 0.4;
 }
-.gen-player-slot.drag-over {
+.gen-player-slot-draggable.drag-over {
 	border-color: var(--accent);
 	background: var(--accent-soft);
 }
