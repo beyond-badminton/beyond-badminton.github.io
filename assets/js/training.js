@@ -2,7 +2,7 @@
 "use strict";
 
 function workerMain() {
-	const SCHEDULES_GEN_COUNT = 200;
+	const TRAININGS_GEN_COUNT = 200;
 	const BEST_TEAMS_ITER = 100;
 
 	// ── Utilities ─────────────────────────────────────────────────
@@ -238,7 +238,7 @@ function workerMain() {
 				skill: Number(base.skill) || 1,
 				playtime: Number(ap.playtime) || 1,
 				sit1stRound: Boolean(ap.sit1stRound),
-				roundsAttended: 0, // Track how many rounds this player has attended (played or benched) in the generated schedule
+				roundsAttended: 0, // Track how many rounds this player has attended (played or benched) in the generated training
 				startMin: timeToMins(ap.arrival),
 				endMin: timeToMins(ap.arrival) + Number(ap.playtime) * 60,
 			};
@@ -272,17 +272,17 @@ function workerMain() {
 
 		//console.log("courtBlocks:", courtBlocks);
 
-		totalIretations *= SCHEDULES_GEN_COUNT;
+		totalIretations *= TRAININGS_GEN_COUNT;
 
 		let doneIterations = 0;
 
-		let lastSchedule = null;
-		let lastScheduleTotalPenalty = Infinity;
+		let lastTraining = null;
+		let lastTrainingTotalPenalty = Infinity;
 
-		for (let genIdx = 0; genIdx < SCHEDULES_GEN_COUNT; genIdx++) {
+		for (let genIdx = 0; genIdx < TRAININGS_GEN_COUNT; genIdx++) {
 			resetPlayers();
 
-			// Global history matrices (accumulated across all courtBlocks within a single schedule)
+			// Global history matrices (accumulated across all courtBlocks within a single training)
 			const sameTeamMatrix = Array.from({ length: players.length }, () =>
 				new Array(players.length).fill(0),
 			);
@@ -290,7 +290,7 @@ function workerMain() {
 				new Array(players.length).fill(0),
 			);
 
-			// Track sitting history for each player (accumulated across all courtBlocks within a single schedule)
+			// Track sitting history for each player (accumulated across all courtBlocks within a single training)
 			const sitCount = {}; // Tracks how many times each player has sat
 			const lastSitRound = {}; // Tracks the last round in which each player sat (0 is invalid - no sitting, sit round starts at 1)
 
@@ -438,10 +438,10 @@ function workerMain() {
 				}
 			}
 
-			const schedule = { rounds: rounds };
+			const training = { rounds: rounds };
 
 			const penalties = computePenalties(
-				schedule,
+				training,
 				allPlayers,
 				activePlayers,
 				PENALTY_WEIGHTS,
@@ -457,13 +457,13 @@ function workerMain() {
 			// console.log("penalties: ", penalties);
 			// console.log("total penalty: ", totalPenalty);
 
-			if (lastSchedule == null || totalPenalty < lastScheduleTotalPenalty) {
-				lastSchedule = schedule;
-				lastScheduleTotalPenalty = totalPenalty;
+			if (lastTraining == null || totalPenalty < lastTrainingTotalPenalty) {
+				lastTraining = training;
+				lastTrainingTotalPenalty = totalPenalty;
 			}
 		}
 		self.postMessage({ type: "progress", pct: 100 });
-		self.postMessage({ type: "done", schedule: lastSchedule });
+		self.postMessage({ type: "done", training: lastTraining });
 	};
 
 	// ── Doubles Team assignment ───────────────────────────────────────────
@@ -623,11 +623,15 @@ function workerMain() {
 }
 
 // ── Storage keys ──────────────────────────────────────────────
-const SCHEDULE_KEY = "tournament-generator:schedule";
+const TRAINING_KEY = "tournament-generator:training";
 const SCORES_KEY = "tournament-generator:scores";
 const GEN_PENALTIES_KEY = "tournament-generator:original_penalties";
-const SCHEULE_DATE_KEY = "tournament-generator:scheduleDate";
+const TRAINING_DATE_KEY = "tournament-generator:trainingDate";
 const MATCHES_PER_HOUR_KEY = "tournament-generator:matchesPerHour";
+
+// obsolete ones
+const LEGACY_TRAINING_KEY = "tournament-generator:schedule";
+const LEGACY_TRAINING_DATE_KEY = "tournament-generator:scheduleDate";
 
 // ── Penalty weights (mirror of worker) ───────────────────────
 const PENALTY_WEIGHTS = {
@@ -641,11 +645,11 @@ const PENALTY_WEIGHTS = {
 };
 
 // ── State ─────────────────────────────────────────────────────
-let schedule = null; // { rounds: [...] }
+let training = null; // { rounds: [...] }
 let scores = {}; // { [matchId]: { a: number|null, b: number|null } }
 let generatedPenalties = {};
 let worker = null;
-let scheduleDate = null; // Date object representing the date of the schedule
+let trainingDate = null; // Date object representing the date of the training
 //let matchesPerHour = 0;
 
 const MATCHES_PER_HOUR_OPTIONS = [2, 3, 4, 5, 6, 7, 8]; // Options for matches per hour
@@ -665,7 +669,7 @@ const genExportBtn = document.getElementById("gen-export-btn");
 const genProgress = document.getElementById("gen-progress");
 const genProgressBar = document.getElementById("gen-progress-bar");
 const genScoreboard = document.getElementById("gen-scoreboard");
-const genScheduleOut = document.getElementById("gen-schedule-output");
+const genTrainingOut = document.getElementById("gen-training-output");
 const genStatsOut = document.getElementById("gen-stats-output");
 const genStatsTbody = document.getElementById("gen-stats-tbody");
 const genEmpty = document.getElementById("gen-empty");
@@ -687,20 +691,20 @@ function playerSkill(activeId) {
 
 // ── Generate button handler ───────────────────────────────────
 genGenerateBtn.addEventListener("click", () => {
-	if (schedule && !confirm("Replace the existing schedule with a new one?"))
+	if (training && !confirm("Replace the existing training with a new one?"))
 		return;
 	runGeneration();
 });
 
 genClearBtn.addEventListener("click", () => {
-	if (!confirm("Clear the generated schedule and all scores?")) return;
-	clearGeneratedScheduleFromStorage();
+	if (!confirm("Clear the generated training and all scores?")) return;
+	clearGeneratedTrainingFromStorage();
 });
 
 genPrintBtn.addEventListener("click", () => {
-	printSchedule(
-		schedule,
-		scheduleDate,
+	printTraining(
+		training,
+		trainingDate,
 		scores,
 		document.getElementById("print-extra-match").checked,
 		false,
@@ -708,9 +712,9 @@ genPrintBtn.addEventListener("click", () => {
 });
 
 genExportBtn.addEventListener("click", () => {
-	downloadScheduleSpreadsheet(
-		schedule,
-		scheduleDate,
+	downloadTrainingSpreadsheet(
+		training,
+		trainingDate,
 		scores,
 		document.getElementById("print-extra-match").checked,
 		false,
@@ -718,14 +722,14 @@ genExportBtn.addEventListener("click", () => {
 });
 
 genDatePicker.addEventListener("change", () => {
-	scheduleDate = genDatePicker.valueAsDate;
-	saveGeneratedScheduleToStorage(false);
+	trainingDate = genDatePicker.valueAsDate;
+	saveGeneratedTrainingToStorage(false);
 });
 
 // genMatchesPerHourSel.addEventListener('change', () => {
-// 	if (hasSchedule()) return;
+// 	if (hasTraining()) return;
 // 	matchesPerHour = parseInt(genMatchesPerHourSel.value, 10);
-// 	saveGeneratedScheduleToStorage(false);
+// 	saveGeneratedTrainingToStorage(false);
 // });
 
 function normalizeBlock(blocks) {
@@ -868,11 +872,11 @@ function runGeneration() {
 			}, 600);
 
 			// Preserve existing scores for any surviving matchIds
-			schedule = msg.schedule;
-			//console.log("New schedule generated:", schedule);
+			training = msg.training;
+			//console.log("New training generated:", training);
 			const newScores = {};
-			if (schedule) {
-				schedule.rounds.forEach((r) => {
+			if (training) {
+				training.rounds.forEach((r) => {
 					r.matches.forEach((m) => {
 						newScores[m.matchId] = scores[m.matchId] || { a: null, b: null };
 					});
@@ -880,13 +884,13 @@ function runGeneration() {
 			}
 			scores = newScores;
 			generatedPenalties = computePenalties(
-				schedule,
+				training,
 				allPlayers,
 				activePlayers,
 				PENALTY_WEIGHTS,
 			);
 
-			saveGeneratedScheduleToStorage();
+			saveGeneratedTrainingToStorage();
 		}
 	};
 	worker.onerror = (err) => {
@@ -912,29 +916,29 @@ function setProgress(pct) {
 	genProgressBar.textContent = pct < 100 ? percentage : "Done";
 }
 
-function hasSchedule() {
-	return schedule?.rounds && schedule.rounds.length > 0;
+function hasTraining() {
+	return training?.rounds && training.rounds.length > 0;
 }
 
 // ── Render ────────────────────────────────────────────────────
-function renderGeneratedSchedule() {
-	const hasScheduleValue = hasSchedule();
+function renderGeneratedTraining() {
+	const hasTrainingValue = hasTraining();
 
-	//genMatchesPerHourSel.disabled = hasScheduleValue; // Disable matches per hour selection if a schedule exists
-	genEmpty.hidden = hasScheduleValue;
-	genScoreboard.hidden = !hasScheduleValue;
-	genScheduleOut.hidden = !hasScheduleValue;
-	genStatsOut.hidden = !hasScheduleValue;
-	genClearBtn.hidden = !hasScheduleValue;
-	genPrintBtn.hidden = !hasScheduleValue;
-	genExportBtn.hidden = !hasScheduleValue;
+	//genMatchesPerHourSel.disabled = hasTrainingValue; // Disable matches per hour selection if a training exists
+	genEmpty.hidden = hasTrainingValue;
+	genScoreboard.hidden = !hasTrainingValue;
+	genTrainingOut.hidden = !hasTrainingValue;
+	genStatsOut.hidden = !hasTrainingValue;
+	genClearBtn.hidden = !hasTrainingValue;
+	genPrintBtn.hidden = !hasTrainingValue;
+	genExportBtn.hidden = !hasTrainingValue;
 
-	genDatePicker.valueAsDate = null; // it will be set in renderSchedule() if scheduleDate is available
-	//genMatchesPerHourSel.value = String(MATCHES_PER_HOUR_DEFDAULT); // it will be set in renderSchedule() if matchesPerHour is available
+	genDatePicker.valueAsDate = null; // it will be set in renderTraining() if trainingDate is available
+	//genMatchesPerHourSel.value = String(MATCHES_PER_HOUR_DEFDAULT); // it will be set in renderTraining() if matchesPerHour is available
 
-	if (!hasScheduleValue) return;
+	if (!hasTrainingValue) return;
 
-	renderSchedule();
+	renderTraining();
 	renderScoreboard();
 	renderStatsTable();
 }
@@ -943,10 +947,10 @@ function buildPlayerSlotInnerHtml(pid) {
 	return `${playerName(pid)}&nbsp;${renderSkillPillHtml(playerSkill(pid))}`;
 }
 
-// ── Schedule output ───────────────────────────────────────────
-function renderSchedule() {
-	genScheduleOut.innerHTML = "";
-	//console.log("Rendering schedule:", schedule);
+// ── Training output ───────────────────────────────────────────
+function renderTraining() {
+	genTrainingOut.innerHTML = "";
+	//console.log("Rendering training:", training);
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
 
@@ -954,7 +958,7 @@ function renderSchedule() {
 	// this is sufficient since we are generating matches per hour
 	let courtBlockStart = null;
 
-	schedule.rounds.forEach((round) => {
+	training.rounds.forEach((round) => {
 		const roundEl = document.createElement("div");
 		roundEl.className = "gen-round";
 		roundEl.dataset.roundId = round.roundId;
@@ -1011,12 +1015,12 @@ function renderSchedule() {
 		blockEl.appendChild(roundEl);
 	});
 
-	genScheduleOut.appendChild(blockEl);
+	genTrainingOut.appendChild(blockEl);
 
 	attachDragHandlers();
 
-	if (scheduleDate) {
-		genDatePicker.valueAsDate = scheduleDate; // Format as YYYY-MM-DD for input[type=date]
+	if (trainingDate) {
+		genDatePicker.valueAsDate = trainingDate; // Format as YYYY-MM-DD for input[type=date]
 	}
 
 	// if (matchesPerHour) {
@@ -1096,7 +1100,7 @@ function buildMatchCard(match, roundId) {
 }
 
 // ── Score input handler ───────────────────────────────────────
-genScheduleOut.addEventListener("change", (e) => {
+genTrainingOut.addEventListener("change", (e) => {
 	const inp = e.target.closest(".gen-score-input");
 	if (!inp) return;
 	const { matchId, side } = inp.dataset;
@@ -1107,8 +1111,8 @@ genScheduleOut.addEventListener("change", (e) => {
 });
 
 // ── Scoreboard ────────────────────────────────────────────────
-function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
-	if (!schedule)
+function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
+	if (!training)
 		return {
 			skill: 0,
 			sameTeam: 0,
@@ -1117,7 +1121,7 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 			extraBench: 0,
 		};
 
-	// Rebuild history matrices from schedule
+	// Rebuild history matrices from training
 	const ids = activePlayers.map((p) => p.id);
 	const n = ids.length;
 	const idx = {};
@@ -1165,7 +1169,7 @@ function computePenalties(schedule, allPlayers, activePlayers, penaltyWeights) {
 		sitCount[id] = 0;
 	});
 
-	schedule.rounds.forEach((round) => {
+	training.rounds.forEach((round) => {
 		const benchSet = new Set(round.bench || []);
 		const playingSet = new Set();
 		round.matches.forEach((m) => {
@@ -1316,7 +1320,7 @@ function renderScoreboard() {
 		generatedPenalties.consecutiveBench +
 		generatedPenalties.extraBench;
 	const adjustedPenalties = computePenalties(
-		schedule,
+		training,
 		allPlayers,
 		activePlayers,
 		PENALTY_WEIGHTS,
@@ -1372,7 +1376,7 @@ function renderScoreboard() {
 	helpText.className = "sb-helptext";
 	helpText.textContent = "?";
 	helpText.title =
-		"Penalties are calculated based on the generated schedule and the current schedule. The difference column shows how much the penalties have changed since the schedule was generated.";
+		"Penalties are calculated based on the generated training and the current training. The difference column shows how much the penalties have changed since the training was generated.";
 
 	genScoreboard.innerHTML = `
 	<table class="sb-table">
@@ -1407,7 +1411,7 @@ function renderScoreboard() {
 
 // ── Player stats ──────────────────────────────────────────────
 function renderStatsTable() {
-	if (!schedule) return;
+	if (!training) return;
 
 	const stats = {};
 	activePlayers.forEach((ap) => {
@@ -1422,7 +1426,7 @@ function renderStatsTable() {
 		};
 	});
 
-	schedule.rounds.forEach((round) => {
+	training.rounds.forEach((round) => {
 		round.matches.forEach((m) => {
 			[...m.teamA, ...m.teamB].forEach((id) => {
 				if (stats[id]) stats[id].matches++;
@@ -1468,45 +1472,45 @@ function renderStatsTable() {
 }
 
 // ── Persistence ───────────────────────────────────────────────
-function loadGeneratedScheduleFromStorage() {
+function loadGeneratedTrainingFromStorage() {
 	try {
-		const s = localStorage.getItem(SCHEDULE_KEY);
+		const s = localStorage.getItem(TRAINING_KEY) || localStorage.getItem(LEGACY_TRAINING_KEY);
 		const c = localStorage.getItem(SCORES_KEY);
 		const p = localStorage.getItem(GEN_PENALTIES_KEY);
-		const d = localStorage.getItem(SCHEULE_DATE_KEY);
+		const d = localStorage.getItem(TRAINING_DATE_KEY) || localStorage.getItem(LEGACY_TRAINING_DATE_KEY);
 		//const m = localStorage.getItem(MATCHES_PER_HOUR_KEY);
 		//if (m) matchesPerHour = Number(m);
-		if (s) schedule = JSON.parse(s);
+		if (s) training = JSON.parse(s);
 		if (c) scores = JSON.parse(c);
 		if (p) generatedPenalties = JSON.parse(p);
-		if (d) scheduleDate = new Date(d);
-		else scheduleDate = null;
+		if (d) trainingDate = new Date(d);
+		else trainingDate = null;
 	} catch (_) {}
 
-	if (scheduleDate == null) scheduleDate = new Date();
+	if (trainingDate == null) trainingDate = new Date();
 	if (
 		generatedPenalties == null ||
 		Object.keys(generatedPenalties).length === 0
 	)
 		generatedPenalties = computePenalties(
-			schedule,
+			training,
 			allPlayers,
 			activePlayers,
 			PENALTY_WEIGHTS,
 		);
 	// console.log(
-	// 	"Loaded schedule from storage:",
-	// 	schedule,
+	// 	"Loaded training from storage:",
+	// 	training,
 	// 	scores,
 	// 	generatedPenalties,
-	// 	scheduleDate,
+	// 	trainingDate,
 	// );
 	// console.log(
-	// 	"Loaded schedule from storage:",
+	// 	"Loaded training from storage:",
 	// 	generatedPenalties,
-	// 	computePenalties(schedule, allPlayers, activePlayers, PENALTY_WEIGHTS),
+	// 	computePenalties(training, allPlayers, activePlayers, PENALTY_WEIGHTS),
 	//);
-	renderGeneratedSchedule();
+	renderGeneratedTraining();
 }
 
 function saveScores() {
@@ -1516,38 +1520,41 @@ function saveScores() {
 	} catch (_) {}
 }
 
-function saveGeneratedScheduleToStorage(render = true) {
+function saveGeneratedTrainingToStorage(render = true) {
 	try {
-		localStorage.setItem(SCHEDULE_KEY, JSON.stringify(schedule));
+		localStorage.setItem(TRAINING_KEY, JSON.stringify(training));
 		localStorage.setItem(SCORES_KEY, JSON.stringify(scores));
 		localStorage.setItem(GEN_PENALTIES_KEY, JSON.stringify(generatedPenalties));
-		localStorage.setItem(SCHEULE_DATE_KEY, scheduleDate.toISOString());
+		localStorage.setItem(TRAINING_DATE_KEY, trainingDate.toISOString());
 		//localStorage.setItem(MATCHES_PER_HOUR_KEY, String(matchesPerHour));
 	} catch (_) {}
 
-	if (render) renderGeneratedSchedule();
+	if (render) renderGeneratedTraining();
 }
 
-function clearGeneratedScheduleFromStorage() {
-	schedule = null;
+function clearGeneratedTrainingFromStorage() {
+	training = null;
 	scores = {};
 	generatedPenalties = {};
-	scheduleDate = new Date();
+	trainingDate = new Date();
 	try {
-		localStorage.removeItem(SCHEDULE_KEY);
+		localStorage.removeItem(TRAINING_KEY);
 		localStorage.removeItem(SCORES_KEY);
 		localStorage.removeItem(GEN_PENALTIES_KEY);
-		localStorage.removeItem(SCHEULE_DATE_KEY);
+		localStorage.removeItem(TRAINING_DATE_KEY);
 		localStorage.removeItem(MATCHES_PER_HOUR_KEY);
+
+		localStorage.removeItem(LEGACY_TRAINING_KEY);
+		localStorage.removeItem(LEGACY_TRAINING_DATE_KEY);
 	} catch (_) {}
-	renderGeneratedSchedule();
+	renderGeneratedTraining();
 }
 
 // ── Drag & Drop ───────────────────────────────────────────────
 let dragSrc = null; // { playerId, team, pos, matchId, roundId }
 
 function attachDragHandlers() {
-	genScheduleOut.querySelectorAll(".gen-player-slot").forEach((el) => {
+	genTrainingOut.querySelectorAll(".gen-player-slot").forEach((el) => {
 		el.addEventListener("dragstart", onDragStart);
 		el.addEventListener("dragover", onDragOver);
 		el.addEventListener("dragleave", onDragLeave);
@@ -1555,7 +1562,7 @@ function attachDragHandlers() {
 		el.addEventListener("dragend", onDragEnd);
 	});
 	// Bench slots also act as drop targets
-	genScheduleOut.querySelectorAll(".gen-bench").forEach((el) => {
+	genTrainingOut.querySelectorAll(".gen-bench").forEach((el) => {
 		el.addEventListener("dragover", (e) => {
 			e.preventDefault();
 			el.classList.add("drag-over");
@@ -1596,7 +1603,7 @@ function onDragLeave(e) {
 }
 function onDragEnd(e) {
 	e.currentTarget.classList.remove("dragging");
-	genScheduleOut.querySelectorAll(".drag-over").forEach((el) => {
+	genTrainingOut.querySelectorAll(".drag-over").forEach((el) => {
 		el.classList.remove("drag-over");
 	});
 }
@@ -1625,7 +1632,7 @@ function onDrop(e) {
 	if (dragSrc.roundId !== dst.roundId) return;
 
 	swapPlayerOrBench(dragSrc, dst);
-	saveGeneratedScheduleToStorage();
+	saveGeneratedTrainingToStorage();
 	dragSrc = null;
 }
 
@@ -1635,11 +1642,11 @@ function onDropBench(benchEl) {
 	if (String(dragSrc.roundId) !== String(benchEl.dataset.roundId)) return;
 	const roundId = Number(benchEl.dataset.roundId);
 	// Find the round
-	const round = schedule.rounds.find((r) => r.roundId === roundId);
+	const round = training.rounds.find((r) => r.roundId === roundId);
 	if (!round) return;
 	if (dragSrc.bench) return; // already on bench
 	// Move playing player to bench; move first bench player to the vacated slot
-	const srcMatch = findMatchInSchedule(dragSrc.roundId, dragSrc.matchId);
+	const srcMatch = findMatchInTraining(dragSrc.roundId, dragSrc.matchId);
 	if (!srcMatch) return;
 	if (round.bench.length === 0) {
 		// No bench player to swap with — just move to bench
@@ -1653,12 +1660,12 @@ function onDropBench(benchEl) {
 		srcMatch[dragSrc.team][dragSrc.pos] = benchPid;
 		round.bench[0] = dragSrc.playerId;
 	}
-	saveGeneratedScheduleToStorage();
+	saveGeneratedTrainingToStorage();
 	dragSrc = null;
 }
 
-function findMatchInSchedule(roundId, matchId) {
-	for (const round of schedule.rounds) {
+function findMatchInTraining(roundId, matchId) {
+	for (const round of training.rounds) {
 		if (String(round.roundId) !== String(roundId)) continue;
 		for (const match of round.matches) {
 			if (match.matchId === matchId) return match;
@@ -1670,8 +1677,8 @@ function findMatchInSchedule(roundId, matchId) {
 function swapPlayerOrBench(src, dst) {
 	// Both in matches — simple team swap
 	if (!src.bench && !dst.bench) {
-		const srcMatch = findMatchInSchedule(src.roundId, src.matchId);
-		const dstMatch = findMatchInSchedule(dst.roundId, dst.matchId);
+		const srcMatch = findMatchInTraining(src.roundId, src.matchId);
+		const dstMatch = findMatchInTraining(dst.roundId, dst.matchId);
 		if (!srcMatch || !dstMatch) return;
 		const tmp = srcMatch[src.team][src.pos];
 		srcMatch[src.team][src.pos] = dstMatch[dst.team][dst.pos];
@@ -1681,12 +1688,12 @@ function swapPlayerOrBench(src, dst) {
 
 	// Find relevant round (bench lives at round level)
 	const roundId = src.bench ? src.roundId : dst.roundId;
-	const round = schedule.rounds.find((r) => r.roundId === roundId);
+	const round = training.rounds.find((r) => r.roundId === roundId);
 	if (!round) return;
 
 	if (src.bench && !dst.bench) {
 		// Bench -> Match slot
-		const dstMatch = findMatchInSchedule(dst.roundId, dst.matchId);
+		const dstMatch = findMatchInTraining(dst.roundId, dst.matchId);
 		if (!dstMatch) return;
 		const benchIdx = round.bench.indexOf(src.playerId);
 		if (benchIdx === -1) return;
@@ -1695,7 +1702,7 @@ function swapPlayerOrBench(src, dst) {
 		round.bench[benchIdx] = displaced;
 	} else if (!src.bench && dst.bench) {
 		// Match slot -> Bench
-		const srcMatch = findMatchInSchedule(src.roundId, src.matchId);
+		const srcMatch = findMatchInTraining(src.roundId, src.matchId);
 		if (!srcMatch) return;
 		const benchIdx = round.bench.indexOf(dst.playerId);
 		if (benchIdx === -1) return;
@@ -1727,4 +1734,4 @@ function swapPlayerOrBench(src, dst) {
 	});
 })();
 
-loadGeneratedScheduleFromStorage();
+loadGeneratedTrainingFromStorage();
