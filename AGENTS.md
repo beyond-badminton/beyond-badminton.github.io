@@ -15,19 +15,19 @@ assets/
     init.js            # App bootstrap, tab switching
     common.js          # Shared utilities / helpers
     all-players.js     # "All Players" tab — master player list
-    active-players.js  # "Active Players" tab — players entering the current tournament
+    active-players.js  # "Active Players" tab — players entering the current event
     courts.js          # "Courts" tab — court names + court availability blocks
-    schedule.js        # "Schedule" tab — generated matches + stats
-    schedule.export.js # "Schedule" tab — print/export functions
+    trainings.js        # "Trainings" tab — generated matches + stats
+    trainings.export.js # "Trainings" tab — print/export functions
 ```
 
 ## Tabs
 | Tab | File | Description |
 |-----|------|-------------|
 | All Players | `all-players.js` | Master list of known players (persisted). Add / remove players. |
-| Active Players | `active-players.js` | Subset of all players participating in the current tournament. |
+| Active Players | `active-players.js` | Subset of all players participating in the current event. |
 | Courts | `courts.js` | (1) Define court names, (2) add availability blocks (start time + duration + courts). |
-| Schedule | `schedule.js` | Will schedule a round-robin / random match schedule (2v2). |
+| Trainings | `trainings.js` | Will schedule a round-robin / random match schedule (2v2). |
 
 ## Key Data Shapes (localStorage)
 - **Court names** — `{ id: number, name: string }[]`
@@ -46,7 +46,7 @@ assets/
 ## Schedule Tab — Generate Algorithm
 
 ### Approach: Monte Carlo with Penalty Scoring
-The generator runs **many random tournament simulations** and keeps the one with the **lowest total penalty score**.
+The generator runs **many random training simulations** and keeps the one with the **lowest total penalty score**.
 
 ### High-level flow
 1. Read active players (with skill levels) + court availability blocks.
@@ -86,7 +86,7 @@ distribute sit-outs as evenly as possible across all players.
 ---
 
 ### Pair / Opponent Repetition
-The generator tracks a **match history matrix** across all rounds of the tournament:
+The generator tracks a **match history matrix** across all rounds of the training:
 - `sameTeam[i][j]` — how many times players i and j were on the **same team**
 - `opponent[i][j]` — how many times players i and j **faced each other**
 
@@ -113,9 +113,9 @@ The run with the **lowest otalPenalty** is selected as the final schedule.
 ---
 
 ### Implementation Notes
-- `assets/js/schedule.js` — Monte Carlo engine + UI for the Schedule tab.
+- `assets/js/training.js` — Monte Carlo engine + UI for the Schedule tab.
 - Penalty weights should be tunable constants at the top of the file.
-- The history matrices reset per tournament generation (not persisted).
+- The history matrices reset per training generation (not persisted).
 
 ---
 
@@ -260,7 +260,7 @@ Example:
   - `playingSlotsPerBlock` = `availableCourts × 4`
   - `benchCount` = `max(0, eligiblePlayers.length - playingSlotsPerBlock)`
 - Phase 1 bench rotation is computed **per block** based on that block's eligible players and court count.
-- The history matrices (`sameTeam`, `opponent`) accumulate **across all blocks** — variety is tracked for the whole tournament, not just within a block.
+- The history matrices (`sameTeam`, `opponent`) accumulate **across all blocks** — variety is tracked for the whole traning event, not just within a block.
 
 ---
 
@@ -422,6 +422,6 @@ Below controls:
 
 ### 6. Generated schedule persistence
 - Generated schedule **is persisted** to `localStorage` under key `tournament-generator:schedule`.
-- "Discard tournament" (existing button) clears everything including schedule and scores.
+- "Discard event" (existing button) clears everything including schedule and scores.
 - A new **"Clear matches"** button in the Schedule tab clears only the generated schedule (and scores), without touching active players or courts.
 - "Schedule" replaces any existing schedule (with confirmation prompt if one already exists).

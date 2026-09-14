@@ -4,21 +4,21 @@
 // ============================================================
 // DISCARD TOURNAMENT
 // ============================================================
-async function discardTournament() {
+async function discardEvent() {
 	const hasData =
 		activePlayers.length > 0 ||
 		courtBlocks.length > 0 ||
-		(schedule != null && Object.keys(schedule).length > 0);
+		(training != null && Object.keys(training).length > 0);
 	if (
 		hasData &&
 		!confirm(
-			"Discard this tournament? Active players, courts, and availability will be removed. The All players list and the Court names are kept.",
+			"Discard current event? Active players, courts, and matches will be removed. The All players list and the Court names are kept.",
 		)
 	) {
 		return;
 	}
 
-	clearGeneratedScheduleFromStorage();
+	clearGeneratedTrainingFromStorage();
 	clearCourtsFromStorage();
 	clearActivePlayersFromStorage();
 }
@@ -29,7 +29,7 @@ async function discardLocalStorane() {
 		activePlayers.length > 0 ||
 		courtBlocks.length > 0 ||
 		courtNames.length > 0 ||
-		(schedule != null && Object.keys(schedule).length > 0);
+		(training != null && Object.keys(training).length > 0);
 	if (
 		hasData &&
 		!confirm(
@@ -39,7 +39,7 @@ async function discardLocalStorane() {
 		return;
 	}
 
-	clearGeneratedScheduleFromStorage();
+	clearGeneratedTrainingFromStorage();
 	clearCourtsFromStorage();
 	_clearCourtNamesFromStorage();
 	clearActivePlayersFromStorage();
@@ -55,7 +55,10 @@ const STORAGE_KEYS = [
 	COURT_NAMES_NEXT_ID_KEY,
 	COURTS_STORAGE_KEY,
 	COURTS_NEXT_ID_KEY,
-	SCHEDULE_KEY,
+	LEGACY_TRAINING_KEY,
+	LEGACY_TRAINING_DATE_KEY,
+	TRAINING_KEY,
+	TRAINING_DATE_KEY,
 	SCORES_KEY,
 	GEN_PENALTIES_KEY,
 ];
@@ -80,7 +83,7 @@ async function saveLocalStorageToFile() {
 	if (window.showSaveFilePicker) {
 		try {
 			const handle = await window.showSaveFilePicker({
-				suggestedName: "tournament-full-backup.json",
+				suggestedName: "storage-full-backup.json",
 				types: [
 					{
 						description: "JSON File",
@@ -103,7 +106,7 @@ async function saveLocalStorageToFile() {
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		a.download = "tournament-full-backup.json";
+		a.download = "storage-full-backup.json";
 		document.body.appendChild(a);
 		a.click();
 		document.body.removeChild(a);
@@ -119,7 +122,7 @@ async function loadLocalStorageFromFile() {
 		activePlayers.length > 0 ||
 		courtBlocks.length > 0 ||
 		courtNames.length > 0 ||
-		(schedule != null && Object.keys(schedule).length > 0);
+		(training != null && Object.keys(training).length > 0);
 	if (
 		hasData &&
 		!confirm(
@@ -175,7 +178,7 @@ async function loadLocalStorageFromFile() {
 	loadActivePlayersFromStorage();
 	loadCourtNamesFromStorage();
 	loadCourtsFromStorage();
-	loadGeneratedScheduleFromStorage();
+	loadGeneratedTrainingFromStorage();
 
 	return true;
 }
@@ -194,7 +197,7 @@ document.getElementById("discard-storage-btn").addEventListener("click", () => {
 	discardLocalStorane();
 });
 document
-	.getElementById("discard-tournament-btn")
+	.getElementById("discard-event-btn")
 	.addEventListener("click", () => {
-		discardTournament();
+		discardEvent();
 	});
