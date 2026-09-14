@@ -42,11 +42,11 @@ function buildTrainingRoundViewModels(
 		printCourtBlockStart,
 		matches: matches.map((match) => ({
 			court: match.court,
-			teamAName: match.teamA.map((pid) => playerName(pid)).join(", "),
-			teamBName: match.teamB.map((pid) => playerName(pid)).join(", "),
+			teamAName: match.teamA.map((pid) => activePlayerName(pid)).join(", "),
+			teamBName: match.teamB.map((pid) => activePlayerName(pid)).join(", "),
 			scoreStr: formatMatchScore(match, roundScores),
 		})),
-		benchNames: bench.map((pid) => playerName(pid)),
+		benchNames: bench.map((pid) => activePlayerName(pid)),
 		showBench: bench.length > 0 || forceShowBench,
 	});
 

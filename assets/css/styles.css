@@ -2,6 +2,7 @@
 	--ink: #1a2420;
 	--ink-soft: #5c6b64;
 	--line: #dde3df;
+	--accent-line: #d4d4d4;
 	--paper: #f7f8f6;
 	--card: #ffffff;
 	--accent: #1f7a5c;
@@ -136,6 +137,11 @@ header h1 {
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
 	padding: 22px;
+	margin-bottom: 16px;
+}
+
+.card .card {
+	border: 1px solid var(--accent-line);
 }
 
 .tab-content {
@@ -153,7 +159,7 @@ header h1 {
 }
 
 .card h2 {
-	font-size: 1rem;
+	font-size: 1.1rem;
 	margin: 0 0 16px;
 }
 
@@ -257,14 +263,7 @@ button[type="submit"]:active {
 	color: var(--ink-soft);
 }
 
-.csv-help {
-	font-size: 0.8rem;
-	color: var(--ink-soft);
-	line-height: 1.5;
-	margin: 0 0 8px;
-}
-
-.csv-columns {
+.section-hint-list {
 	margin: 0 0 12px;
 	padding-left: 18px;
 	font-size: 0.78rem;
@@ -272,7 +271,7 @@ button[type="submit"]:active {
 	line-height: 1.6;
 }
 
-.csv-columns code,
+.section-hint-list code,
 .code {
 	background: var(--paper);
 	border: 1px solid var(--line);
@@ -416,6 +415,44 @@ input[type="file"] {
 	margin: 0;
 }
 
+.players-panel-header-btns {
+	display: flex;
+	justify-content: flex-end; /* Aligns items to the right */
+	margin-bottom: 10px;
+}
+
+.players-panel-header-btns[hidden] {
+	display: none;
+}
+
+.select-btn {
+	border: 1px solid var(--line);
+	background: var(--card);
+	color: var(--ink-soft);
+	font-family: inherit;
+	font-size: 0.78rem;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: 7px;
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		color 0.15s ease;
+}
+
+.select-btn:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.tiebreak-desc {
+	display: block;
+	font-size: 1.0em;
+	color: #666;
+	margin-top: 0.1em;
+	margin-bottom: 0.5em;
+}
+
 .clear-btn {
 	border: 1px solid var(--line);
 	background: var(--card);
@@ -550,6 +587,19 @@ input[type="file"] {
 .player-table tr:hover td {
 	background: var(--paper);
 }
+
+.compact-table th:not(:last-child),
+.compact-table td:not(:last-child) {
+	width: 1%;
+	white-space: nowrap;
+	padding-right: 40px;
+}
+
+.compact-table th:last-child,
+.compact-table td:last-child {
+	text-align: right;
+}
+
 
 .skill-pill {
 	display: inline-block;
@@ -876,10 +926,6 @@ span.sort-active .sort-icon {
 	/*gap: 6px;*/
 }
 
-.gen-controls-card {
-	margin-bottom: 16px;
-}
-
 .gen-controls-row {
 	display: flex;
 	align-items: flex-end;
@@ -976,7 +1022,6 @@ span.sort-active .sort-icon {
 .gen-scoreboard-card {
 	position: sticky;
 	top: -12px;
-	margin-bottom: 16px;
 }
 
 .gen-section-heading {
@@ -1056,6 +1101,63 @@ span.sort-active .sort-icon {
 	color: #c8503a;
 }
 
+.gen-card-toggle {
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	user-select: none;
+}
+.gen-card-toggle:hover {
+	color: var(--accent);
+}
+
+.gen-collapse-arrow {
+	display: inline-block;
+	flex-shrink: 0;
+	font-size: 1.3em;
+	line-height: 1;
+	text-align: center;
+	transition: transform 0.12s ease;
+}
+
+/* Hide everything in a collapsible container except its toggle header */
+.gen-collapsible.gen-collapsed > *:not(.gen-card-toggle) {
+	display: none;
+}
+.gen-collapsible.gen-collapsed {
+	padding-bottom: 14px;
+}
+
+.gen-collapsible.gen-collapsed .gen-collapse-arrow {
+	transform: rotate(-90deg);
+}
+
+.checkbox-filter-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+.checkbox-filter-controls input[type="search"] {
+	flex: 1 1 auto;
+	max-width: 240px;
+}
+
+.checkbox-filter-list {
+	max-height: 220px;
+	overflow-y: auto;
+	padding: 4px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	margin-bottom: 34px;
+}
+
+.checkbox-pill.filter-hidden {
+	display: none;
+}
+
 .gen-block-header {
 	width: 100%;
 	text-align: left;
@@ -1069,7 +1171,7 @@ span.sort-active .sort-icon {
 
 .gen-round {
 	background: var(--card);
-	border: 1px solid var(--line);
+	border: 1px solid var(--accent-line);
 	border-radius: var(--radius);
 	padding: 14px;
 	margin-bottom: 10px;
@@ -1084,6 +1186,14 @@ span.sort-active .sort-icon {
 	margin: 0 0 10px;
 }
 
+.gen-table-label {
+	font-size: 0.78rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--ink-soft);
+	margin: 0 0 20px;
+}
 .gen-matches-row {
 	display: flex;
 	flex-direction: column;
@@ -1136,7 +1246,6 @@ span.sort-active .sort-icon {
 	font-size: 0.82rem;
 	font-weight: 500;
 	background: var(--card);
-	cursor: grab;
 	user-select: none;
 	white-space: nowrap;
 	transition:
@@ -1144,14 +1253,18 @@ span.sort-active .sort-icon {
 		border-color 0.12s ease,
 		opacity 0.12s ease;
 }
-.gen-player-slot:hover {
+
+.gen-player-slot-draggable {
+	cursor: grab;
+}
+.gen-player-slot-draggable:hover {
 	border-color: var(--accent);
 	background: var(--accent-soft);
 }
-.gen-player-slot.dragging {
+.gen-player-slot-draggable.dragging {
 	opacity: 0.4;
 }
-.gen-player-slot.drag-over {
+.gen-player-slot-draggable.drag-over {
 	border-color: var(--accent);
 	background: var(--accent-soft);
 }
@@ -1208,17 +1321,25 @@ span.sort-active .sort-icon {
 	flex-shrink: 0;
 }
 
-.gen-stats-heading {
-	font-size: 0.82rem;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	color: var(--ink-soft);
-	font-weight: 700;
-	margin: 0 0 12px;
-}
 .gen-stats-scroll {
 	overflow-x: auto;
 }
+
+.gen-stats-table-wrap {
+	min-height: 150px;
+	max-height: 1000px;
+	height: 300px;
+	overflow-y: auto;
+	resize: vertical;
+}
+
+.gen-stats-table-wrap thead th {
+	position: sticky;
+	top: 0;
+	background: var(--card);
+	z-index: 1;
+}
+
 .gen-stats-table {
 	width: 100%;
 	border-collapse: collapse;
@@ -1277,3 +1398,36 @@ span.sort-active .sort-icon {
   color: inherit;
   cursor: help;
 } */
+
+.confirm-modal {
+	padding: 20px;
+	border: none;
+	border-radius: 8px;
+	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+	font-family: sans-serif;
+	font-size: 16px;
+	max-width: 400px;
+	text-align: center;
+}
+
+.confirm-modal::backdrop {
+	background: rgba(0, 0, 0, 0.6); /* Darkens the background */
+}
+
+.confirm-modal input {
+	width: 100%;
+	padding: 10px;
+	margin: 15px 0;
+	box-sizing: border-box;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+.confirm-modal .modal-note {
+	font-size: 14px;
+}
+.confirm-modal .modal-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}

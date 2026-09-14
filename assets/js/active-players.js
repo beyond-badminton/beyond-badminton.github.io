@@ -199,6 +199,32 @@ document
 		);
 	});
 
+// ── Utility ───────────────────────────────────────────────────
+
+function activePlayerAllId(activeId) {
+	const ap = activePlayers.find((p) => p.id === activeId);
+	return ap ? ap.allPlayerId : null;
+}
+function activePlayerName(activeId) {
+	const ap = activePlayers.find((p) => p.id === activeId);
+	return playerName(ap ? ap.allPlayerId : null);
+}
+
+function activePlayerSkill(activeId) {
+	const ap = activePlayers.find((p) => p.id === activeId);
+	return playerSkill(ap ? ap.allPlayerId : null);
+}
+
+function activePlayerGender(activeId) {
+	const ap = activePlayers.find((p) => p.id === activeId);
+	return playerGender(ap ? ap.allPlayerId : null);
+}
+
+function activePlayerIsWoman(activeId) {
+	const ap = activePlayers.find((p) => p.id === activeId);
+	return playerIsWoman(ap ? ap.allPlayerId : null);
+}
+
 // ============================================================
 // INIT — initial render on page load
 // ============================================================
