@@ -11,8 +11,10 @@ function workerMain() {
 		return Math.floor(Math.random() * n);
 	}
 
+	let matchIdCounter = 0;
+
 	function genId() {
-		return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+		return `m${(matchIdCounter++).toString(36)}`;
 	}
 
 	function incMatrix(mat, idx, id1, id2) {
@@ -30,14 +32,6 @@ function workerMain() {
 			j = idx[id2];
 		if (i == null || j == null) return 0;
 		return mat[i][j];
-	}
-
-	function shuffle(array) {
-		for (let i = array.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[array[i], array[j]] = [array[j], array[i]];
-		}
-		return array;
 	}
 
 	function sortPlayersByName(players) {
@@ -669,25 +663,12 @@ const genExportBtn = document.getElementById("gen-export-btn");
 const genProgress = document.getElementById("gen-progress");
 const genProgressBar = document.getElementById("gen-progress-bar");
 const genScoreboard = document.getElementById("gen-scoreboard");
+const genScoreboardOut = document.getElementById("gen-scoreboard-output");
+const genTrainingSchedule = document.getElementById("gen-training-schedule");
 const genTrainingOut = document.getElementById("gen-training-output");
 const genStatsOut = document.getElementById("gen-stats-output");
 const genStatsTbody = document.getElementById("gen-stats-tbody");
 const genEmpty = document.getElementById("gen-empty");
-
-// ── Utility ───────────────────────────────────────────────────
-
-function playerName(activeId) {
-	const ap = activePlayers.find((p) => p.id === activeId);
-	if (!ap) return "?";
-	const p = allPlayers.find((p) => p.id === ap.allPlayerId);
-	return p ? p.name : "?";
-}
-function playerSkill(activeId) {
-	const ap = activePlayers.find((p) => p.id === activeId);
-	if (!ap) return "?";
-	const p = allPlayers.find((p) => p.id === ap.allPlayerId);
-	return p ? p.skill : "?";
-}
 
 // ── Generate button handler ───────────────────────────────────
 genGenerateBtn.addEventListener("click", () => {
@@ -697,7 +678,7 @@ genGenerateBtn.addEventListener("click", () => {
 });
 
 genClearBtn.addEventListener("click", () => {
-	if (!confirm("Clear the generated training and all scores?")) return;
+	if (!confirm("Discard the generated training and all scores?")) return;
 	clearGeneratedTrainingFromStorage();
 });
 
@@ -845,6 +826,7 @@ function runGeneration() {
 		[
 			`
 		const PENALTY_WEIGHTS = ${JSON.stringify(PENALTY_WEIGHTS)};
+		${shuffle.toString()};
 		${minsToTime.toString()};
 		${timeToMins.toString()};
 		${computePenalties.toString()};
@@ -927,7 +909,7 @@ function renderGeneratedTraining() {
 	//genMatchesPerHourSel.disabled = hasTrainingValue; // Disable matches per hour selection if a training exists
 	genEmpty.hidden = hasTrainingValue;
 	genScoreboard.hidden = !hasTrainingValue;
-	genTrainingOut.hidden = !hasTrainingValue;
+	genTrainingSchedule.hidden = !hasTrainingValue;
 	genStatsOut.hidden = !hasTrainingValue;
 	genClearBtn.hidden = !hasTrainingValue;
 	genPrintBtn.hidden = !hasTrainingValue;
@@ -944,7 +926,7 @@ function renderGeneratedTraining() {
 }
 
 function buildPlayerSlotInnerHtml(pid) {
-	return `${playerName(pid)}&nbsp;${renderSkillPillHtml(playerSkill(pid))}`;
+	return `${activePlayerName(pid)}&nbsp;${renderSkillPillHtml(activePlayerSkill(pid))}`;
 }
 
 // ── Training output ───────────────────────────────────────────
@@ -981,35 +963,14 @@ function renderTraining() {
 		matchesRow.className = "gen-matches-row";
 
 		round.matches.forEach((match) => {
-			matchesRow.appendChild(buildMatchCard(match, round.roundId));
+			matchesRow.appendChild(buildMatchCard(match, scores[match.matchId] || { a: null, b: null }, round.roundId));
 		});
 
 		roundEl.appendChild(matchesRow);
 
 		// Bench
 		if (round.bench && round.bench.length > 0) {
-			const benchEl = document.createElement("div");
-			benchEl.className = "gen-bench";
-			benchEl.dataset.roundId = round.roundId;
-
-			const bLabel = document.createElement("span");
-			bLabel.className = "gen-bench-label";
-			bLabel.textContent = "Bench:";
-			benchEl.appendChild(bLabel);
-
-			round.bench.forEach((pid, bi) => {
-				const slot = document.createElement("div");
-				slot.className = "gen-player-slot bench-slot";
-				slot.draggable = true;
-				slot.dataset.playerId = pid;
-				slot.dataset.bench = "true";
-				slot.dataset.pos = bi;
-				slot.dataset.roundId = round.roundId;
-				slot.innerHTML = buildPlayerSlotInnerHtml(pid);
-				benchEl.appendChild(slot);
-			});
-
-			roundEl.appendChild(benchEl);
+			roundEl.appendChild(buildBenchCard(round.bench, round.roundId));
 		}
 
 		blockEl.appendChild(roundEl);
@@ -1028,9 +989,14 @@ function renderTraining() {
 	// }
 }
 
-function buildMatchCard(match, roundId) {
-	const sc = scores[match.matchId] || { a: null, b: null };
-
+function buildMatchCard(
+	match,
+	score,
+	roundId,
+	draggable = true,
+	disabledScore = false,
+	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
+) {
 	const card = document.createElement("div");
 	card.className = "gen-match-card";
 	card.dataset.matchId = match.matchId;
@@ -1040,6 +1006,8 @@ function buildMatchCard(match, roundId) {
 	courtLabel.textContent = match.court;
 	card.appendChild(courtLabel);
 
+	console.log("Building match card for match:", match, "with score:", score);
+
 	["teamA", "teamB"].forEach((teamKey, ti) => {
 		const teamEl = document.createElement("div");
 		teamEl.className = `gen-team${ti === 1 ? " gen-team--right" : ""}`;
@@ -1048,14 +1016,14 @@ function buildMatchCard(match, roundId) {
 
 		match[teamKey].forEach((pid, pi) => {
 			const slot = document.createElement("div");
-			slot.className = "gen-player-slot";
-			slot.draggable = true;
+			slot.className = `gen-player-slot ${draggable ? "gen-player-slot-draggable" : ""}`;
+			slot.draggable = draggable;
 			slot.dataset.playerId = pid;
 			slot.dataset.team = teamKey;
 			slot.dataset.pos = pi;
 			slot.dataset.matchId = match.matchId;
 			slot.dataset.roundId = roundId;
-			slot.innerHTML = buildPlayerSlotInnerHtml(pid);
+			slot.innerHTML = buildPlayerSlotFunc(pid);
 			teamEl.appendChild(slot);
 		});
 
@@ -1064,7 +1032,7 @@ function buildMatchCard(match, roundId) {
 		// Score box between teams
 		if (ti === 0) {
 			const scoreRow = document.createElement("div");
-			const hasScore = sc.a !== null || sc.b !== null;
+			const hasScore = score.a !== null || score.b !== null;
 			scoreRow.className = `gen-score-row${hasScore ? "" : " score-blank"}`;
 
 			const inA = document.createElement("input");
@@ -1072,7 +1040,7 @@ function buildMatchCard(match, roundId) {
 			inA.min = "0";
 			inA.placeholder = "0";
 			inA.className = "gen-score-input";
-			inA.value = sc.a !== null ? sc.a : "";
+			inA.value = score.a !== null ? score.a : "";
 			inA.dataset.matchId = match.matchId;
 			inA.dataset.side = "a";
 
@@ -1085,9 +1053,14 @@ function buildMatchCard(match, roundId) {
 			inB.min = "0";
 			inB.placeholder = "0";
 			inB.className = "gen-score-input";
-			inB.value = sc.b !== null ? sc.b : "";
+			inB.value = score.b !== null ? score.b : "";
 			inB.dataset.matchId = match.matchId;
 			inB.dataset.side = "b";
+			
+			if (disabledScore) {
+				inA.disabled = true;
+				inB.disabled = true;
+			}
 
 			scoreRow.appendChild(inA);
 			scoreRow.appendChild(sep);
@@ -1097,6 +1070,39 @@ function buildMatchCard(match, roundId) {
 	});
 
 	return card;
+}
+
+function buildBenchCard(
+	bench,
+	roundId,
+	draggable = true,
+	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
+) {
+	if (!bench || bench.length === 0) {
+		return null;
+	}
+	const benchEl = document.createElement("div");
+	benchEl.className = "gen-bench";
+	benchEl.dataset.roundId = roundId;
+
+	const bLabel = document.createElement("span");
+	bLabel.className = "gen-bench-label";
+	bLabel.textContent = "Bench:";
+	benchEl.appendChild(bLabel);
+
+	bench.forEach((pid, bi) => {
+		const slot = document.createElement("div");
+		slot.className = `gen-player-slot ${draggable ? "gen-player-slot-draggable" : ""} bench-slot`;
+		slot.draggable = draggable;
+		slot.dataset.playerId = pid;
+		slot.dataset.bench = "true";
+		slot.dataset.pos = bi;
+		slot.dataset.roundId = roundId;
+		slot.innerHTML = buildPlayerSlotFunc(pid);
+		benchEl.appendChild(slot);
+	});
+
+	return benchEl;
 }
 
 // ── Score input handler ───────────────────────────────────────
@@ -1148,7 +1154,7 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 		return mat[i][j];
 	}
 
-	function playerSkill(allPlayers, activePlayers, activeId) {
+	function getPlayerSkill(allPlayers, activePlayers, activeId) {
 		const ap = activePlayers.find((p) => p.id === activeId);
 		if (!ap) return 1;
 		const p = allPlayers.find((p) => p.id === ap.allPlayerId);
@@ -1198,11 +1204,11 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 			const [a0, a1, b0, b1] = [...m.teamA, ...m.teamB];
 			// Skill
 			const sa =
-				playerSkill(allPlayers, activePlayers, a0) +
-				playerSkill(allPlayers, activePlayers, a1);
+				getPlayerSkill(allPlayers, activePlayers, a0) +
+				getPlayerSkill(allPlayers, activePlayers, a1);
 			const sb =
-				playerSkill(allPlayers, activePlayers, b0) +
-				playerSkill(allPlayers, activePlayers, b1);
+				getPlayerSkill(allPlayers, activePlayers, b0) +
+				getPlayerSkill(allPlayers, activePlayers, b1);
 			const diff = Math.abs(sa - sb);
 			if (diff === 1) skillPen += penaltyWeights.SKILL_1;
 			else if (diff === 2) skillPen += penaltyWeights.SKILL_2;
@@ -1307,11 +1313,6 @@ function penColor(val) {
 	return "pen-red";
 }
 
-function valueWithSign(val) {
-	if (val > 0) return `+${val}`;
-	if (val <= 0) return val;
-}
-
 function renderScoreboard() {
 	const totalGenerated =
 		generatedPenalties.skill +
@@ -1378,11 +1379,11 @@ function renderScoreboard() {
 	helpText.title =
 		"Penalties are calculated based on the generated training and the current training. The difference column shows how much the penalties have changed since the training was generated.";
 
-	genScoreboard.innerHTML = `
+	genScoreboardOut.innerHTML = `
 	<table class="sb-table">
 		<thead>
 		<tr class="gen-section-heading">
-			<th>Tournament penalty score</th>
+			<th>Penalty</th>
 			<th>Generated</th>
 			<th>Adjusted</th>
 			<th>Difference</th>
@@ -1416,8 +1417,8 @@ function renderStatsTable() {
 	const stats = {};
 	activePlayers.forEach((ap) => {
 		stats[ap.id] = {
-			name: playerName(ap.id),
-			skill: playerSkill(ap.id),
+			name: activePlayerName(ap.id),
+			skill: activePlayerSkill(ap.id),
 			playtime: ap.playtime,
 			matches: 0,
 			bench: 0,
@@ -1474,10 +1475,14 @@ function renderStatsTable() {
 // ── Persistence ───────────────────────────────────────────────
 function loadGeneratedTrainingFromStorage() {
 	try {
-		const s = localStorage.getItem(TRAINING_KEY) || localStorage.getItem(LEGACY_TRAINING_KEY);
+		const s =
+			localStorage.getItem(TRAINING_KEY) ||
+			localStorage.getItem(LEGACY_TRAINING_KEY);
 		const c = localStorage.getItem(SCORES_KEY);
 		const p = localStorage.getItem(GEN_PENALTIES_KEY);
-		const d = localStorage.getItem(TRAINING_DATE_KEY) || localStorage.getItem(LEGACY_TRAINING_DATE_KEY);
+		const d =
+			localStorage.getItem(TRAINING_DATE_KEY) ||
+			localStorage.getItem(LEGACY_TRAINING_DATE_KEY);
 		//const m = localStorage.getItem(MATCHES_PER_HOUR_KEY);
 		//if (m) matchesPerHour = Number(m);
 		if (s) training = JSON.parse(s);

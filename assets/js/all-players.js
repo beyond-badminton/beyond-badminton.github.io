@@ -125,6 +125,10 @@ function removeAllPlayer(id) {
 	) {
 		return;
 	}
+	const inTournament = tournamentPlayersMap.has(id);
+	if (inTournament && !alert("This player is currently in the tournament. Player cannot be removed.")) {
+		return;
+	}
 	allPlayers = allPlayers.filter((p) => p.id !== id);
 	activePlayers = activePlayers.filter((ap) => ap.allPlayerId !== id);
 	saveAllPlayersToStorage();
@@ -496,6 +500,27 @@ document.addEventListener("click", (event) => {
 		closeCurrentPickerPopover();
 	}
 });
+
+// ── Utility ───────────────────────────────────────────────────
+
+function playerName(allPlayerId) {
+	const p = allPlayers.find((p) => Number(p.id) === Number(allPlayerId));
+	return p ? p.name : "?";
+}
+
+function playerSkill(allPlayerId) {
+	const p = allPlayers.find((p) => p.id === allPlayerId);
+	return p ? p.skill : "?";
+}
+
+function playerGender(allPlayerId) {
+	const p = allPlayers.find((p) => p.id === allPlayerId);
+	return p?.gender || "x";
+}
+
+function playerIsWoman(allPlayerId) {
+	return playerGender(allPlayerId) === "w";
+}
 
 // ============================================================
 // INIT — initial render on page load
