@@ -7,6 +7,12 @@
 const ALL_PLAYERS_KEY = "tournament-generator:allPlayers";
 const ALL_PLAYERS_NEXT_ID_KEY = "tournament-generator:allPlayersNextId";
 
+const GENDER_LABELS = {
+	m: "Man",
+	w: "Woman",
+	x: "N/A",
+};
+
 const SKILL_LABELS = {
 	1: "Beginner",
 	2: "Intermediate",
@@ -17,23 +23,41 @@ const SKILL_LABELS = {
 let allPlayers = [];
 let nextAllPlayerId = 1;
 
+function genderLabel(gender) {
+	return GENDER_LABELS[gender] || "N/A";
+}
+
+function skillLabel(skillId) {
+	return SKILL_LABELS[skillId] || String(skillId) || "Unknown";
+}
+
 // DOM refs
 const allPlayerForm = document.getElementById("all-player-form");
 const apNameInput = document.getElementById("ap-name");
 const apSkillInput = document.getElementById("ap-skill");
+const apgenderInput = document.getElementById("ap-gender");
 const apNameField = document.getElementById("ap-name-field");
 const allPlayerTableBody = document.getElementById("all-player-table-body");
 const allPlayersEmpty = document.getElementById("all-players-empty");
 const allPlayerCount = document.getElementById("all-player-count");
 const csvSkillCodes = document.getElementById("csv-skill-codes");
 
+function renderGenderPillHtml(genderId, clickable = false) {
+	return `<span class="gender-pill gender-${genderId || "x"} ${clickable ? "gender-pick" : ""}">${genderLabel(genderId)}</span>`;
+}
+
+function updateGenderPillElement(element, genderId, clickable = false) {
+	element.className = `gender-pill gender-${genderId || "x"} ${clickable ? "gender-pick" : ""}`;
+	element.textContent = genderLabel(genderId);
+}
+
 function renderSkillPillHtml(skillId, clickable = false) {
-	return `<span class="skill-pill skill-${skillId} ${clickable ? "skill-pick" : ""}">${SKILL_LABELS[skillId] || skillId}</span>`;
+	return `<span class="skill-pill skill-${skillId} ${clickable ? "skill-pick" : ""}">${skillLabel(skillId)}</span>`;
 }
 
 function updateSkillPillElement(element, skillId, clickable = false) {
 	element.className = `skill-pill skill-${skillId} ${clickable ? "skill-pick" : ""}`;
-	element.textContent = SKILL_LABELS[skillId] || skillId;
+	element.textContent = skillLabel(skillId);
 }
 
 function populateAppSkillOptions() {
@@ -65,6 +89,7 @@ function renderAllPlayers() {
 		const row = document.createElement("tr");
 		row.innerHTML = `
 		<td>${p.name}</td>
+		<td>${renderGenderPillHtml(p.gender, true)}</td>
 		<td>${renderSkillPillHtml(p.skill, true)}</td>
 		<td><button type="button" class="remove-btn" data-id="${p.id}">Remove</button></td>`;
 		allPlayerTableBody.appendChild(row);
@@ -75,11 +100,16 @@ function renderAllPlayers() {
 	updateSortUI("all");
 }
 
-function addAllPlayer(name, skill) {
+function addAllPlayer(name, skill, gender) {
 	if (allPlayers.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
 		return `Player "${name}" already exists.`;
 	}
-	allPlayers.push({ id: nextAllPlayerId++, name, skill });
+	allPlayers.push({
+		id: nextAllPlayerId++,
+		name,
+		skill,
+		gender: gender || "x",
+	});
 	saveAllPlayersToStorage();
 	populateActivePlayerSelect();
 	return null;
@@ -151,7 +181,11 @@ document
 allPlayerForm.addEventListener("submit", (e) => {
 	e.preventDefault();
 	if (!validateAllPlayerForm()) return;
-	const error = addAllPlayer(apNameInput.value.trim(), apSkillInput.value);
+	const error = addAllPlayer(
+		apNameInput.value.trim(),
+		apSkillInput.value,
+		apgenderInput.value,
+	);
 	if (error) {
 		alert(error);
 		return;
@@ -181,12 +215,29 @@ allPlayersCsvInput.addEventListener("change", () => {
 			allPlayersImportResult.className = "import-result error";
 			return;
 		}
+		const requiredHeaders = ["name", "skill", "gender"];
+		const fileHeaders = lines[0].split(",").map((c) => c.trim().toLowerCase());
+		const headersIndexes = requiredHeaders.map((header) =>
+			fileHeaders.indexOf(header),
+		);
+
+		console.log(
+			`File headers: ${JSON.stringify(fileHeaders)}, required headers: ${JSON.stringify(requiredHeaders)}, indexes: ${JSON.stringify(headersIndexes)}`,
+		);
+
 		const rows = lines.slice(1);
 		let added = 0;
 		const errors = [];
 		const skillNumbers = Object.keys(SKILL_LABELS);
 		rows.forEach((line, i) => {
-			const [name, skill] = line.split(",").map((c) => c.trim());
+			const values = line.split(",");
+			console.log(`Row ${i + 2}: values=${JSON.stringify(values)}`);
+			const [name, skill, gender] = headersIndexes.map(
+				(i) => values[i]?.trim() || "",
+			);
+			console.log(
+				`Row ${i + 2}: name="${name}", skill="${skill}", gender="${gender}"`,
+			);
 			if (!name) {
 				errors.push(`Row ${i + 2}: missing name`);
 				return;
@@ -198,7 +249,23 @@ allPlayersCsvInput.addEventListener("change", () => {
 				);
 				return;
 			}
-			const error = addAllPlayer(name, skill);
+
+			// gender is optional, can be missing, we accept undefined value which defaults to "X" (N/A)
+			if (
+				gender &&
+				!Object.keys(GENDER_LABELS).includes(gender.toLowerCase())
+			) {
+				errors.push(
+					`Row ${i + 2}: Gender must be empty or one of ${Object.entries(
+						GENDER_LABELS,
+					)
+						.map(([key, value]) => `'${key}' (${value})`)
+						.join(", ")}`,
+				);
+				return;
+			}
+
+			const error = addAllPlayer(name, skill, gender?.toLowerCase());
 			if (error) {
 				errors.push(`Row ${i + 2}: ${error}`);
 				return;
@@ -231,8 +298,8 @@ document
 			return;
 		}
 		const csv = [
-			"name,skill",
-			...allPlayers.map((p) => `${p.name},${p.skill}`),
+			"name,skill,gender",
+			...allPlayers.map((p) => `${p.name},${p.skill},${p.gender || "x"}`),
 		].join("\r\n");
 		const a = document.createElement("a");
 		a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -243,27 +310,35 @@ document
 		URL.revokeObjectURL(a.href);
 	});
 
-// skill change
-let currentPopover = null;
+// gender/skill change
 
-// 2. Delegate click event to skill pills inside the table
+// 1. define current popver variable to track the open picker
+let currentPickerPopover = null;
+
+// 2. Delegate click event to gender and skill pills inside the table
 allPlayerTableBody.addEventListener("click", (event) => {
-	const targetPill = event.target.closest(".skill-pill");
-	if (!targetPill || targetPill.closest(".skill-picker-popover")) return;
+	const targetSkillPill = event.target.closest(".skill-pill");
+	if (targetSkillPill && !targetSkillPill.closest(".skill-picker-popover")) {
+		event.stopPropagation();
+		openSkillPicker(targetSkillPill);
+		return;
+	}
 
-	event.stopPropagation();
-	openSkillPicker(targetPill);
+	const targetGenderPill = event.target.closest(".gender-pill");
+	if (targetGenderPill && !targetGenderPill.closest(".gender-picker-popover")) {
+		event.stopPropagation();
+		openGenderPicker(targetGenderPill);
+		return;
+	}
 });
 
-function openSkillPicker(targetPill) {
-	closeSkillPicker();
-
-	// Create popover element
-	const popover = document.createElement("div");
-	popover.className = "skill-picker-popover";
+function createPickerPopover(targetPill) {
+	// Create pickerPopover element
+	const pickerPopover = document.createElement("div");
+	pickerPopover.className = "gender-picker-popover";
 
 	// Apply positioning styles
-	Object.assign(popover.style, {
+	Object.assign(pickerPopover.style, {
 		position: "absolute",
 		backgroundColor: "#ffffff",
 		border: "1px solid var(--accent-soft)",
@@ -277,13 +352,66 @@ function openSkillPicker(targetPill) {
 
 	// Calculate position relative to clicked pill
 	const rect = targetPill.getBoundingClientRect();
-	popover.style.top = `${rect.bottom + window.scrollY + 4}px`;
-	popover.style.left = `${rect.left + window.scrollX}px`;
+	pickerPopover.style.top = `${rect.bottom + window.scrollY + 4}px`;
+	pickerPopover.style.left = `${rect.left + window.scrollX}px`;
 
+	return pickerPopover;
+}
+
+function getPlayerIdFromPill(targetPill) {
 	// Retrieve player ID from the row's remove button or dataset
 	const row = targetPill.closest("tr");
 	const playerId =
 		targetPill.dataset.id || row.querySelector(".remove-btn")?.dataset.id;
+
+	return playerId;
+}
+
+function openGenderPicker(targetPill) {
+	closeCurrentPickerPopover();
+
+	// Create pickerPopover element
+	const pickerPopover = createPickerPopover(targetPill);
+
+	// Retrieve player ID from the row's remove button or dataset
+	const playerId = getPlayerIdFromPill(targetPill);
+
+	// Build gender option pills
+	Object.keys(GENDER_LABELS).forEach((genderId) => {
+		const option = document.createElement("span");
+		updateGenderPillElement(option, genderId, true);
+
+		option.addEventListener("click", (e) => {
+			e.stopPropagation();
+
+			// Update target pill UI
+
+			// Callback hook for backend/API update
+			if (onGenderChanged(targetPill, playerId, genderId)) {
+				// Reset sort UI since gender change may affect order, we do not wont to apply sort because
+				// it would change the order of the list and confuse the user.
+				// Instead we just update the pill and let the user sort manually if they want.
+				cancelSortUI("all");
+			}
+
+			closeCurrentPickerPopover();
+		});
+
+		pickerPopover.appendChild(option);
+	});
+
+	document.body.appendChild(pickerPopover);
+	currentPickerPopover = pickerPopover;
+}
+
+function openSkillPicker(targetPill) {
+	closeCurrentPickerPopover();
+
+	// Create pickerPopover element
+	const pickerPopover = createPickerPopover(targetPill);
+
+	// Retrieve player ID from the row's remove button or dataset
+	const playerId = getPlayerIdFromPill(targetPill);
 
 	// Build skill option pills
 	Object.keys(SKILL_LABELS).forEach((skillId) => {
@@ -303,24 +431,40 @@ function openSkillPicker(targetPill) {
 				cancelSortUI("all");
 			}
 
-			closeSkillPicker();
+			closeCurrentPickerPopover();
 		});
 
-		popover.appendChild(option);
+		pickerPopover.appendChild(option);
 	});
 
-	document.body.appendChild(popover);
-	currentPopover = popover;
+	document.body.appendChild(pickerPopover);
+	currentPickerPopover = pickerPopover;
 }
 
-function closeSkillPicker() {
-	if (currentPopover) {
-		currentPopover.remove();
-		currentPopover = null;
+function closeCurrentPickerPopover() {
+	if (currentPickerPopover) {
+		currentPickerPopover.remove();
+		currentPickerPopover = null;
 	}
 }
 
-// 3. Backend callback placeholder
+// 3. Backend callback placeholders
+
+function onGenderChanged(targetPillElement, playerId, genderId) {
+	const player = allPlayers.find((p) => p.id === Number(playerId));
+	if (player && player.gender !== genderId) {
+		player.gender = genderId;
+		saveAllPlayersToStorage(false);
+
+		// here we can avoid to render all players again, just update the pill text and class
+		updateGenderPillElement(targetPillElement, genderId, true);
+
+		return true;
+	}
+
+	return false;
+}
+
 function onSkillChanged(targetPillElement, playerId, skillId) {
 	const player = allPlayers.find((p) => p.id === Number(playerId));
 	if (player && player.skill !== skillId) {
@@ -339,17 +483,17 @@ function onSkillChanged(targetPillElement, playerId, skillId) {
 	return false;
 }
 
-// 4. Close popover on Escape key
+// 4. Close pickerPopover on Escape key
 document.addEventListener("keydown", (event) => {
 	if (event.key === "Escape") {
-		closeSkillPicker();
+		closeCurrentPickerPopover();
 	}
 });
 
-// 5. Close popover when clicking outside
+// 5. Close pickerPopover when clicking outside
 document.addEventListener("click", (event) => {
-	if (currentPopover && !currentPopover.contains(event.target)) {
-		closeSkillPicker();
+	if (currentPickerPopover && !currentPickerPopover.contains(event.target)) {
+		closeCurrentPickerPopover();
 	}
 });
 

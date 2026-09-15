@@ -142,6 +142,13 @@ function getSorted(arr, listKey) {
 			if (va > vb) return dir === "asc" ? 1 : -1;
 			return 0;
 		}
+		if (field === "gender") {
+			const va = a[field] || "x";
+			const vb = b[field] || "x";
+			if (va < vb) return dir === "asc" ? -1 : 1;
+			if (va > vb) return dir === "asc" ? 1 : -1;
+			return 0;
+		}
 
 		const ret = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
 		if (ret < 0) return dir === "asc" ? -1 : 1;
