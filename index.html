@@ -357,8 +357,8 @@ Pikachu,3,x</pre>
 							</div>
 							<div>
 								<div class="checkbox-group">
-									<label class="gen-checkbox-label" for="disable-2man-vs-2woman">
-										<input type="checkbox" id="disable-2man-vs-2woman">
+									<label class="gen-checkbox-label" for="disable-2men-vs-2women">
+										<input type="checkbox" id="disable-2men-vs-2women">
 										Disable 2 men vs 2 women matchups
 									</label>
 									<span class="help-icon" title="Prevents games between an all-male team and an all-female team.">?</span>
@@ -366,16 +366,16 @@ Pikachu,3,x</pre>
 							</div>
 						</div>
 						<div class="gen-btn-row">
-							<button type="button" id="gen-generate-btn" class="gen-primary-btn">Generate</button>
-							<button type="button" id="gen-clear-btn" class="clear-btn" hidden>Clear matches</button>
-							<button type="button" id="gen-print-btn" class="secondary-btn" hidden>Print</button>
-							<button type="button" id="gen-export-btn" class="secondary-btn" hidden>Export</button>
-						</div>
-
-						<div id="gen-progress" class="gen-progress-wrap" hidden>
-							<div id="gen-progress-bar" class="gen-progress-bar" style="width:0%">0%</div>
+							<button type="button" id="gen-generate-tournament-btn" class="gen-primary-btn">Generate</button>
+							<button type="button" id="gen-clear-tournament-btn" class="clear-btn" hidden>Clear matches</button>
+							<button type="button" id="gen-print-tournament-btn" class="secondary-btn" hidden>Print</button>
+							<button type="button" id="gen-export-tournament-btn" class="secondary-btn" hidden>Export</button>
 						</div>
 					</div>
+
+					<p class="empty gen-empty-hint" id="gen-tournament-empty">
+						Add active players and court availability, then click <strong>Generate</strong>.
+					</p>
 
 					<div id="gen-tournament-output" hidden></div>
 				</div>

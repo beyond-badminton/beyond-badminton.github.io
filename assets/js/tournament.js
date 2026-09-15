@@ -1,6 +1,144 @@
 // biome-ignore lint/suspicious/noRedundantUseStrict: required for global scripts loaded via <script> tags
 "use strict";
 
+// ── Storage keys ──────────────────────────────────────────────
+const TOURNAMENT_KEY = "tournament-generator:tournament";
+const TOURNAMENT_PLAYERS_KEY = "tournament-generator:tournamentPlayers";
+const TOURNAMENT_SCORES_KEY = "tournament-generator:tournamentScores";
+const TOURNAMENT_DATE_KEY = "tournament-generator:tournamentDate";
+
+let tournament = {};
+let tournamentPlayers = {};
+let tournamentScores = {};
+let tournamentDate = null;
+
+// ── DOM refs ──────────────────────────────────────────────────
+
+const genGenerateTournamentBtn = document.getElementById("gen-generate-tournament-btn");
+const genClearTournamentBtn = document.getElementById("gen-clear-tournament-btn");
+const genTournamentDatePicker = document.getElementById("gen-tournament-date-picker");
+const genPrintTournamentBtn = document.getElementById("gen-print-tournament-btn");
+const genExportTournamentBtn = document.getElementById("gen-export-tournament-btn");
+const genTournamentOut = document.getElementById("gen-tournament-output");
+const genTournamentEmpty = document.getElementById("gen-tournament-empty");
+const genQualificationMatchesNum = document.getElementById("qualification-matches");
+const genDisableTwoMenVsTwoWomenCb = document.getElementById("disable-2men-vs-2women");
+
+
+// ── Generate button handler ───────────────────────────────────
+genGenerateTournamentBtn.addEventListener("click", () => {
+	if (hasTournament() && !confirm("Replace the existing tournament with a new one?"))
+		return;
+	generateTournament();
+});
+
+genClearTournamentBtn.addEventListener("click", () => {
+	if (!confirm("Clear the generated tournament?")) return;
+	clearGeneratedTournamentFromStorage();
+});
+
+genPrintTournamentBtn.addEventListener("click", () => {
+	// printTournament(
+	// 	tournament,
+	// 	tournamentPlayers,
+	// 	tournamentScores,
+	// 	tournamentDate
+	// );
+});
+
+genExportTournamentBtn.addEventListener("click", () => {
+	// downloadTournamentSpreadsheet(
+	// 	tournament,
+	// 	tournamentPlayers,
+	// 	tournamentScores,
+	// 	tournamentDate
+	// );
+});
+
+genTournamentDatePicker.addEventListener("change", () => {
+	tournamentDate = genTournamentDatePicker.valueAsDate;
+	saveGeneratedTournamentToStorage(false);
+});
+
+function hasTournament() {
+	return (
+		tournament &&
+		Object.keys(tournament).length > 0
+	);
+}
+
+function clearGeneratedTournamentFromStorage() {
+	tournament = {};
+	tournamentPlayers = {};
+	tournamentScores = {};
+	tournamentDate = null;
+
+	try {
+		localStorage.removeItem(TOURNAMENT_KEY);
+		localStorage.removeItem(TOURNAMENT_PLAYERS_KEY);
+		localStorage.removeItem(TOURNAMENT_SCORES_KEY);
+		localStorage.removeItem(TOURNAMENT_DATE_KEY);
+	} catch {}
+
+	renderTournament();
+}
+
+function saveTournamentScores() {
+	try {
+		localStorage.setItem(TOURNAMENT_SCORES_KEY, JSON.stringify(scores));
+	} catch (_) {}
+}
+
+function saveTournamentPlayers() {
+	try {
+		localStorage.setItem(TOURNAMENT_PLAYERS_KEY, JSON.stringify(players));
+	} catch (_) {}
+}
+
+function saveGeneratedTournamentToStorage(render = true) {
+	try {
+		localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(tournament));
+		if (tournamentDate) {
+			localStorage.setItem(
+				TOURNAMENT_DATE_KEY,
+				tournamentDate.toISOString(),
+			);
+		} else {
+			localStorage.removeItem(TOURNAMENT_DATE_KEY);
+		}
+	} catch {}
+
+	saveTournamentPlayers();
+	saveTournamentScores();
+
+	if (render) renderTournament();
+}
+
+function loadGeneratedTournamentFromStorage() {
+	try {
+		const savedTournament = localStorage.getItem(TOURNAMENT_KEY);
+		const savedPlayers = localStorage.getItem(TOURNAMENT_PLAYERS_KEY);
+		const savedScores = localStorage.getItem(TOURNAMENT_SCORES_KEY);
+		const savedDate = localStorage.getItem(TOURNAMENT_DATE_KEY);
+
+		if (savedTournament) tournament = JSON.parse(savedTournament);
+		if (savedPlayers) tournamentPlayers = JSON.parse(savedPlayers);
+		if (savedScores) tournamentScores = JSON.parse(savedScores);
+		if (savedDate) tournamentDate = new Date(savedDate);
+	} catch {
+		tournament = {};
+		tournamentPlayers = {};
+		tournamentScores = {};
+		tournamentDate = null;
+	}
+
+	renderTournament();
+}
+
+
+
+
+
 /**
  * Generate an independent random doubles tournament.
  *
@@ -24,12 +162,12 @@
  *   stats: Object
  * }}
  */
-function generateRandomDoublesTournament({
+function generateQualificationMatches(
 	activePlayerCount,
-	matchCount,
 	activeWomenCount = null,
-	courts = [],
-}) {
+	matchCount,
+	courts = []
+) {
 	// ------------------------------------------------------------
 	// Validation
 	// ------------------------------------------------------------
@@ -214,14 +352,30 @@ function generateRandomDoublesTournament({
 	return rounds;
 }
 
-const genTournamentOut = document.getElementById("gen-tournament-output");
-// const genTournamentDatePicker = document.getElementById(
-// 	"gen-tournament-date-picker",
-// );
+function generateTournament() {
+	const activeWomenCount = genDisableTwoMenVsTwoWomenCb.value 
+		? activePlayers.filter((ap) => playerIsWoman(ap.allPlayerId)).length
+		: null;
 
-function renderTournament(rounds) {
-	genTournamentOut.hidden = false;
+	const rounds = generateQualificationMatches(activePlayers.length, activeWomenCount, Number(genQualificationMatchesNum.value), ["C1", "C2", "C3"]);
+	tournament = { qualificationRounds : rounds };
+	saveGeneratedTournamentToStorage(true);
+}
+
+function renderTournament() {
+	const hasTournamentValue = hasTournament();
+	
+	genTournamentEmpty.hidden = hasTournamentValue;
+	genTournamentOut.hidden = !hasTournamentValue;
 	genTournamentOut.innerHTML = "";
+	genClearTournamentBtn.hidden = !hasTournamentValue;
+	genPrintTournamentBtn.hidden = !hasTournamentValue;
+	genExportTournamentBtn.hidden = !hasTournamentValue;
+
+	if (!hasTournamentValue) {
+		return;
+	}
+
 	//console.log("Rendering training:", training);
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
@@ -230,7 +384,7 @@ function renderTournament(rounds) {
 	// this is sufficient since we are generating matches per hour
 	let courtBlockStart = null;
 
-	rounds.forEach((round) => {
+	tournament.qualificationRounds.forEach((round) => {
 		const roundEl = document.createElement("div");
 		roundEl.className = "gen-round";
 		roundEl.dataset.roundId = round.roundId;
@@ -279,13 +433,14 @@ function renderTournament(rounds) {
 	// }
 }
 
-const rounds = generateRandomDoublesTournament({
-	activePlayerCount: 14,
-	matchCount: 4,
-	activeWomenCount: 4,
-	courts: ["C1", "C2", "C3"],
-});
+// const rounds = generateRandomDoublesTournament({
+// 	activePlayerCount: 14,
+// 	matchCount: 4,
+// 	activeWomenCount: 4,
+// 	courts: ["C1", "C2", "C3"],
+// });
 
-//console.log("Generated tournament rounds:", rounds);
+// //console.log("Generated tournament rounds:", rounds);
 
-renderTournament(rounds);
+
+loadGeneratedTournamentFromStorage();

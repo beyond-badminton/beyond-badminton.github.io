@@ -497,6 +497,27 @@ document.addEventListener("click", (event) => {
 	}
 });
 
+// ── Utility ───────────────────────────────────────────────────
+
+function playerName(allPlayerId) {
+	const p = allPlayers.find((p) => p.id === allPlayerId);
+	return p ? p.name : "?";
+}
+
+function playerSkill(allPlayerId) {
+	const p = allPlayers.find((p) => p.id === allPlayerId);
+	return p ? p.skill : "?";
+}
+
+function playerGender(allPlayerId) {
+	const p = allPlayers.find((p) => p.id === allPlayerId);
+	return p?.gender || "x";
+}
+
+function playerIsWoman(allPlayerId) {
+	return playerGender(allPlayerId) === "w";
+}
+
 // ============================================================
 // INIT — initial render on page load
 // ============================================================

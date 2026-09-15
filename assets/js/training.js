@@ -666,21 +666,6 @@ const genStatsOut = document.getElementById("gen-stats-output");
 const genStatsTbody = document.getElementById("gen-stats-tbody");
 const genEmpty = document.getElementById("gen-empty");
 
-// ── Utility ───────────────────────────────────────────────────
-
-function playerName(activeId) {
-	const ap = activePlayers.find((p) => p.id === activeId);
-	if (!ap) return "?";
-	const p = allPlayers.find((p) => p.id === ap.allPlayerId);
-	return p ? p.name : "?";
-}
-function playerSkill(activeId) {
-	const ap = activePlayers.find((p) => p.id === activeId);
-	if (!ap) return "?";
-	const p = allPlayers.find((p) => p.id === ap.allPlayerId);
-	return p ? p.skill : "?";
-}
-
 // ── Generate button handler ───────────────────────────────────
 genGenerateBtn.addEventListener("click", () => {
 	if (training && !confirm("Replace the existing training with a new one?"))
@@ -937,7 +922,7 @@ function renderGeneratedTraining() {
 }
 
 function buildPlayerSlotInnerHtml(pid) {
-	return `${playerName(pid)}&nbsp;${renderSkillPillHtml(playerSkill(pid))}`;
+	return `${activePlayerName(pid)}&nbsp;${renderSkillPillHtml(activePlayerSkill(pid))}`;
 }
 
 // ── Training output ───────────────────────────────────────────
@@ -1158,7 +1143,7 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 		return mat[i][j];
 	}
 
-	function playerSkill(allPlayers, activePlayers, activeId) {
+	function getPlayerSkill(allPlayers, activePlayers, activeId) {
 		const ap = activePlayers.find((p) => p.id === activeId);
 		if (!ap) return 1;
 		const p = allPlayers.find((p) => p.id === ap.allPlayerId);
@@ -1208,11 +1193,11 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 			const [a0, a1, b0, b1] = [...m.teamA, ...m.teamB];
 			// Skill
 			const sa =
-				playerSkill(allPlayers, activePlayers, a0) +
-				playerSkill(allPlayers, activePlayers, a1);
+				getPlayerSkill(allPlayers, activePlayers, a0) +
+				getPlayerSkill(allPlayers, activePlayers, a1);
 			const sb =
-				playerSkill(allPlayers, activePlayers, b0) +
-				playerSkill(allPlayers, activePlayers, b1);
+				getPlayerSkill(allPlayers, activePlayers, b0) +
+				getPlayerSkill(allPlayers, activePlayers, b1);
 			const diff = Math.abs(sa - sb);
 			if (diff === 1) skillPen += penaltyWeights.SKILL_1;
 			else if (diff === 2) skillPen += penaltyWeights.SKILL_2;
@@ -1426,8 +1411,8 @@ function renderStatsTable() {
 	const stats = {};
 	activePlayers.forEach((ap) => {
 		stats[ap.id] = {
-			name: playerName(ap.id),
-			skill: playerSkill(ap.id),
+			name: activePlayerName(ap.id),
+			skill: activePlayerSkill(ap.id),
 			playtime: ap.playtime,
 			matches: 0,
 			bench: 0,
