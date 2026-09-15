@@ -342,6 +342,41 @@ Pikachu,3,x</pre>
 				</div>
 				
 				<div id="tournament-section" class="sub-tab-content">
+				
+					<div class="card gen-controls-card">
+						<h2>Generate tournament</h2>
+
+						<div class="gen-controls-row">
+							<div class="field gen-field-inline">
+								<label for="matches-per-hour">Qualification Matches per Player <span class="help-icon" title="Number of qualification matches to be played by every player to set the final playoff roster.">?</span></label>
+								<input type="number" id="qualification-matches" min="1" value="1">
+							</div>
+							<div class="field gen-field-inline">
+								<label for="gen-tournament-date-picker">Date of the tournament</label>
+								<input type="date" id="gen-tournament-date-picker" />
+							</div>
+							<div>
+								<div class="checkbox-group">
+									<label class="gen-checkbox-label" for="disable-2man-vs-2woman">
+										<input type="checkbox" id="disable-2man-vs-2woman">
+										Disable 2 men vs 2 women matchups
+									</label>
+									<span class="help-icon" title="Prevents games between an all-male team and an all-female team.">?</span>
+								</div>
+							</div>
+						</div>
+						<div class="gen-btn-row">
+							<button type="button" id="gen-generate-btn" class="gen-primary-btn">Generate</button>
+							<button type="button" id="gen-clear-btn" class="clear-btn" hidden>Clear matches</button>
+							<button type="button" id="gen-print-btn" class="secondary-btn" hidden>Print</button>
+							<button type="button" id="gen-export-btn" class="secondary-btn" hidden>Export</button>
+						</div>
+
+						<div id="gen-progress" class="gen-progress-wrap" hidden>
+							<div id="gen-progress-bar" class="gen-progress-bar" style="width:0%">0%</div>
+						</div>
+					</div>
+
 					<div id="gen-tournament-output" hidden></div>
 				</div>
 			</div>
