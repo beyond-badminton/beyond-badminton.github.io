@@ -602,6 +602,48 @@ input[type="file"] {
 	box-shadow: 0 0 0 1px #0f7f9b;
 }
 
+.gender-pill {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-weight: 600;
+	font-size: 0.78rem;
+	transition:
+		box-shadow 0.2s ease-in-out,
+		border-color 0.2s ease-in-out;
+}
+
+.gender-pick {
+	cursor: pointer;
+}
+
+.gender-pill.gender-m {
+	background: hsl(194, 100%, 92%);
+	color: #0f7f9b;
+}
+
+.gender-pick.gender-m:hover {
+	box-shadow: 0 0 0 1px #0f7f9b;
+}
+
+.gender-pill.gender-w {
+	background: #fbe3d3;
+	color: #c05a1d;
+}
+
+.gender-pick.gender-w:hover {
+	box-shadow: 0 0 0 1px #c05a1d;
+}
+
+.gender-pill.gender-x {
+	background: var(--line);
+	color: var(--ink-soft);
+}
+
+.gender-pick.gender-x:hover {
+	box-shadow: 0 0 0 1px var(--ink-soft);
+}
+
 /* Tablet and up: widen the shell, show table instead of stacked cards */
 @media (max-width: 680px) {
 	.logo {

@@ -47,6 +47,14 @@
 									<span class="error-text">Enter a name.</span>
 								</div>
 								<div class="field">
+									<label for="ap-gender">Gender</label>
+									<select id="ap-gender" name="gender">
+										<option value="x">N/A</option>
+										<option value="m">Man</option>
+										<option value="w">Woman</option>
+									</select>
+								</div>
+								<div class="field">
 									<label for="ap-skill">Skill level</label>
 									<select id="ap-skill" name="skill">
 									</select>
@@ -57,16 +65,24 @@
 							<div class="import-section">
 								<h3>Import / Export CSV</h3>
 								<p class="csv-help">Data is stored in browser local storage. Export is useful if local storage is cleared or you wish to change browser or device.</p>
-								<p class="csv-help">Import format — one player per line, first line (header) is skipped. Columns:</p>
+								<p class="csv-help">Import format:</p>
+								<ul class="csv-columns">
+									<li>One player per line</li>
+									<li>First line must include column headers</li>
+									<li>Header order is flexible</li>
+								</ul>
+								<p class="csv-help">Columns:</p>
 								<ul class="csv-columns">
 									<li><code>name</code> — player's name</li>
 									<li id="csv-skill-codes"></li>
+									<li><code>gender</code> — <code>m</code> (man), <code>w</code> (woman), <code>x</code> (N/A)</li>
 								</ul>
 								<span class="code-label">Example:</span>
 								<pre class="code">
-name,skill
-Alice,2
-Bob,1</pre>
+name,skill,gender
+Alice,2,w
+David,1,m
+Pikachu,3,x</pre>
 								<div class="import-actions">
 									<button type="button" class="secondary-btn" id="export-all-players-btn">Export CSV</button>
 									<label class="secondary-btn" for="all-players-csv-input">Import CSV</label>
@@ -86,6 +102,7 @@ Bob,1</pre>
 							<thead>
 								<tr>
 									<th><span class="sortable" data-list="all" data-field="name">Name <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="all" data-field="gender">Gender <span class="sort-icon">↕</span></span>&nbsp;&nbsp;<span class="help-icon" title="Click a gender to edit it directly. Changing genders will not re-sort the table automatically - click this header to re-sort anytime.">?</span></th>
 									<th><span class="sortable" data-list="all" data-field="skill">Skill <span class="sort-icon">↕</span></span>&nbsp;&nbsp;<span class="help-icon" title="Click a skill to edit it directly. Changing skills will not re-sort the table automatically - click this header to re-sort anytime.">?</span></th>
 									<th></th>
 								</tr>
