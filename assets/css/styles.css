@@ -428,6 +428,10 @@ input[type="file"] {
 	margin-bottom: 10px;
 }
 
+.players-panel-header-btns[hidden] {
+	display: none;
+}
+
 .clear-btn {
 	border: 1px solid var(--line);
 	background: var(--card);

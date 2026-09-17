@@ -49,7 +49,6 @@ let playoffScores = {};
 let tournamentPlayers = [];
 
 const localConfig = {
-	qualificationDrawFinalRendered: false,
 	qualificationRoundsFinalRendered: false,
 	qualificationScoresFinalRendered: false,
 	playoffDrawFinalRendered: false,
@@ -64,13 +63,6 @@ const genTournamentDatePicker = document.getElementById("gen-tournament-date-pic
 const genPrintTournamentBtn = document.getElementById("gen-print-tournament-btn");
 const genExportTournamentBtn = document.getElementById("gen-export-tournament-btn");
 
-const genQualificationDrawCard = document.getElementById("gen-qualification-draw-card");
-const genQualificationDrawTitle = document.getElementById("gen-qualification-draw-title");
-const genQualificationDrawTableBody = document.getElementById("qualification-draw-table-body");
-
-const genQualificationCard = document.getElementById("gen-qualification-card");
-const genQualificationOut = document.getElementById("gen-qualification-output");
-
 const genQualificationScoresCard = document.getElementById("gen-qualification-scores-card");
 const genQualificationScoresOut = document.getElementById("gen-qualification-scores-output");
 
@@ -83,8 +75,6 @@ const genTournamentEmpty = document.getElementById("gen-tournament-empty");
 const genqualificationRoundsNum = document.getElementById("qualification-matches");
 const genDisableTwoMenVsTwoWomenCb = document.getElementById("disable-2men-vs-2women");
 
-
-const qualificationDrawPlayerField = document.getElementById("qualification-draw-player");
 
 // ── Generate button handler ───────────────────────────────────
 genGenerateTournamentBtn.addEventListener("click", () => {
@@ -512,8 +502,47 @@ function populateSelectElementWithValues(selectEl, values, firstValueHint) {
 	});
 }
 
-const availableDraws = []
+// ------------------------------------------------------------
+// Qualification draw
+// ------------------------------------------------------------
+
+const genQualificationDrawCard = document.getElementById("gen-qualification-draw-card");
+const genQualificationDrawTitle = document.getElementById("gen-qualification-draw-title");
+const genQualificationDrawTableBody = document.getElementById("qualification-draw-table-body");
+
+const qualificationDrawFormCard = document.getElementById("gen-qualification-draw-form-card");
+const qualificationDrawPlayerField = document.getElementById("qualification-draw-player");
+const qualificationDrawPickField = document.getElementById("qualification-draw-pick");
+const qualificationDrawSubmitButton = document.getElementById("submit-qualification-draw-btn");
+const qualificationDrawPanelHeader = document.getElementById("qualification-draw-panel-header");
+const qualificationDrawClearButton = document.getElementById("clear-qualification-draw-btn");
+
+//const availableDraws = []
 let currentPlayerId = null;
+
+// function populateAvailableDraws() {
+// 	availableDraws.length = 0;
+// 	let start = 1;
+// 	let end = tournamentPlayers.length;
+
+// 	if (tournamentConfig.disable2MenVs2Women) {
+// 		const womenCount = getWomenCount();
+// 		if (playerIsWoman(currentPlayerId)) {
+// 			end = womenCount;
+// 		}
+// 		else {
+// 			start = 1 + womenCount;
+// 		}
+// 	}
+
+// 	for (let i = start; i <= end; i++) {
+// 		if (qualificationDraw.some((p) => p.pick === i)) {
+// 			continue;
+// 		}
+// 		availableDraws.push(i);
+// 	}
+// }
+
 
 function populateQualificationDrawPlayerField() {
 	const playerOptions = tournamentPlayers
@@ -529,40 +558,10 @@ function populateQualificationDrawPlayerField() {
 	}
 };
 
+function populateQualificationDrawPickField() {
+	const values = [];
 
-function renderQualificationDraw() {
-	if (localConfig.qualificationDrawFinalRendered) {
-		return;
-	}
-
-	genQualificationCard.hidden = false;
-	genQualificationDrawTitle.innerText = tournamentConfig.qualificationDrawConfirmed
-		? "Qualification draw"
-		: "Enter qualification draw results";
-
-	if (!tournamentConfig.qualificationDrawConfirmed && availableDraws.length === 0) {
-		for (let i = 0; i < tournamentPlayers.length; i++) {
-			availableDraws.push(tournamentConfig.disable2MenVs2Women && playerIsWoman(tournamentPlayers[i - 1]) ? i : i);
-		}
-	}
-
-	const selectPickField = document.getElementById("qualification-draw-pick");
-	const submitDrawBtn = document.getElementById("submit-qualification-draw-btn");
-	const clearDrawBtn = document.getElementById("clear-qualification-draw-btn");
-
-	submitDrawBtn.disabled = true;
-	submitDrawBtn.hidden = true;
-	clearDrawBtn.disabled = tournamentConfig.qualificationDrawConfirmed;
-	clearDrawBtn.hidden = tournamentConfig.qualificationDrawConfirmed;
-
-	populateQualificationDrawPlayerField();
-
-	qualificationDrawPlayerField.hidden = tournamentConfig.qualificationDrawConfirmed;
-	qualificationDrawPlayerField.addEventListener("change", (event) => {
-		if (!event.target.value) return;
-		currentPlayerId = Number(event.target.value);
-
-		const values = [];
+	if (currentPlayerId !== null) {
 		let start = 1;
 		let end = tournamentPlayers.length;
 
@@ -582,83 +581,86 @@ function renderQualificationDraw() {
 			}
 			values.push(i);
 		}
+	}
 
-		populateSelectElementWithValues(selectPickField, values, "Select a pick");
-		selectPickField.value = "";
-		selectPickField.disabled = false;
-	});
+	populateSelectElementWithValues(qualificationDrawPickField, values, "Select a pick");
 
-
-	populateSelectElementWithValues(selectPickField, [], "Select a pick");
-	selectPickField.addEventListener("change", (event) => {
-		const drawNumber = event.target.value;
-		if (!drawNumber) return;
-		qualificationDrawPlayerField.value = "";
-		selectPickField.value = "";
-		selectPickField.disabled = true;
-
-		qualificationDraw.push({
-			id: currentPlayerId,
-			name: playerName(currentPlayerId),
-			pick: Number(drawNumber),
-		});
-
-		console.log("Added to qualificationDraw:", qualificationDraw);
-
-		saveQualificationDraw();
-
-		renderQualificationDrawPlayers();
-
-		// remove playerId from qualificationDrawPlayerField options
-		const optionToRemove = qualificationDrawPlayerField.querySelector(`option[value="${currentPlayerId}"]`);
-		if (optionToRemove) {
-			console.log("Removing playerId from qualificationDrawPlayerField options:", currentPlayerId);
-			optionToRemove.remove();
-		}
-
-		if (qualificationDraw.length === tournamentPlayers.length) {
-			qualificationDrawPlayerField.disabled = true;
-			submitDrawBtn.disabled = false;
-			submitDrawBtn.hidden = false;
-		}
-	});
-
-	submitDrawBtn.addEventListener("click", () => {
-		if (qualificationDraw.length !== tournamentPlayers.length) {
-			alert("Please complete the qualification draw for all players before confirming.");
-			return;
-		}
-		tournamentConfig.qualificationDrawConfirmed = true;
-		savedTournamentConfig();
-
-		renderQualificationDrawPlayers();
-
-		submitDrawBtn.hidden = true;
-		submitDrawBtn.disabled = true;
-		genQualificationDrawTitle.innerText = "Qualification draw";
-		// disable qualificationDrawPlayerField and selectPickField
-		qualificationDrawPlayerField.disabled = true;
-		selectPickField.disabled = true;
-		clearDrawBtn.disabled = true;
-		clearDrawBtn.hidden = true;
-
-		document.getElementById("gen-qualification-draw-form-card").hidden = true;
-	});
-
-	clearDrawBtn.hidden = tournamentConfig.qualificationDrawConfirmed;
-	clearDrawBtn.addEventListener("click", () => {
-		if (!confirm("Are you sure you want to clear the qualification draw?")) return;
-		qualificationDraw = [];
-		saveQualificationDraw();
-		tournamentConfig.qualificationDrawConfirmed = false;
-		savedTournamentConfig();
-
-		renderQualificationDrawPlayers();
-		populateQualificationDrawPlayerField();
-	});
-
-	localConfig.qualificationDrawFinalRendered = true;
+	if (currentPlayerId === null || values.length === 0) {
+		qualificationDrawPickField.disabled = true;
+	}
+	else {
+		qualificationDrawPickField.disabled = false;
+	}
 }
+
+qualificationDrawPlayerField.addEventListener("change", (event) => {
+	if (!event.target.value) return;
+
+	currentPlayerId = Number(event.target.value);
+
+	//populateAvailableDraws();
+	populateQualificationDrawPickField();
+
+	// on pick change, reset the pick field and enable it
+	qualificationDrawPickField.value = "";
+	qualificationDrawPickField.disabled = false;
+});
+
+qualificationDrawPickField.addEventListener("change", (event) => {
+	const drawNumber = event.target.value;
+	if (!drawNumber) return;
+
+	qualificationDrawPickField.value = "";
+	qualificationDrawPickField.disabled = true;
+
+	qualificationDraw.push({
+		id: currentPlayerId,
+		name: playerName(currentPlayerId),
+		pick: Number(drawNumber),
+	});
+
+	console.log("Added to qualificationDraw:", qualificationDraw);
+
+	saveQualificationDraw();
+
+	renderQualificationDrawPlayers();
+
+	// remove playerId from qualificationDrawPlayerField options
+	const optionToRemove = qualificationDrawPlayerField.querySelector(`option[value="${currentPlayerId}"]`);
+	if (optionToRemove) {
+		console.log("Removing playerId from qualificationDrawPlayerField options:", currentPlayerId);
+		optionToRemove.remove();
+	}
+
+	if (qualificationDraw.length === tournamentPlayers.length) {
+		qualificationDrawPlayerField.disabled = true;
+		qualificationDrawSubmitButton.disabled = false;
+		qualificationDrawSubmitButton.hidden = false;
+	}
+});
+
+qualificationDrawSubmitButton.addEventListener("click", () => {
+	if (qualificationDraw.length !== tournamentPlayers.length) {
+		alert("Please complete the qualification draw for all players before confirming.");
+		return;
+	}
+
+	tournamentConfig.qualificationDrawConfirmed = true;
+	savedTournamentConfig();
+	renderQualificationDraw();
+
+	populateQualificationPickToPlayer();
+	renderQualificationRounds();
+});
+
+qualificationDrawClearButton.addEventListener("click", () => {
+	if (!confirm("Are you sure you want to clear the qualification draw?")) return;
+	qualificationDraw = [];
+	saveQualificationDraw();
+	tournamentConfig.qualificationDrawConfirmed = false;
+	savedTournamentConfig();
+	renderQualificationDraw();
+});
 
 function renderQualificationDrawPlayers() {
 	genQualificationDrawTableBody.innerHTML = "";
@@ -678,48 +680,51 @@ function renderQualificationDrawPlayers() {
 	updateSortUI("qualification");
 }
 
-function renderTournament() {
-	const hasTournamentValue = hasTournament();
+function renderQualificationDraw() {
 
-	if (hasTournamentValue) {
-		renderQualificationDraw();
+	qualificationDrawFormCard.hidden = tournamentConfig.qualificationDrawConfirmed;
+	genQualificationDrawTitle.innerText = tournamentConfig.qualificationDrawConfirmed
+		? "Qualification draw"
+		: "Enter qualification draw results";
+
+	qualificationDrawSubmitButton.disabled = tournamentConfig.qualificationDrawConfirmed || qualificationDraw.length !== tournamentPlayers.length;
+	qualificationDrawClearButton.disabled = tournamentConfig.qualificationDrawConfirmed;
+	qualificationDrawPanelHeader.hidden = tournamentConfig.qualificationDrawConfirmed;
+
+	if (!tournamentConfig.qualificationDrawConfirmed) {
+		populateQualificationDrawPlayerField();
+		populateQualificationDrawPickField();
 	}
-	console.log("Rendering tournament, hasTournament:", hasTournamentValue);
-	
-	genTournamentEmpty.hidden = hasTournamentValue;
-	genQualificationDrawCard.hidden = !hasTournamentValue;
-	genQualificationCard.hidden = !hasTournamentValue;
-	genClearTournamentBtn.hidden = !hasTournamentValue;
-	genPrintTournamentBtn.hidden = !hasTournamentValue;
-	genExportTournamentBtn.hidden = !hasTournamentValue;
-
-	if (!hasTournamentValue) {
-		return;
+	else {
+		renderQualificationDrawPlayers();
 	}
+}
 
-	genTournamentDatePicker.valueAsDate = tournamentConfig.tournamentDate ? new Date(tournamentConfig.tournamentDate) : null;
+//------------------------------------------------------------
+// Render qualification rounds
+//------------------------------------------------------------
 
-	//console.log("Rendering training:", training);
+const genQualificationCard = document.getElementById("gen-qualification-card");
+const genQualificationOut = document.getElementById("gen-qualification-output");
+
+const qualificationPickToPlayer = new Map();
+
+function populateQualificationPickToPlayer() {
+	qualificationPickToPlayer.clear();
+	qualificationDraw.forEach((p) => {
+		qualificationPickToPlayer.set(p.pick, p);
+	});
+}
+
+function renderQualificationRounds() {
+
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
-
-	// with round, we will print time for each whole hour
-	// this is sufficient since we are generating matches per hour
-	let courtBlockStart = null;
 
 	qualificationRounds.forEach((round) => {
 		const roundEl = document.createElement("div");
 		roundEl.className = "gen-round";
 		roundEl.dataset.roundId = round.roundId;
-
-		if (round.courtBlockStart && round.courtBlockStart !== courtBlockStart) {
-			const bHeader = document.createElement("div");
-			bHeader.className = "gen-block-header";
-			bHeader.textContent = round.courtBlockStart;
-			blockEl.appendChild(bHeader);
-		}
-
-		courtBlockStart = round.courtBlockStart;
 
 		const rLabel = document.createElement("p");
 		rLabel.className = "gen-round-label";
@@ -731,7 +736,7 @@ function renderTournament() {
 
 		round.matches.forEach((match) => {
 			matchesRow.appendChild(
-				buildMatchCard(match, round.roundId, false, (number) => String(number)),
+				buildMatchCard(match, round.roundId, false, (number) => qualificationPickToPlayer.get(number)?.name || String(number)),
 			);
 		});
 
@@ -749,7 +754,35 @@ function renderTournament() {
 		blockEl.appendChild(roundEl);
 	});
 
+	genQualificationOut.innerHTML = "";
 	genQualificationOut.appendChild(blockEl);
+}
+
+function renderQualificationScores() {
+}
+
+
+function renderTournament() {
+	const hasTournamentValue = hasTournament();
+
+	console.log("Rendering tournament, hasTournament:", hasTournamentValue);
+	
+	genTournamentEmpty.hidden = hasTournamentValue;
+	genQualificationDrawCard.hidden = !hasTournamentValue;
+	genQualificationCard.hidden = !hasTournamentValue;
+	genClearTournamentBtn.hidden = !hasTournamentValue;
+	genPrintTournamentBtn.hidden = !hasTournamentValue;
+	genExportTournamentBtn.hidden = !hasTournamentValue;
+
+	if (!hasTournamentValue) {
+		return;
+	}
+
+	renderQualificationDraw();
+	renderQualificationRounds();
+	renderQualificationScores();
+
+	genTournamentDatePicker.valueAsDate = tournamentConfig.tournamentDate ? new Date(tournamentConfig.tournamentDate) : null;
 
 	// if (trainingDate) {
 	// 	genDatePicker.valueAsDate = trainingDate; // Format as YYYY-MM-DD for input[type=date]
