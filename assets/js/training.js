@@ -963,7 +963,7 @@ function renderTraining() {
 		matchesRow.className = "gen-matches-row";
 
 		round.matches.forEach((match) => {
-			matchesRow.appendChild(buildMatchCard(match, round.roundId));
+			matchesRow.appendChild(buildMatchCard(match, scores[match.matchId] = { a: null, b: null }, round.roundId));
 		});
 
 		roundEl.appendChild(matchesRow);
@@ -991,12 +991,11 @@ function renderTraining() {
 
 function buildMatchCard(
 	match,
+	score,
 	roundId,
 	draggable = true,
 	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
 ) {
-	const sc = scores[match.matchId] || { a: null, b: null };
-
 	const card = document.createElement("div");
 	card.className = "gen-match-card";
 	card.dataset.matchId = match.matchId;
@@ -1030,7 +1029,7 @@ function buildMatchCard(
 		// Score box between teams
 		if (ti === 0) {
 			const scoreRow = document.createElement("div");
-			const hasScore = sc.a !== null || sc.b !== null;
+			const hasScore = score.a !== null || score.b !== null;
 			scoreRow.className = `gen-score-row${hasScore ? "" : " score-blank"}`;
 
 			const inA = document.createElement("input");
@@ -1038,7 +1037,7 @@ function buildMatchCard(
 			inA.min = "0";
 			inA.placeholder = "0";
 			inA.className = "gen-score-input";
-			inA.value = sc.a !== null ? sc.a : "";
+			inA.value = score.a !== null ? score.a : "";
 			inA.dataset.matchId = match.matchId;
 			inA.dataset.side = "a";
 
@@ -1051,7 +1050,7 @@ function buildMatchCard(
 			inB.min = "0";
 			inB.placeholder = "0";
 			inB.className = "gen-score-input";
-			inB.value = sc.b !== null ? sc.b : "";
+			inB.value = score.b !== null ? score.b : "";
 			inB.dataset.matchId = match.matchId;
 			inB.dataset.side = "b";
 

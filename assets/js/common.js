@@ -106,6 +106,7 @@ const sortState = {
 	active: { field: "name", dir: "asc" },
 	stats: { field: "name", dir: "asc" },
 	qualification: { field: "name", dir: "asc" },
+	qualificationScores: { field: "name", dir: "asc" },
 };
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used
@@ -124,7 +125,11 @@ function getSorted(arr, listKey) {
 			field === "matches" ||
 			field === "bench" ||
 			field === "sit1stRound" ||
-			field === "pick"
+			field === "pick" ||
+			field === "played" ||
+			field === "wins" ||
+			field === "losses" ||
+			field === "winrate"
 		) {
 			const va = a[field] || false;
 			const vb = b[field] || false;
@@ -207,6 +212,7 @@ function handleSort(listKey, field) {
 	else if (listKey === "active") renderActivePlayers();
 	else if (listKey === "stats") renderStatsTable();
 	else if (listKey === "qualification") renderQualificationDrawPlayers();
+	else if (listKey === "qualificationScores") renderQualificationScores();
 }
 
 document.querySelectorAll("span.sortable").forEach((el) => {

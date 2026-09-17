@@ -9,7 +9,7 @@ const TOURNAMENT_QUALIFICATION_SCORES_KEY = "tournament-generator:qualificationS
 const TOURNAMENT_QUALIFICATION_STATS_KEY = "tournament-generator:qualificationPlayerStats";
 const TOURNAMENT_PLAYOFF_DRAW_KEY = "tournament-generator:playoffDraw";
 const TOURNAMENT_PLAYOFF_ROUNDS_KEY = "tournament-generator:playoffRounds";
-const TOURNAMENT_PLAYOFF_SCORESS_KEY = "tournament-generator:playoffScores";
+const TOURNAMENT_PLAYOFF_SCORES_KEY = "tournament-generator:playoffScores";
 const TOURNAMENT_PLAYERS_KEY = "tournament-generator:tournamentPlayers";
 
 // ── State ─────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ let playoffDraw = [];
 let playoffRounds = {};
 let playoffScores = {};
 
-// Copy of all players IDs from active players
+// Copy of allPlayerId from active players
 let tournamentPlayers = [];
 
 const localConfig = {
@@ -137,14 +137,15 @@ function clearGeneratedTournamentFromStorage() {
 		localStorage.removeItem(TOURNAMENT_QUALIFICATION_PLAYER_STATS_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_DRAW_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
-		localStorage.removeItem(TOURNAMENT_PLAYOFF_SCORESS_KEY);
+		localStorage.removeItem(TOURNAMENT_PLAYOFF_SCORES_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYERS_KEY);
 	} catch {}
 
+	//console.log("Cleared generated tournament from storage.", tournamentConfig);
 	renderTournament();
 }
 
-function savedTournamentConfig() {
+function saveTournamentConfig() {
 	try {
 		localStorage.setItem(TOURNAMENT_CONFIG_KEY, JSON.stringify(tournamentConfig));
 	} catch (_) {}
@@ -156,7 +157,7 @@ function saveQualificationDraw() {
 	} catch (_) {}
 }
 
-function savequalificationRounds() {
+function saveQualificationRounds() {
 	try {
 		localStorage.setItem(TOURNAMENT_QUALIFICATION_ROUNDS_KEY, JSON.stringify(qualificationRounds));
 	} catch (_) {}
@@ -182,20 +183,20 @@ function saveplayoffRounds() {
 
 function savePlayoffScores() {
 	try {
-		localStorage.setItem(TOURNAMENT_PLAYOFF_SCORESS_KEY, JSON.stringify(scores));
+		localStorage.setItem(TOURNAMENT_PLAYOFF_SCORES_KEY, JSON.stringify(playoffScores));
 	} catch (_) {}
 }
 
 function saveTournamentPlayers() {
 	try {
-		localStorage.setItem(TOURNAMENT_PLAYERS_KEY, JSON.stringify(players));
+		localStorage.setItem(TOURNAMENT_PLAYERS_KEY, JSON.stringify(tournamentPlayers));
 	} catch (_) {}
 }
 
 function saveTournamentToStorage(render = true) {
-	savedTournamentConfig();
+	saveTournamentConfig();
 	saveQualificationDraw();
-	savequalificationRounds();
+	saveQualificationRounds();
 	saveQualificationScores();
 	savePlayoffDraw();
 	saveplayoffRounds();
@@ -214,7 +215,7 @@ function loadTournamentFromStorage() {
 		const savedQualificationPlayerStats = localStorage.getItem(TOURNAMENT_QUALIFICATION_STATS_KEY);
 		const savedPlayoffDraw = localStorage.getItem(TOURNAMENT_PLAYOFF_DRAW_KEY);
 		const savedplayoffRounds = localStorage.getItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
-		const savedPlayoffScores = localStorage.getItem(TOURNAMENT_PLAYOFF_SCORESS_KEY);
+		const savedPlayoffScores = localStorage.getItem(TOURNAMENT_PLAYOFF_SCORES_KEY);
 		const savedTournamentPlayers = localStorage.getItem(TOURNAMENT_PLAYERS_KEY);
 
 		if (savedTournamentConfig) {tournamentConfig = JSON.parse(savedTournamentConfig);} else { tournamentConfig = newTournamentConfig(); }
@@ -258,7 +259,7 @@ function loadTournamentFromStorage() {
  *   stats: Object
  * }}
  */
-function generatequalificationRounds(
+function generateQualificationRounds(
 	activePlayerCount,
 	activeWomenCount = null,
 	matchCount,
@@ -456,22 +457,24 @@ function getWomenCount() {
 
 function generateTournament() {
 
+	clearGeneratedTournamentFromStorage();
+
 	tournamentConfig.disable2MenVs2Women = genDisableTwoMenVsTwoWomenCb.checked;
 	tournamentConfig.matchesPerPlayer = Number(genqualificationRoundsNum.value);
 	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate ? genTournamentDatePicker.valueAsDate.toISOString() : null;
-	savedTournamentConfig();
+	saveTournamentConfig();
 
 	tournamentPlayers = activePlayers.map((ap) => ap.allPlayerId);
-	console.log("Generating tournament with players:", tournamentPlayers);
+	//console.log("Generating tournament with players:", tournamentPlayers);
 	saveTournamentPlayers();
 
 	const activeWomenCount = tournamentConfig.disable2MenVs2Women
 		? getWomenCount()
 		: null;
 
-	qualificationRounds = generatequalificationRounds(tournamentPlayers.length, activeWomenCount, tournamentConfig.matchesPerPlayer, ["C1", "C2", "C3"]);
+	qualificationRounds = generateQualificationRounds(tournamentPlayers.length, activeWomenCount, tournamentConfig.matchesPerPlayer, ["C1", "C2", "C3"]);
 
-	savequalificationRounds();
+	saveQualificationRounds();
 
 	renderTournament();
 }
@@ -623,7 +626,7 @@ qualificationDrawPickField.addEventListener("change", (event) => {
 		pick: Number(drawNumber),
 	});
 
-	console.log("Added to qualificationDraw:", qualificationDraw);
+	//console.log("Added to qualificationDraw:", qualificationDraw);
 
 	saveQualificationDraw();
 
@@ -632,7 +635,7 @@ qualificationDrawPickField.addEventListener("change", (event) => {
 	// remove playerId from qualificationDrawPlayerField options
 	const optionToRemove = qualificationDrawPlayerField.querySelector(`option[value="${currentPlayerId}"]`);
 	if (optionToRemove) {
-		console.log("Removing playerId from qualificationDrawPlayerField options:", currentPlayerId);
+		//console.log("Removing playerId from qualificationDrawPlayerField options:", currentPlayerId);
 		optionToRemove.remove();
 	}
 
@@ -650,10 +653,8 @@ qualificationDrawSubmitButton.addEventListener("click", () => {
 	}
 
 	tournamentConfig.qualificationDrawConfirmed = true;
-	savedTournamentConfig();
-	renderQualificationDraw();
-
-	renderQualificationRounds();
+	saveTournamentConfig();
+	renderTournament();
 });
 
 qualificationDrawClearButton.addEventListener("click", () => {
@@ -661,13 +662,13 @@ qualificationDrawClearButton.addEventListener("click", () => {
 	qualificationDraw = [];
 	saveQualificationDraw();
 	tournamentConfig.qualificationDrawConfirmed = false;
-	savedTournamentConfig();
+	saveTournamentConfig();
 	renderQualificationDraw();
 });
 
 function renderQualificationDrawPlayers() {
 	genQualificationDrawTableBody.innerHTML = "";
-
+	//console.log("Rendering qualification draw players:", qualificationDraw);
 	getSorted(qualificationDraw, "qualification").forEach((p) => {
 		const row = document.createElement("tr");
 		const removeBtnHtml = tournamentConfig.qualificationDrawConfirmed
@@ -698,9 +699,8 @@ function renderQualificationDraw() {
 		populateQualificationDrawPlayerField();
 		populateQualificationDrawPickField();
 	}
-	else {
-		renderQualificationDrawPlayers();
-	}
+
+	renderQualificationDrawPlayers();
 }
 
 //------------------------------------------------------------
@@ -711,27 +711,23 @@ const genQualificationCard = document.getElementById("gen-qualification-card");
 const genQualificationOut = document.getElementById("gen-qualification-output");
 
 
-
-const qualificationPickToPlayer = new Map();
-
-function populateQualificationPickToPlayer() {
-	qualificationPickToPlayer.clear();
-	qualificationDraw.forEach((p) => {
-		qualificationPickToPlayer.set(p.pick, p);
-	});
-}
-
 function reassignQualificationMatches() {
 	if (tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationMatchesReassigned) {
 
-		populateQualificationPickToPlayer();
+		const qualificationPickToPlayer = new Map();
+		qualificationDraw.forEach((p) => {
+			qualificationPickToPlayer.set(p.pick, p);
+		});
+
 		// iterate over all matches and change player numbers to playerids
 		qualificationRounds.forEach((round) => {
 			round.matches.forEach((match) => {
+				//console.log("Before reassignment:", match);
 				match.teamA[0] = qualificationPickToPlayer.get(match.teamA[0])?.id || match.teamA[0];
 				match.teamA[1] = qualificationPickToPlayer.get(match.teamA[1])?.id || match.teamA[1];
 				match.teamB[0] = qualificationPickToPlayer.get(match.teamB[0])?.id || match.teamB[0];
 				match.teamB[1] = qualificationPickToPlayer.get(match.teamB[1])?.id || match.teamB[1];
+				//console.log("After reassignment:", match);
 			});
 		});
 		tournamentConfig.qualificationMatchesReassigned = true;
@@ -746,6 +742,7 @@ function renderQualificationRounds() {
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
 
+	//console.log("Rendering qualification rounds:", tournamentConfig);
 	qualificationRounds.forEach((round) => {
 		const roundEl = document.createElement("div");
 		roundEl.className = "gen-round";
@@ -759,10 +756,10 @@ function renderQualificationRounds() {
 		const matchesRow = document.createElement("div");
 		matchesRow.className = "gen-matches-row";
 
-		console.log("Rendering round:", round.roundId, "with matches:", round.matches);
+		//console.log("Rendering round:", round.roundId, "with matches:", round.matches);
 		round.matches.forEach((match) => {
 			matchesRow.appendChild(
-				buildMatchCard(match, round.roundId, false, (number) => tournamentConfig.qualificationMatchesReassigned ? String(number) : playerName(number)),
+				buildMatchCard(match, qualificationScores[match.matchId] = { a: null, b: null }, round.roundId, false, (number) => tournamentConfig.qualificationMatchesReassigned ? playerName(number) : String(number)),
 			);
 		});
 
@@ -796,7 +793,7 @@ function saveQualificationPlayerStats() {
 
 function ensureQualificationPlayerStat(playerId) {
 	if (!qualificationPlayerStats[playerId]) {
-		qualificationPlayerStats[playerId] = { played: 0, wins: 0, losses: 0 };
+		qualificationPlayerStats[playerId] = { played: 0, wins: 0, losses: 0, differencePoints: 0 };
 	}
 	return qualificationPlayerStats[playerId];
 }
@@ -812,27 +809,33 @@ function findQualificationMatch(matchId) {
 
 // Apply (or revert, using sign = -1) the effect of a completed match's score onto qualificationPlayerStats
 function applyQualificationMatchStats(match, score, sign = 1) {
-	if (!score || score.a === null || score.b === null || score.a === score.b) {
-		// No decided winner (score missing or a tie) — nothing to (un)apply
+	const scoreA = score?.a || 0;
+	const scoreB = score?.b || 0;
+
+	if (scoreA === 0 && scoreB === 0) {
+		// No score to apply
 		return;
 	}
 
-	const teamAWon = score.a > score.b;
-	const teamAIds = match.teamA.filter((id) => id != null);
-	const teamBIds = match.teamB.filter((id) => id != null);
+	const teamAWon = scoreA > scoreB;
+	const teamBWon = scoreB > scoreA;
 
-	teamAIds.forEach((id) => {
+	match.teamA.forEach((id) => {
 		const stat = ensureQualificationPlayerStat(id);
 		stat.played += sign;
 		if (teamAWon) stat.wins += sign;
-		else stat.losses += sign;
+		else if (teamBWon) stat.losses += sign;
+		stat.differencePoints += sign * (scoreA - scoreB);
+		//console.log(`Updated stats for player ${id} in team A: played=${stat.played}, wins=${stat.wins}, losses=${stat.losses}, differencePoints=${stat.differencePoints}`);
 	});
 
-	teamBIds.forEach((id) => {
+	match.teamB.forEach((id) => {
 		const stat = ensureQualificationPlayerStat(id);
 		stat.played += sign;
-		if (teamAWon) stat.losses += sign;
-		else stat.wins += sign;
+		if (teamBWon) stat.wins += sign;
+		else if (teamAWon) stat.losses += sign;
+		stat.differencePoints += sign * (scoreB - scoreA);
+		//console.log(`Updated stats for player ${id} in team B: played=${stat.played}, wins=${stat.wins}, losses=${stat.losses}, differencePoints=${stat.differencePoints}`);
 	});
 }
 
@@ -863,9 +866,64 @@ genQualificationOut.addEventListener("change", (e) => {
 
 	saveQualificationScores();
 	saveQualificationPlayerStats();
+	renderQualificationScores();
 });
 
 function renderQualificationScores() {
+	if (!tournamentConfig.qualificationDrawConfirmed) {
+		return;
+	}
+
+	const rows = tournamentPlayers.map((playerId) => {
+		const stat = ensureQualificationPlayerStat(playerId);
+
+		return {
+			name: playerName(playerId),
+			skill: playerSkill(playerId),
+			played: stat.played,
+			wins: stat.wins,
+			losses: stat.losses,
+			winrate: stat.played > 0 ? Math.round((stat.wins / stat.played) * 100) : 0,
+			differencePoints: stat.differencePoints,
+		};
+	});
+
+	//console.log("Rendering qualification scores:", qualificationScores);
+	genQualificationScoresOut.innerHTML = `
+	<table class="gen-stats-table">
+		<thead>
+			<tr>
+				<th><span class="sortable" data-list="qualificationScores" data-field="name">Player <span class="sort-icon">↕</span></span></th>
+				<th><span class="sortable" data-list="qualificationScores" data-field="played">Played <span class="sort-icon">↕</span></span></th>
+				<th><span class="sortable" data-list="qualificationScores" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
+				<th><span class="sortable" data-list="qualificationScores" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
+				<th><span class="sortable" data-list="qualificationScores" data-field="winrate">Win rate <span class="sort-icon">↕</span></span></th>
+				<th><span class="sortable" data-list="qualificationScores" data-field="differencePoints">Difference Points <span class="sort-icon">↕</span></span></th>
+			</tr>
+		</thead>
+		<tbody id="qualification-scores-tbody">
+		${getSorted(rows, "qualificationScores")
+			.map(
+				(r) => `<tr>
+					<td>${r.name}</td>
+					<td>${r.played}</td>
+					<td>${r.wins}</td>
+					<td>${r.losses}</td>
+					<td>${r.winrate}%</td>
+					<td>${r.differencePoints}</td>
+				</tr>`,
+			)
+			.join("")}
+		</tbody>
+	</table>
+	`;
+
+	updateSortUI("qualificationScores");
+
+	// Dynamically injected spans need listeners attached (common.js only wires up spans present at load).
+	genQualificationScoresOut.querySelectorAll("span.sortable").forEach((el) => {
+		el.addEventListener("click", () => handleSort(el.dataset.list, el.dataset.field));
+	});
 }
 
 
@@ -874,7 +932,7 @@ function renderQualificationScores() {
 function renderTournament() {
 	const hasTournamentValue = hasTournament();
 
-	console.log("Rendering tournament, hasTournament:", hasTournamentValue);
+	//console.log("Rendering tournament, hasTournament:", hasTournamentValue);
 	
 	genClearTournamentBtn.hidden = !hasTournamentValue;
 	genPrintTournamentBtn.hidden = !hasTournamentValue;
@@ -882,7 +940,7 @@ function renderTournament() {
 	genTournamentEmpty.hidden = hasTournamentValue;
 	genQualificationDrawCard.hidden = !hasTournamentValue;
 	genQualificationCard.hidden = !hasTournamentValue;
-	genQualificationScoresCard.hidden = !hasTournamentValue;
+	genQualificationScoresCard.hidden = !tournamentConfig?.qualificationDrawConfirmed;
 
 	if (!hasTournamentValue) {
 		return;
