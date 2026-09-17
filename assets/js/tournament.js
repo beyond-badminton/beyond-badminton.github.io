@@ -6,6 +6,7 @@ const TOURNAMENT_CONFIG_KEY = "tournament-generator:tournamentConfig";
 const TOURNAMENT_QUALIFICATION_DRAW_KEY = "tournament-generator:qualificationDraw";
 const TOURNAMENT_QUALIFICATION_ROUNDS_KEY = "tournament-generator:qualificationRounds";
 const TOURNAMENT_QUALIFICATION_SCORES_KEY = "tournament-generator:qualificationScores";
+const TOURNAMENT_QUALIFICATION_STATS_KEY = "tournament-generator:qualificationPlayerStats";
 const TOURNAMENT_PLAYOFF_DRAW_KEY = "tournament-generator:playoffDraw";
 const TOURNAMENT_PLAYOFF_ROUNDS_KEY = "tournament-generator:playoffRounds";
 const TOURNAMENT_PLAYOFF_SCORESS_KEY = "tournament-generator:playoffScores";
@@ -121,6 +122,7 @@ function clearGeneratedTournamentFromStorage() {
 	qualificationDraw = [];
 	qualificationRounds = [];
 	qualificationScores = {};
+	qualificationPlayerStats = {};
 	playoffDraw = {};
 	playoffRounds = {};
 	playoffScores = {};
@@ -131,6 +133,7 @@ function clearGeneratedTournamentFromStorage() {
 		localStorage.removeItem(TOURNAMENT_QUALIFICATION_DRAW_KEY);
 		localStorage.removeItem(TOURNAMENT_QUALIFICATION_ROUNDS_KEY);
 		localStorage.removeItem(TOURNAMENT_QUALIFICATION_SCORES_KEY);
+		localStorage.removeItem(TOURNAMENT_QUALIFICATION_PLAYER_STATS_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_DRAW_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_SCORESS_KEY);
@@ -160,7 +163,7 @@ function savequalificationRounds() {
 
 function saveQualificationScores() {
 	try {
-		localStorage.setItem(TOURNAMENT_QUALIFICATION_SCORES_KEY, JSON.stringify(scores));
+		localStorage.setItem(TOURNAMENT_QUALIFICATION_SCORES_KEY, JSON.stringify(qualificationScores));
 	} catch (_) {}
 }
 
@@ -207,6 +210,7 @@ function loadTournamentFromStorage() {
 		const savedQualificationDraw = localStorage.getItem(TOURNAMENT_QUALIFICATION_DRAW_KEY);
 		const savedqualificationRounds = localStorage.getItem(TOURNAMENT_QUALIFICATION_ROUNDS_KEY);
 		const savedQualificationScores = localStorage.getItem(TOURNAMENT_QUALIFICATION_SCORES_KEY);
+		const savedQualificationPlayerStats = localStorage.getItem(TOURNAMENT_QUALIFICATION_STATS_KEY);
 		const savedPlayoffDraw = localStorage.getItem(TOURNAMENT_PLAYOFF_DRAW_KEY);
 		const savedplayoffRounds = localStorage.getItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
 		const savedPlayoffScores = localStorage.getItem(TOURNAMENT_PLAYOFF_SCORESS_KEY);
@@ -216,6 +220,7 @@ function loadTournamentFromStorage() {
 		if (savedQualificationDraw) qualificationDraw = JSON.parse(savedQualificationDraw);
 		if (savedqualificationRounds) qualificationRounds = JSON.parse(savedqualificationRounds);
 		if (savedQualificationScores) qualificationScores = JSON.parse(savedQualificationScores);
+		if (savedQualificationPlayerStats) qualificationPlayerStats = JSON.parse(savedQualificationPlayerStats);
 		if (savedPlayoffDraw) playoffDraw = JSON.parse(savedPlayoffDraw);
 		if (savedplayoffRounds) playoffRounds = JSON.parse(savedplayoffRounds);
 		if (savedPlayoffScores) playoffScores = JSON.parse(savedPlayoffScores);
@@ -761,6 +766,67 @@ function renderQualificationRounds() {
 }
 
 //------------------------------------------------------------
+// Qualification player stats
+//------------------------------------------------------------
+
+function saveQualificationPlayerStats() {
+	try {
+		localStorage.setItem(TOURNAMENT_QUALIFICATION_STATS_KEY, JSON.stringify(qualificationPlayerStats));
+	} catch (_) {}
+}
+
+function ensureQualificationPlayerStat(playerId) {
+	if (!qualificationPlayerStats[playerId]) {
+		qualificationPlayerStats[playerId] = { played: 0, wins: 0, losses: 0 };
+	}
+	return qualificationPlayerStats[playerId];
+}
+
+// Find a qualification match (and its round) by matchId
+function findQualificationMatch(matchId) {
+	for (const round of qualificationRounds) {
+		const match = round.matches.find((m) => m.matchId === matchId);
+		if (match) return { round, match };
+	}
+	return null;
+}
+
+// Map anonymous draw "pick" numbers (used in teamA/teamB) to real allPlayerId
+function qualificationPickToAllPlayerId(pick) {
+	return qualificationPickToPlayer.get(pick)?.id ?? null;
+}
+
+// Apply (or revert, using sign = -1) the effect of a completed match's score onto qualificationPlayerStats
+function applyQualificationMatchStats(match, score, sign = 1) {
+	if (!score || score.a === null || score.b === null || score.a === score.b) {
+		// No decided winner (score missing or a tie) — nothing to (un)apply
+		return;
+	}
+
+	const teamAWon = score.a > score.b;
+	const teamAIds = match.teamA.map(qualificationPickToAllPlayerId).filter((id) => id != null);
+	const teamBIds = match.teamB.map(qualificationPickToAllPlayerId).filter((id) => id != null);
+
+	teamAIds.forEach((id) => {
+		const stat = ensureQualificationPlayerStat(id);
+		stat.played += sign;
+		if (teamAWon) stat.wins += sign;
+		else stat.losses += sign;
+	});
+
+	teamBIds.forEach((id) => {
+		const stat = ensureQualificationPlayerStat(id);
+		stat.played += sign;
+		if (teamAWon) stat.losses += sign;
+		else stat.wins += sign;
+	});
+}
+
+function revertQualificationMatchStats(match, score) {
+	applyQualificationMatchStats(match, score, -1);
+}
+
+//------------------------------------------------------------
 // Render qualification scores
 //------------------------------------------------------------
 
@@ -768,14 +834,27 @@ genQualificationOut.addEventListener("change", (e) => {
 	const inp = e.target.closest(".gen-score-input");
 	if (!inp) return;
 	const { matchId, side } = inp.dataset;
-	if (!qualificationScores[matchId]) scores[matchId] = { a: null, b: null };
+
+	const found = findQualificationMatch(matchId);
+	const oldScore = qualificationScores[matchId] || { a: null, b: null };
+
+	// Revert the stats contribution of the previous score before applying the new one
+	if (found) revertQualificationMatchStats(found.match, oldScore);
+
+	if (!qualificationScores[matchId]) qualificationScores[matchId] = { a: null, b: null };
 	const val = inp.value === "" ? null : Number(inp.value);
 	qualificationScores[matchId][side] = val;
-	saveScores();
+
+	if (found) applyQualificationMatchStats(found.match, qualificationScores[matchId]);
+
+	saveQualificationScores();
+	saveQualificationPlayerStats();
 });
 
 function renderQualificationScores() {
 }
+
+
 
 
 function renderTournament() {
