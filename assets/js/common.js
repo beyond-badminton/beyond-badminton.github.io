@@ -105,6 +105,7 @@ const sortState = {
 	all: { field: "name", dir: "asc" },
 	active: { field: "name", dir: "asc" },
 	stats: { field: "name", dir: "asc" },
+	qualification: { field: "name", dir: "asc" },
 };
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used
@@ -122,7 +123,8 @@ function getSorted(arr, listKey) {
 			field === "playtime" ||
 			field === "matches" ||
 			field === "bench" ||
-			field === "sit1stRound"
+			field === "sit1stRound" ||
+			field === "pick"
 		) {
 			const va = a[field] || false;
 			const vb = b[field] || false;
@@ -203,11 +205,20 @@ function handleSort(listKey, field) {
 	//console.log(`Sorting ${listKey} by ${field} (${sortState[listKey].dir})`);
 	if (listKey === "all") renderAllPlayers();
 	else if (listKey === "active") renderActivePlayers();
-	else renderStatsTable();
+	else if (listKey === "stats") renderStatsTable();
+	else if (listKey === "qualification") renderQualificationDrawPlayers();
 }
 
 document.querySelectorAll("span.sortable").forEach((el) => {
 	el.addEventListener("click", () =>
 		handleSort(el.dataset.list, el.dataset.field),
 	);
+});
+
+document.querySelectorAll('.gen-card-toggle').forEach(function (header) {
+	header.addEventListener('click', function () {
+		const container = header.closest('.gen-collapsible');
+		if (!container) return;
+		container.classList.toggle('gen-collapsed');
+	});
 });

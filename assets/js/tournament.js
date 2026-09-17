@@ -2,15 +2,59 @@
 "use strict";
 
 // ── Storage keys ──────────────────────────────────────────────
-const TOURNAMENT_KEY = "tournament-generator:tournament";
+const TOURNAMENT_CONFIG_KEY = "tournament-generator:tournamentConfig";
+const TOURNAMENT_QUALIFICATION_DRAW_KEY = "tournament-generator:qualificationDraw";
+const TOURNAMENT_QUALIFICATION_ROUNDS_KEY = "tournament-generator:qualificationRounds";
+const TOURNAMENT_QUALIFICATION_SCORES_KEY = "tournament-generator:qualificationScores";
+const TOURNAMENT_PLAYOFF_DRAW_KEY = "tournament-generator:playoffDraw";
+const TOURNAMENT_PLAYOFF_ROUNDS_KEY = "tournament-generator:playoffRounds";
+const TOURNAMENT_PLAYOFF_SCORESS_KEY = "tournament-generator:playoffScores";
 const TOURNAMENT_PLAYERS_KEY = "tournament-generator:tournamentPlayers";
-const TOURNAMENT_SCORES_KEY = "tournament-generator:tournamentScores";
-const TOURNAMENT_DATE_KEY = "tournament-generator:tournamentDate";
 
-let tournament = {};
-let tournamentPlayers = {};
-let tournamentScores = {};
-let tournamentDate = null;
+// ── State ─────────────────────────────────────────────────────
+
+function newTournamentConfig() {
+	return {
+		tournamentDate: null,
+		matchesPerPlayer: 0,
+		disable2MenVs2Women: false,
+		qualificationDrawConfirmed: false,
+		qualificationFinished: false,
+		playoffDrawConfirmed: false,
+		playoffFinished: false,
+	};
+}
+
+// The generated tournament object, which contains:
+// - tournamentDate: Date of the tournament
+// - matchesPerPlayer: Number of matches each player should play
+// - qualificationDraw: Numbers assigned to players (1..activePlayerCount) after a physical draw
+// - qualificationDrawConfirmed: Boolean indicating whether the draw has been confirmed
+// - qualificationRounds: Array of rounds, each containing matches and bench players
+// - qualificationScores: Object containing player scores (allPlayerId : { played, wins, losses, winrate })
+// - playoffDraw: first of every 4 players will draw its teammate from the next 3 players, and then the next 4 players will do the same, etc.
+// - playoffDrawConfirmed: Boolean indicating whether the playoff draw has been confirmed
+// - playoffRounds: Array of playoff rounds, this will contain quarterfinals, semifinals, and finals, each containing matches
+let tournamentConfig = newTournamentConfig();
+
+
+let qualificationDraw = [];
+let qualificationRounds = [];
+let qualificationScores = {};
+let playoffDraw = [];
+let playoffRounds = {};
+let playoffScores = {};
+
+// Copy of all players IDs from active players
+let tournamentPlayers = [];
+
+const localConfig = {
+	qualificationDrawFinalRendered: false,
+	qualificationRoundsFinalRendered: false,
+	qualificationScoresFinalRendered: false,
+	playoffDrawFinalRendered: false,
+	playoffRoundsFinalRendered: false,
+}
 
 // ── DOM refs ──────────────────────────────────────────────────
 
@@ -19,11 +63,28 @@ const genClearTournamentBtn = document.getElementById("gen-clear-tournament-btn"
 const genTournamentDatePicker = document.getElementById("gen-tournament-date-picker");
 const genPrintTournamentBtn = document.getElementById("gen-print-tournament-btn");
 const genExportTournamentBtn = document.getElementById("gen-export-tournament-btn");
-const genTournamentOut = document.getElementById("gen-tournament-output");
+
+const genQualificationDrawCard = document.getElementById("gen-qualification-draw-card");
+const genQualificationDrawTitle = document.getElementById("gen-qualification-draw-title");
+const genQualificationDrawTableBody = document.getElementById("qualification-draw-table-body");
+
+const genQualificationCard = document.getElementById("gen-qualification-card");
+const genQualificationOut = document.getElementById("gen-qualification-output");
+
+const genQualificationScoresCard = document.getElementById("gen-qualification-scores-card");
+const genQualificationScoresOut = document.getElementById("gen-qualification-scores-output");
+
+const genPlayoffDrawCard = document.getElementById("gen-playoff-draw-card");
+const genPlayoffDrawTitle = document.getElementById("gen-playoff-draw-title");
+const genPlayoffDrawOut = document.getElementById("gen-playoff-draw-output");
+const genPlayoffOut = document.getElementById("gen-playoff-output");
+
 const genTournamentEmpty = document.getElementById("gen-tournament-empty");
-const genQualificationMatchesNum = document.getElementById("qualification-matches");
+const genqualificationRoundsNum = document.getElementById("qualification-matches");
 const genDisableTwoMenVsTwoWomenCb = document.getElementById("disable-2men-vs-2women");
 
+
+const qualificationDrawPlayerField = document.getElementById("qualification-draw-player");
 
 // ── Generate button handler ───────────────────────────────────
 genGenerateTournamentBtn.addEventListener("click", () => {
@@ -42,7 +103,6 @@ genPrintTournamentBtn.addEventListener("click", () => {
 	// 	tournament,
 	// 	tournamentPlayers,
 	// 	tournamentScores,
-	// 	tournamentDate
 	// );
 });
 
@@ -51,41 +111,82 @@ genExportTournamentBtn.addEventListener("click", () => {
 	// 	tournament,
 	// 	tournamentPlayers,
 	// 	tournamentScores,
-	// 	tournamentDate
 	// );
 });
 
 genTournamentDatePicker.addEventListener("change", () => {
-	tournamentDate = genTournamentDatePicker.valueAsDate;
-	saveGeneratedTournamentToStorage(false);
+	if (!hasTournament()) return;
+	tournament.tournamentDate = genTournamentDatePicker.valueAsDate.toISOString();
+	saveTournamentToStorage(false);
 });
 
 function hasTournament() {
-	return (
-		tournament &&
-		Object.keys(tournament).length > 0
-	);
+	return (tournamentConfig?.matchesPerPlayer || 0) > 0;
 }
 
 function clearGeneratedTournamentFromStorage() {
-	tournament = {};
-	tournamentPlayers = {};
-	tournamentScores = {};
-	tournamentDate = null;
+	tournamentConfig = newTournamentConfig();
+	qualificationDraw = [];
+	qualificationRounds = [];
+	qualificationScores = {};
+	playoffDraw = {};
+	playoffRounds = {};
+	playoffScores = {};
+	tournamentPlayers = [];
 
 	try {
-		localStorage.removeItem(TOURNAMENT_KEY);
+		localStorage.removeItem(TOURNAMENT_CONFIG_KEY);
+		localStorage.removeItem(TOURNAMENT_QUALIFICATION_DRAW_KEY);
+		localStorage.removeItem(TOURNAMENT_QUALIFICATION_ROUNDS_KEY);
+		localStorage.removeItem(TOURNAMENT_QUALIFICATION_SCORES_KEY);
+		localStorage.removeItem(TOURNAMENT_PLAYOFF_DRAW_KEY);
+		localStorage.removeItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
+		localStorage.removeItem(TOURNAMENT_PLAYOFF_SCORESS_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYERS_KEY);
-		localStorage.removeItem(TOURNAMENT_SCORES_KEY);
-		localStorage.removeItem(TOURNAMENT_DATE_KEY);
 	} catch {}
 
 	renderTournament();
 }
 
-function saveTournamentScores() {
+function savedTournamentConfig() {
 	try {
-		localStorage.setItem(TOURNAMENT_SCORES_KEY, JSON.stringify(scores));
+		localStorage.setItem(TOURNAMENT_CONFIG_KEY, JSON.stringify(tournamentConfig));
+	} catch (_) {}
+}
+
+function saveQualificationDraw() {
+	try {
+		localStorage.setItem(TOURNAMENT_QUALIFICATION_DRAW_KEY, JSON.stringify(qualificationDraw));
+	} catch (_) {}
+}
+
+function savequalificationRounds() {
+	try {
+		localStorage.setItem(TOURNAMENT_QUALIFICATION_ROUNDS_KEY, JSON.stringify(qualificationRounds));
+	} catch (_) {}
+}
+
+function saveQualificationScores() {
+	try {
+		localStorage.setItem(TOURNAMENT_QUALIFICATION_SCORES_KEY, JSON.stringify(scores));
+	} catch (_) {}
+}
+
+function savePlayoffDraw() {
+	try {
+		localStorage.setItem(TOURNAMENT_PLAYOFF_DRAW_KEY, JSON.stringify(playoffDraw));
+	} catch (_) {}
+}
+
+function saveplayoffRounds() {
+	try {
+		localStorage.setItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY, JSON.stringify(playoffRounds));
+	} catch (_) {}
+}
+
+function savePlayoffScores() {
+	try {
+		localStorage.setItem(TOURNAMENT_PLAYOFF_SCORESS_KEY, JSON.stringify(scores));
 	} catch (_) {}
 }
 
@@ -95,41 +196,41 @@ function saveTournamentPlayers() {
 	} catch (_) {}
 }
 
-function saveGeneratedTournamentToStorage(render = true) {
-	try {
-		localStorage.setItem(TOURNAMENT_KEY, JSON.stringify(tournament));
-		if (tournamentDate) {
-			localStorage.setItem(
-				TOURNAMENT_DATE_KEY,
-				tournamentDate.toISOString(),
-			);
-		} else {
-			localStorage.removeItem(TOURNAMENT_DATE_KEY);
-		}
-	} catch {}
-
+function saveTournamentToStorage(render = true) {
+	savedTournamentConfig();
+	saveQualificationDraw();
+	savequalificationRounds();
+	saveQualificationScores();
+	savePlayoffDraw();
+	saveplayoffRounds();
+	savePlayoffScores();
 	saveTournamentPlayers();
-	saveTournamentScores();
 
 	if (render) renderTournament();
 }
 
-function loadGeneratedTournamentFromStorage() {
+function loadTournamentFromStorage() {
 	try {
-		const savedTournament = localStorage.getItem(TOURNAMENT_KEY);
-		const savedPlayers = localStorage.getItem(TOURNAMENT_PLAYERS_KEY);
-		const savedScores = localStorage.getItem(TOURNAMENT_SCORES_KEY);
-		const savedDate = localStorage.getItem(TOURNAMENT_DATE_KEY);
+		const savedTournamentConfig = localStorage.getItem(TOURNAMENT_CONFIG_KEY);
+		const savedQualificationDraw = localStorage.getItem(TOURNAMENT_QUALIFICATION_DRAW_KEY);
+		const savedqualificationRounds = localStorage.getItem(TOURNAMENT_QUALIFICATION_ROUNDS_KEY);
+		const savedQualificationScores = localStorage.getItem(TOURNAMENT_QUALIFICATION_SCORES_KEY);
+		const savedPlayoffDraw = localStorage.getItem(TOURNAMENT_PLAYOFF_DRAW_KEY);
+		const savedplayoffRounds = localStorage.getItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
+		const savedPlayoffScores = localStorage.getItem(TOURNAMENT_PLAYOFF_SCORESS_KEY);
+		const savedTournamentPlayers = localStorage.getItem(TOURNAMENT_PLAYERS_KEY);
 
-		if (savedTournament) tournament = JSON.parse(savedTournament);
-		if (savedPlayers) tournamentPlayers = JSON.parse(savedPlayers);
-		if (savedScores) tournamentScores = JSON.parse(savedScores);
-		if (savedDate) tournamentDate = new Date(savedDate);
+		if (savedTournamentConfig) {tournamentConfig = JSON.parse(savedTournamentConfig);} else { tournamentConfig = newTournamentConfig(); }
+		if (savedQualificationDraw) qualificationDraw = JSON.parse(savedQualificationDraw);
+		if (savedqualificationRounds) qualificationRounds = JSON.parse(savedqualificationRounds);
+		if (savedQualificationScores) qualificationScores = JSON.parse(savedQualificationScores);
+		if (savedPlayoffDraw) playoffDraw = JSON.parse(savedPlayoffDraw);
+		if (savedplayoffRounds) playoffRounds = JSON.parse(savedplayoffRounds);
+		if (savedPlayoffScores) playoffScores = JSON.parse(savedPlayoffScores);
+		if (savedTournamentPlayers) tournamentPlayers = JSON.parse(savedTournamentPlayers);
 	} catch {
-		tournament = {};
-		tournamentPlayers = {};
-		tournamentScores = {};
-		tournamentDate = null;
+		clearGeneratedTournamentFromStorage();
+		return;
 	}
 
 	renderTournament();
@@ -148,13 +249,10 @@ function loadGeneratedTournamentFromStorage() {
  * - Does NOT use the existing schedule.
  * - Does NOT use player names.
  *
- * @param {Object} options
- * @param {number} options.activePlayerCount Total number of active players.
- * @param {number} options.men Number of men.
- * @param {number} options.women Number of women.
- * @param {number} options.matchCount Number of doubles matches to generate.
- * @param {boolean} options.allowTwoMenVsTwoWomen
- * @param {string[]} options.courts Available court names, e.g. ["C1", "C2", "C3"]
+ * @param {number} activePlayerCount Total number of active players.
+ * @param {number} activeWomenCount If set, number of women portion of active players. If set, then disable 2 men vs 2 women matches.
+ * @param {number} matchCount Number of doubles matches to generate.
+ * @param {string[]} courts Available court names, e.g. ["C1", "C2", "C3"]
  *
  * @returns {{
  *   players: number[],
@@ -162,7 +260,7 @@ function loadGeneratedTournamentFromStorage() {
  *   stats: Object
  * }}
  */
-function generateQualificationMatches(
+function generatequalificationRounds(
 	activePlayerCount,
 	activeWomenCount = null,
 	matchCount,
@@ -352,22 +450,245 @@ function generateQualificationMatches(
 	return rounds;
 }
 
+function getWomenCount() {
+	if (!tournamentPlayers || tournamentPlayers.length === 0) {
+		return 0;
+	}
+
+	return tournamentPlayers.reduce((count, playerId) => {
+		return playerIsWoman(playerId) ? count + 1 : count;
+	}, 0);
+}
+
 function generateTournament() {
-	const activeWomenCount = genDisableTwoMenVsTwoWomenCb.value 
-		? activePlayers.filter((ap) => playerIsWoman(ap.allPlayerId)).length
+
+	tournamentConfig.disable2MenVs2Women = genDisableTwoMenVsTwoWomenCb.checked;
+	tournamentConfig.matchesPerPlayer = Number(genqualificationRoundsNum.value);
+	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate ? genTournamentDatePicker.valueAsDate.toISOString() : null;
+	savedTournamentConfig();
+
+	tournamentPlayers = activePlayers.map((ap) => ap.allPlayerId);
+	console.log("Generating tournament with players:", tournamentPlayers);
+	saveTournamentPlayers();
+
+	const activeWomenCount = tournamentConfig.disable2MenVs2Women
+		? getWomenCount()
 		: null;
 
-	const rounds = generateQualificationMatches(activePlayers.length, activeWomenCount, Number(genQualificationMatchesNum.value), ["C1", "C2", "C3"]);
-	tournament = { qualificationRounds : rounds };
-	saveGeneratedTournamentToStorage(true);
+	qualificationRounds = generatequalificationRounds(tournamentPlayers.length, activeWomenCount, tournamentConfig.matchesPerPlayer, ["C1", "C2", "C3"]);
+
+	savequalificationRounds();
+
+	renderTournament();
+}
+
+function populateSelectElementWithKeyValue(selectEl, keyvals, firstValueHint) {
+	selectEl.innerHTML = "";
+	const opt = document.createElement("option");
+	opt.value = "";
+	opt.textContent = firstValueHint;
+	selectEl.appendChild(opt);
+
+	keyvals.forEach((item) => {
+		const opt = document.createElement("option");
+		opt.value = item.key;
+		opt.textContent = item.value;
+		selectEl.appendChild(opt);
+	});
+}
+
+function populateSelectElementWithValues(selectEl, values, firstValueHint) {
+	selectEl.innerHTML = "";
+	const opt = document.createElement("option");
+	opt.value = "";
+	opt.textContent = firstValueHint;
+	selectEl.appendChild(opt);
+
+	values.forEach((value) => {
+		const opt = document.createElement("option");
+		opt.value = value;
+		opt.textContent = String(value);
+		selectEl.appendChild(opt);
+	});
+}
+
+const availableDraws = []
+let currentPlayerId = null;
+
+function populateQualificationDrawPlayerField() {
+	const playerOptions = tournamentPlayers
+		.filter((playerId) => !qualificationDraw.some((p) => p.id === playerId))
+		.map((playerId) => ({ key: playerId, value: playerName(playerId) }));
+	playerOptions.sort((a, b) => a.value.localeCompare(b.value));
+	populateSelectElementWithKeyValue(qualificationDrawPlayerField, playerOptions, "Select a player");
+	if (playerOptions.length === 0) {
+		qualificationDrawPlayerField.disabled = true;
+	}
+	else {
+		qualificationDrawPlayerField.disabled = false;
+	}
+};
+
+
+function renderQualificationDraw() {
+	if (localConfig.qualificationDrawFinalRendered) {
+		return;
+	}
+
+	genQualificationCard.hidden = false;
+	genQualificationDrawTitle.innerText = tournamentConfig.qualificationDrawConfirmed
+		? "Qualification draw"
+		: "Enter qualification draw results";
+
+	if (!tournamentConfig.qualificationDrawConfirmed && availableDraws.length === 0) {
+		for (let i = 0; i < tournamentPlayers.length; i++) {
+			availableDraws.push(tournamentConfig.disable2MenVs2Women && playerIsWoman(tournamentPlayers[i - 1]) ? i : i);
+		}
+	}
+
+	const selectPickField = document.getElementById("qualification-draw-pick");
+	const submitDrawBtn = document.getElementById("submit-qualification-draw-btn");
+	const clearDrawBtn = document.getElementById("clear-qualification-draw-btn");
+
+	submitDrawBtn.disabled = true;
+	submitDrawBtn.hidden = true;
+	clearDrawBtn.disabled = tournamentConfig.qualificationDrawConfirmed;
+	clearDrawBtn.hidden = tournamentConfig.qualificationDrawConfirmed;
+
+	populateQualificationDrawPlayerField();
+
+	qualificationDrawPlayerField.hidden = tournamentConfig.qualificationDrawConfirmed;
+	qualificationDrawPlayerField.addEventListener("change", (event) => {
+		if (!event.target.value) return;
+		currentPlayerId = Number(event.target.value);
+
+		const values = [];
+		let start = 1;
+		let end = tournamentPlayers.length;
+
+		if (tournamentConfig.disable2MenVs2Women) {
+			const womenCount = getWomenCount();
+			if (playerIsWoman(currentPlayerId)) {
+				end = womenCount;
+			}
+			else {
+				start = 1 + womenCount;
+			}
+		}
+
+		for (let i = start; i <= end; i++) {
+			if (qualificationDraw.some((p) => p.pick === i)) {
+				continue;
+			}
+			values.push(i);
+		}
+
+		populateSelectElementWithValues(selectPickField, values, "Select a pick");
+		selectPickField.value = "";
+		selectPickField.disabled = false;
+	});
+
+
+	populateSelectElementWithValues(selectPickField, [], "Select a pick");
+	selectPickField.addEventListener("change", (event) => {
+		const drawNumber = event.target.value;
+		if (!drawNumber) return;
+		qualificationDrawPlayerField.value = "";
+		selectPickField.value = "";
+		selectPickField.disabled = true;
+
+		qualificationDraw.push({
+			id: currentPlayerId,
+			name: playerName(currentPlayerId),
+			pick: Number(drawNumber),
+		});
+
+		console.log("Added to qualificationDraw:", qualificationDraw);
+
+		saveQualificationDraw();
+
+		renderQualificationDrawPlayers();
+
+		// remove playerId from qualificationDrawPlayerField options
+		const optionToRemove = qualificationDrawPlayerField.querySelector(`option[value="${currentPlayerId}"]`);
+		if (optionToRemove) {
+			console.log("Removing playerId from qualificationDrawPlayerField options:", currentPlayerId);
+			optionToRemove.remove();
+		}
+
+		if (qualificationDraw.length === tournamentPlayers.length) {
+			qualificationDrawPlayerField.disabled = true;
+			submitDrawBtn.disabled = false;
+			submitDrawBtn.hidden = false;
+		}
+	});
+
+	submitDrawBtn.addEventListener("click", () => {
+		if (qualificationDraw.length !== tournamentPlayers.length) {
+			alert("Please complete the qualification draw for all players before confirming.");
+			return;
+		}
+		tournamentConfig.qualificationDrawConfirmed = true;
+		savedTournamentConfig();
+
+		renderQualificationDrawPlayers();
+
+		submitDrawBtn.hidden = true;
+		submitDrawBtn.disabled = true;
+		genQualificationDrawTitle.innerText = "Qualification draw";
+		// disable qualificationDrawPlayerField and selectPickField
+		qualificationDrawPlayerField.disabled = true;
+		selectPickField.disabled = true;
+		clearDrawBtn.disabled = true;
+		clearDrawBtn.hidden = true;
+
+		document.getElementById("gen-qualification-draw-form-card").hidden = true;
+	});
+
+	clearDrawBtn.hidden = tournamentConfig.qualificationDrawConfirmed;
+	clearDrawBtn.addEventListener("click", () => {
+		if (!confirm("Are you sure you want to clear the qualification draw?")) return;
+		qualificationDraw = [];
+		saveQualificationDraw();
+		tournamentConfig.qualificationDrawConfirmed = false;
+		savedTournamentConfig();
+
+		renderQualificationDrawPlayers();
+		populateQualificationDrawPlayerField();
+	});
+
+	localConfig.qualificationDrawFinalRendered = true;
+}
+
+function renderQualificationDrawPlayers() {
+	genQualificationDrawTableBody.innerHTML = "";
+
+	getSorted(qualificationDraw, "qualification").forEach((p) => {
+		const row = document.createElement("tr");
+		const removeBtnHtml = tournamentConfig.qualificationDrawConfirmed
+			? ""
+			: `<button type="button" class="remove-btn" data-id="${p.id}">Remove</button>`;
+		row.innerHTML = `
+		<td>${p.name}</td>
+		<td>${p.pick}</td>
+		<td>${removeBtnHtml}</td>`;
+		genQualificationDrawTableBody.appendChild(row);
+	});
+
+	updateSortUI("qualification");
 }
 
 function renderTournament() {
 	const hasTournamentValue = hasTournament();
+
+	if (hasTournamentValue) {
+		renderQualificationDraw();
+	}
+	console.log("Rendering tournament, hasTournament:", hasTournamentValue);
 	
 	genTournamentEmpty.hidden = hasTournamentValue;
-	genTournamentOut.hidden = !hasTournamentValue;
-	genTournamentOut.innerHTML = "";
+	genQualificationDrawCard.hidden = !hasTournamentValue;
+	genQualificationCard.hidden = !hasTournamentValue;
 	genClearTournamentBtn.hidden = !hasTournamentValue;
 	genPrintTournamentBtn.hidden = !hasTournamentValue;
 	genExportTournamentBtn.hidden = !hasTournamentValue;
@@ -375,6 +696,8 @@ function renderTournament() {
 	if (!hasTournamentValue) {
 		return;
 	}
+
+	genTournamentDatePicker.valueAsDate = tournamentConfig.tournamentDate ? new Date(tournamentConfig.tournamentDate) : null;
 
 	//console.log("Rendering training:", training);
 	const blockEl = document.createElement("section");
@@ -384,7 +707,7 @@ function renderTournament() {
 	// this is sufficient since we are generating matches per hour
 	let courtBlockStart = null;
 
-	tournament.qualificationRounds.forEach((round) => {
+	qualificationRounds.forEach((round) => {
 		const roundEl = document.createElement("div");
 		roundEl.className = "gen-round";
 		roundEl.dataset.roundId = round.roundId;
@@ -426,12 +749,26 @@ function renderTournament() {
 		blockEl.appendChild(roundEl);
 	});
 
-	genTournamentOut.appendChild(blockEl);
+	genQualificationOut.appendChild(blockEl);
 
 	// if (trainingDate) {
 	// 	genDatePicker.valueAsDate = trainingDate; // Format as YYYY-MM-DD for input[type=date]
 	// }
 }
+
+
+genQualificationDrawTableBody.addEventListener("click", (e) => {
+	const playerId = Number(e.target.dataset.id);
+
+	// 1. Handle the Remove Button
+	if (e.target.closest(".remove-btn")) {
+		qualificationDraw = qualificationDraw.filter((p) => p.id !== playerId);
+		saveQualificationDraw();
+		renderQualificationDrawPlayers();
+		populateQualificationDrawPlayerField();
+		return;
+	}
+});
 
 // const rounds = generateRandomDoublesTournament({
 // 	activePlayerCount: 14,
@@ -443,4 +780,5 @@ function renderTournament() {
 // //console.log("Generated tournament rounds:", rounds);
 
 
-loadGeneratedTournamentFromStorage();
+//loadTournamentFromStorage();
+generateTournament();

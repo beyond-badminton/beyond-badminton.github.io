@@ -257,8 +257,11 @@ Pikachu,3,x</pre>
 				<!-- ===== Training ===== -->
 				<div id="training-section" class="sub-tab-content active">
 
-					<div class="card gen-controls-card">
-						<h2>Generate training schedule</h2>
+					<div class="card gen-collapsible">
+						<h2 class="gen-card-toggle">
+							<span class="gen-collapse-arrow">▾</span>
+							Generate training schedule
+						</h2>
 
 						<div class="gen-controls-row">
 							<div class="field gen-field-inline">
@@ -312,14 +315,28 @@ Pikachu,3,x</pre>
 						Add active players and court availability, then click <strong>Generate</strong>.
 					</p>
 
-					<div class="card gen-scoreboard-card" id="gen-scoreboard" hidden>
-						<h3 class="gen-section-heading">Penalty score</h3>
+					<div class="card gen-scoreboard-card gen-collapsible" id="gen-scoreboard" hidden>
+						<h2 class="gen-card-toggle gen-injected-header">
+							<span class="gen-collapse-arrow">▾</span>
+							Schedule penalty score
+						</h2>
+						<div id="gen-scoreboard-output"></div>
 					</div>
 
-					<div id="gen-training-output" hidden></div>
+					<div class="card gen-collapsible" id="gen-training-schedule" hidden>
+						<h2 class="gen-card-toggle gen-injected-header">
+							<span class="gen-collapse-arrow">▾</span>
+							Training schedule
+						</h2>
+						<div id="gen-training-output"></div>
+					</div>
 
-					<div class="card" id="gen-stats-output" hidden>
-						<h3 class="gen-stats-heading">Player stats</h3>
+					<div class="card gen-collapsible" id="gen-stats-output" hidden>
+						<h2 class="gen-card-toggle gen-injected-header">
+							<span class="gen-collapse-arrow">▾</span>
+							Player stats
+						</h2>
+						<!--h3 class="gen-stats-heading">Player stats</h3-->
 						<div class="gen-stats-scroll">
 							<table class="gen-stats-table">
 								<thead>
@@ -343,8 +360,11 @@ Pikachu,3,x</pre>
 				
 				<div id="tournament-section" class="sub-tab-content">
 				
-					<div class="card gen-controls-card">
-						<h2>Generate tournament</h2>
+					<div class="card gen-collapsible">
+						<h2 class="gen-card-toggle">
+							<span class="gen-collapse-arrow">▾</span>
+							Generate tournament
+						</h2>
 
 						<div class="gen-controls-row">
 							<div class="field gen-field-inline">
@@ -376,8 +396,82 @@ Pikachu,3,x</pre>
 					<p class="empty gen-empty-hint" id="gen-tournament-empty">
 						Add active players and court availability, then click <strong>Generate</strong>.
 					</p>
+					
+					<div class="card gen-collapsible" id="gen-qualification-draw-card" hidden>
+						<h2 class="gen-card-toggle">
+							<span class="gen-collapse-arrow">▾</span>
+							<span id="gen-qualification-draw-title">Enter qualification draw results</span>
+						</h2>
+						<div class="players-layout">
+							<div class="card form-card" id="gen-qualification-draw-form-card">
+								<p class="section-hint">Select player and his draw pick into the qualification.</p>
+								
+								<form id="gen-qualification-draw-form">
+									<div class="field" id="gen-qualification-draw-player-field">
+										<label for="qualification-draw-player">Select a player</label>
+										<select id="qualification-draw-player" name="qualificationDrawPlayer">
+										</select>
+									</div>
 
-					<div id="gen-tournament-output" hidden></div>
+									<div class="field" id="gen-qualification-draw-pick-field">
+										<label for="qualification-draw-pick">Select a pick</label>
+										<select id="qualification-draw-pick" name="qualificationDrawPick" disabled>
+										</select>
+									</div>
+									<button type="button" class="secondary-btn" id="submit-qualification-draw-btn" hidden>Confirm draw</button>
+								</form>
+							</div>
+
+							<div class="card players-panel">
+								<div class="players-panel-header-btns">
+									<button type="button" class="clear-btn" id="clear-qualification-draw-btn">Clear all</button>
+								</div>
+								<table class="player-table" id="qualification-draw-table">
+									<thead>
+										<tr>
+											<th><span class="sortable" data-list="qualification" data-field="name">Name <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualification" data-field="pick">Pick <span class="sort-icon">↕</span></span></th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody id="qualification-draw-table-body"></tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<div class="card gen-collapsible" id="gen-qualification-card" hidden>
+						<h2 class="gen-card-toggle">
+							<span class="gen-collapse-arrow">▾</span>
+							Qualification rounds
+						</h2>
+						<div id="gen-qualification-output"></div>
+					</div>
+					
+					<div class="card gen-collapsible" id="gen-qualification-scores-card" hidden>
+						<h2 class="gen-card-toggle">
+							<span class="gen-collapse-arrow">▾</span>
+							Qualification scores
+						</h2>
+						<div id="gen-qualification-scores-output"></div>
+					</div>
+					
+					<div class="card gen-collapsible" id="gen-playoff-draw-card" hidden>
+						<h2 class="gen-card-toggle">
+							<span class="gen-collapse-arrow">▾</span>
+							<span id="gen-playoff-draw-title">Enter playoff draw results</span>
+						</h2>
+						<div id="gen-playoff-draw-output"></div>
+					</div>
+
+					<div class="card gen-collapsible" id="gen-playoff-card" hidden>
+						<h2 class="gen-card-toggle">
+							<span class="gen-collapse-arrow">▾</span>
+							Playoff
+						</h2>
+						<div id="gen-playoff-output"></div>
+					</div>
+
 				</div>
 			</div>
 			<!-- end generator tab -->

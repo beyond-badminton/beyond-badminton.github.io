@@ -201,6 +201,10 @@ document
 
 // ── Utility ───────────────────────────────────────────────────
 
+function activePlayerAllId(activeId) {
+	const ap = activePlayers.find((p) => p.id === activeId);
+	return ap ? ap.allPlayerId : null;
+}
 function activePlayerName(activeId) {
 	const ap = activePlayers.find((p) => p.id === activeId);
 	return playerName(ap ? ap.allPlayerId : null);

@@ -2,6 +2,7 @@
 	--ink: #1a2420;
 	--ink-soft: #5c6b64;
 	--line: #dde3df;
+	--accent-line: #d4d4d4;
 	--paper: #f7f8f6;
 	--card: #ffffff;
 	--accent: #1f7a5c;
@@ -136,6 +137,11 @@ header h1 {
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
 	padding: 22px;
+	margin-bottom: 16px;
+}
+
+.card .card {
+	border: 1px solid var(--accent-line);
 }
 
 .tab-content {
@@ -153,7 +159,7 @@ header h1 {
 }
 
 .card h2 {
-	font-size: 1rem;
+	font-size: 1.1rem;
 	margin: 0 0 16px;
 }
 
@@ -414,6 +420,12 @@ input[type="file"] {
 
 .players-panel-header h2 {
 	margin: 0;
+}
+
+.players-panel-header-btns {
+	display: flex;
+	justify-content: flex-end; /* Aligns items to the right */
+	margin-bottom: 10px;
 }
 
 .clear-btn {
@@ -876,10 +888,6 @@ span.sort-active .sort-icon {
 	/*gap: 6px;*/
 }
 
-.gen-controls-card {
-	margin-bottom: 16px;
-}
-
 .gen-controls-row {
 	display: flex;
 	align-items: flex-end;
@@ -976,7 +984,6 @@ span.sort-active .sort-icon {
 .gen-scoreboard-card {
 	position: sticky;
 	top: -12px;
-	margin-bottom: 16px;
 }
 
 .gen-section-heading {
@@ -1056,6 +1063,38 @@ span.sort-active .sort-icon {
 	color: #c8503a;
 }
 
+.gen-card-toggle {
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	user-select: none;
+}
+.gen-card-toggle:hover {
+	color: var(--accent);
+}
+
+.gen-collapse-arrow {
+	display: inline-block;
+	flex-shrink: 0;
+	font-size: 1.3em;
+	line-height: 1;
+	text-align: center;
+	transition: transform 0.12s ease;
+}
+
+/* Hide everything in a collapsible container except its toggle header */
+.gen-collapsible.gen-collapsed > *:not(.gen-card-toggle) {
+	display: none;
+}
+.gen-collapsible.gen-collapsed {
+	padding-bottom: 14px;
+}
+
+.gen-collapsible.gen-collapsed .gen-collapse-arrow {
+	transform: rotate(-90deg);
+}
+
 .gen-block-header {
 	width: 100%;
 	text-align: left;
@@ -1069,7 +1108,7 @@ span.sort-active .sort-icon {
 
 .gen-round {
 	background: var(--card);
-	border: 1px solid var(--line);
+	border: 1px solid var(--accent-line);
 	border-radius: var(--radius);
 	padding: 14px;
 	margin-bottom: 10px;

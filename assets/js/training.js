@@ -661,6 +661,8 @@ const genExportBtn = document.getElementById("gen-export-btn");
 const genProgress = document.getElementById("gen-progress");
 const genProgressBar = document.getElementById("gen-progress-bar");
 const genScoreboard = document.getElementById("gen-scoreboard");
+const genScoreboardOut = document.getElementById("gen-scoreboard-output");
+const genTrainingSchedule = document.getElementById("gen-training-schedule");
 const genTrainingOut = document.getElementById("gen-training-output");
 const genStatsOut = document.getElementById("gen-stats-output");
 const genStatsTbody = document.getElementById("gen-stats-tbody");
@@ -905,7 +907,7 @@ function renderGeneratedTraining() {
 	//genMatchesPerHourSel.disabled = hasTrainingValue; // Disable matches per hour selection if a training exists
 	genEmpty.hidden = hasTrainingValue;
 	genScoreboard.hidden = !hasTrainingValue;
-	genTrainingOut.hidden = !hasTrainingValue;
+	genTrainingSchedule.hidden = !hasTrainingValue;
 	genStatsOut.hidden = !hasTrainingValue;
 	genClearBtn.hidden = !hasTrainingValue;
 	genPrintBtn.hidden = !hasTrainingValue;
@@ -1373,11 +1375,11 @@ function renderScoreboard() {
 	helpText.title =
 		"Penalties are calculated based on the generated training and the current training. The difference column shows how much the penalties have changed since the training was generated.";
 
-	genScoreboard.innerHTML = `
+	genScoreboardOut.innerHTML = `
 	<table class="sb-table">
 		<thead>
 		<tr class="gen-section-heading">
-			<th>Tournament penalty score</th>
+			<th>Penalty</th>
 			<th>Generated</th>
 			<th>Adjusted</th>
 			<th>Difference</th>
