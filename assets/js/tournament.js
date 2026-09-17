@@ -20,6 +20,7 @@ function newTournamentConfig() {
 		matchesPerPlayer: 0,
 		disable2MenVs2Women: false,
 		qualificationDrawConfirmed: false,
+		qualificationMatchesReassigned: false,
 		qualificationFinished: false,
 		playoffDrawConfirmed: false,
 		playoffFinished: false,
@@ -709,6 +710,8 @@ function renderQualificationDraw() {
 const genQualificationCard = document.getElementById("gen-qualification-card");
 const genQualificationOut = document.getElementById("gen-qualification-output");
 
+
+
 const qualificationPickToPlayer = new Map();
 
 function populateQualificationPickToPlayer() {
@@ -718,11 +721,27 @@ function populateQualificationPickToPlayer() {
 	});
 }
 
+function reassignQualificationMatches() {
+	if (tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationMatchesReassigned) {
+
+		populateQualificationPickToPlayer();
+		// iterate over all matches and change player numbers to playerids
+		qualificationRounds.forEach((round) => {
+			round.matches.forEach((match) => {
+				match.teamA[0] = qualificationPickToPlayer.get(match.teamA[0])?.id || match.teamA[0];
+				match.teamA[1] = qualificationPickToPlayer.get(match.teamA[1])?.id || match.teamA[1];
+				match.teamB[0] = qualificationPickToPlayer.get(match.teamB[0])?.id || match.teamB[0];
+				match.teamB[1] = qualificationPickToPlayer.get(match.teamB[1])?.id || match.teamB[1];
+			});
+		});
+		tournamentConfig.qualificationMatchesReassigned = true;
+		saveTournamentConfig();
+	}
+}
+
 function renderQualificationRounds() {
 
-	if (tournamentConfig.qualificationDrawConfirmed) {
-		populateQualificationPickToPlayer();
-	}
+	reassignQualificationMatches();
 
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
@@ -743,7 +762,7 @@ function renderQualificationRounds() {
 		console.log("Rendering round:", round.roundId, "with matches:", round.matches);
 		round.matches.forEach((match) => {
 			matchesRow.appendChild(
-				buildMatchCard(match, round.roundId, false, (number) => qualificationPickToPlayer.get(number)?.name || String(number)),
+				buildMatchCard(match, round.roundId, false, (number) => tournamentConfig.qualificationMatchesReassigned ? String(number) : playerName(number)),
 			);
 		});
 
@@ -791,11 +810,6 @@ function findQualificationMatch(matchId) {
 	return null;
 }
 
-// Map anonymous draw "pick" numbers (used in teamA/teamB) to real allPlayerId
-function qualificationPickToAllPlayerId(pick) {
-	return qualificationPickToPlayer.get(pick)?.id ?? null;
-}
-
 // Apply (or revert, using sign = -1) the effect of a completed match's score onto qualificationPlayerStats
 function applyQualificationMatchStats(match, score, sign = 1) {
 	if (!score || score.a === null || score.b === null || score.a === score.b) {
@@ -804,8 +818,8 @@ function applyQualificationMatchStats(match, score, sign = 1) {
 	}
 
 	const teamAWon = score.a > score.b;
-	const teamAIds = match.teamA.map(qualificationPickToAllPlayerId).filter((id) => id != null);
-	const teamBIds = match.teamB.map(qualificationPickToAllPlayerId).filter((id) => id != null);
+	const teamAIds = match.teamA.filter((id) => id != null);
+	const teamBIds = match.teamB.filter((id) => id != null);
 
 	teamAIds.forEach((id) => {
 		const stat = ensureQualificationPlayerStat(id);
