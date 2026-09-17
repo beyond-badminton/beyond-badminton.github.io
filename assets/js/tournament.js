@@ -306,14 +306,11 @@ function generatequalificationRounds(
 	// Helpers
 	// ------------------------------------------------------------
 
-	const teamKey = (team) => [...team].sort((a, b) => a - b).join("-");
+	let matchIdCounter = 0;
 
-	const matchKey = (teamA, teamB) => {
-		const a = teamKey(teamA);
-		const b = teamKey(teamB);
-
-		return [a, b].sort().join("|");
-	};
+	function genId() {
+		return `qm${(matchIdCounter++).toString(36)}`;
+	}
 
 	// ------------------------------------------------------------
 	// Check whether a match is legal.
@@ -405,11 +402,10 @@ function generatequalificationRounds(
 				const court = courts[matches.length % courts.length];
 
 				matches.push({
-					matchNumber: matches.length + 1,
 					court,
 					teamA,
 					teamB,
-					matchKey: matchKey(teamA, teamB),
+					matchId: genId(),
 				});
 			}
 
@@ -649,7 +645,6 @@ qualificationDrawSubmitButton.addEventListener("click", () => {
 	savedTournamentConfig();
 	renderQualificationDraw();
 
-	populateQualificationPickToPlayer();
 	renderQualificationRounds();
 });
 
@@ -718,6 +713,10 @@ function populateQualificationPickToPlayer() {
 
 function renderQualificationRounds() {
 
+	if (tournamentConfig.qualificationDrawConfirmed) {
+		populateQualificationPickToPlayer();
+	}
+
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
 
@@ -734,6 +733,7 @@ function renderQualificationRounds() {
 		const matchesRow = document.createElement("div");
 		matchesRow.className = "gen-matches-row";
 
+		console.log("Rendering round:", round.roundId, "with matches:", round.matches);
 		round.matches.forEach((match) => {
 			matchesRow.appendChild(
 				buildMatchCard(match, round.roundId, false, (number) => qualificationPickToPlayer.get(number)?.name || String(number)),
@@ -758,6 +758,20 @@ function renderQualificationRounds() {
 	genQualificationOut.appendChild(blockEl);
 }
 
+//------------------------------------------------------------
+// Render qualification scores
+//------------------------------------------------------------
+
+genQualificationOut.addEventListener("change", (e) => {
+	const inp = e.target.closest(".gen-score-input");
+	if (!inp) return;
+	const { matchId, side } = inp.dataset;
+	if (!qualificationScores[matchId]) scores[matchId] = { a: null, b: null };
+	const val = inp.value === "" ? null : Number(inp.value);
+	qualificationScores[matchId][side] = val;
+	saveScores();
+});
+
 function renderQualificationScores() {
 }
 
@@ -767,12 +781,13 @@ function renderTournament() {
 
 	console.log("Rendering tournament, hasTournament:", hasTournamentValue);
 	
-	genTournamentEmpty.hidden = hasTournamentValue;
-	genQualificationDrawCard.hidden = !hasTournamentValue;
-	genQualificationCard.hidden = !hasTournamentValue;
 	genClearTournamentBtn.hidden = !hasTournamentValue;
 	genPrintTournamentBtn.hidden = !hasTournamentValue;
 	genExportTournamentBtn.hidden = !hasTournamentValue;
+	genTournamentEmpty.hidden = hasTournamentValue;
+	genQualificationDrawCard.hidden = !hasTournamentValue;
+	genQualificationCard.hidden = !hasTournamentValue;
+	genQualificationScoresCard.hidden = !hasTournamentValue;
 
 	if (!hasTournamentValue) {
 		return;
@@ -813,5 +828,4 @@ genQualificationDrawTableBody.addEventListener("click", (e) => {
 // //console.log("Generated tournament rounds:", rounds);
 
 
-//loadTournamentFromStorage();
-generateTournament();
+loadTournamentFromStorage();

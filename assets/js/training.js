@@ -11,8 +11,10 @@ function workerMain() {
 		return Math.floor(Math.random() * n);
 	}
 
+	let matchIdCounter = 0;
+
 	function genId() {
-		return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+		return `m${(matchIdCounter++).toString(36)}`;
 	}
 
 	function incMatrix(mat, idx, id1, id2) {
