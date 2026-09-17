@@ -28,10 +28,11 @@ function newTournamentConfig() {
 // The generated tournament object, which contains:
 // - tournamentDate: Date of the tournament
 // - matchesPerPlayer: Number of matches each player should play
-// - qualificationDraw: Numbers assigned to players (1..activePlayerCount) after a physical draw
+// - qualificationDraw: Numbers assigned to players (number : { allPlayerId, name} ) after a physical draw
 // - qualificationDrawConfirmed: Boolean indicating whether the draw has been confirmed
 // - qualificationRounds: Array of rounds, each containing matches and bench players
-// - qualificationScores: Object containing player scores (allPlayerId : { played, wins, losses, winrate })
+// - qualificationScores: Object containing match scores
+// - qualificationPlayerStats (allPlayerId : { played, wins, losses, winrate })
 // - playoffDraw: first of every 4 players will draw its teammate from the next 3 players, and then the next 4 players will do the same, etc.
 // - playoffDrawConfirmed: Boolean indicating whether the playoff draw has been confirmed
 // - playoffRounds: Array of playoff rounds, this will contain quarterfinals, semifinals, and finals, each containing matches
@@ -41,6 +42,7 @@ let tournamentConfig = newTournamentConfig();
 let qualificationDraw = [];
 let qualificationRounds = [];
 let qualificationScores = {};
+let qualificationPlayerStats = {}; // { allPlayerId: { played, wins, losses } }
 let playoffDraw = [];
 let playoffRounds = {};
 let playoffScores = {};
