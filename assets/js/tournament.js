@@ -806,17 +806,27 @@ function saveQualificationPlayerStats() {
 function initializeQualificationPlayerStats() {
 	let added = false;
 	console.log("Qualification player stats before initialization:", qualificationPlayerStats);
+	
+	const qualificationPicks = new Map();
+	qualificationDraw.forEach((p) => {
+		qualificationPicks.set(p.id, p.pick);
+	});
+
 	tournamentPlayers.forEach((playerId) => {
-	console.log("Processing playerId:", playerId);
+		console.log("Processing playerId:", playerId);
 		if (!qualificationPlayerStats[playerId]) {
-			qualificationPlayerStats[playerId] = { name: playerName(playerId), played: 0, wins: 0, losses: 0, diff: 0, opponents: {} };
+			qualificationPlayerStats[playerId] = { rank: null, name: playerName(playerId), pick: qualificationPicks.get(playerId), played: 0, wins: 0, losses: 0, diff: 0, opponents: {} };
 			added = true;
 		}
 		else {
+			qualificationPlayerStats[playerId].rank = qualificationPlayerStats[playerId].rank ?? null;
 			qualificationPlayerStats[playerId].name = playerName(playerId);
+			qualificationPlayerStats[playerId].pick = qualificationPicks.get(playerId);
 			added = true;
 		}
 	});
+
+	rankPlayers(qualificationPlayerStats, true);
 	if (added) {
 		saveQualificationPlayerStats();
 	}
@@ -830,66 +840,6 @@ function findQualificationMatch(matchId) {
 		if (match) return { round, match };
 	}
 	return null;
-}
-
-// Apply (or revert, using sign = -1) the effect of a completed match's score onto qualificationPlayerStats
-function applyQualificationMatchStats(match, score, sign = 1) {
-	const scoreA = score?.a || 0;
-	const scoreB = score?.b || 0;
-
-	if (scoreA === 0 && scoreB === 0) {
-		// No score to apply
-		return;
-	}
-
-	function updatePlayerRecord(record, sign, teamScore, opponentScore) {
-		record.played += sign;
-		if (teamScore > opponentScore) record.wins += sign;
-		else if (teamScore < opponentScore) record.losses += sign;
-		record.diff += sign * (teamScore - opponentScore);
-	}
-
-	match.teamA.forEach((id) => {
-	console.log(`Processing player ${id} in team A`, qualificationPlayerStats);
-		const playerRecord = qualificationPlayerStats[id];
-		console.log(`Updating stats for player ${id} in team A: ${JSON.stringify(playerRecord)}`);
-		updatePlayerRecord(playerRecord, sign, scoreA, scoreB);
-		console.log(`Updated stats for player ${id} in team A: ${JSON.stringify(playerRecord)}`);
-		
-		match.teamB.forEach((opponentId) => {
-			const opponentRecord = playerRecord.opponents[opponentId] || { name: playerName(opponentId), played : 0, wins: 0, losses: 0, diff: 0 };
-			updatePlayerRecord(opponentRecord, sign, scoreA, scoreB);
-			if (opponentRecord.played === 0) {
-				delete playerRecord.opponents[opponentId];
-			} else {
-				playerRecord.opponents[opponentId] = opponentRecord;
-			}
-		});
-		//console.log(`Updated stats for player ${id} in team A: played=${playerRecord.played}, wins=${playerRecord.wins}, losses=${playerRecord.losses}, diff=${playerRecord.diff}`);
-	});
-
-	match.teamB.forEach((id) => {
-
-		const playerRecord = qualificationPlayerStats[id];
-		console.log(`Updating stats for player ${id} in team B: ${JSON.stringify(playerRecord)}`);
-		updatePlayerRecord(playerRecord, sign, scoreB, scoreA);
-		console.log(`Updated stats for player ${id} in team B: ${JSON.stringify(playerRecord)}`);
-		
-		match.teamA.forEach((opponentId) => {
-			const opponentRecord = playerRecord.opponents[opponentId] || { name: playerName(opponentId), played : 0, wins: 0, losses: 0, diff: 0 };
-			updatePlayerRecord(opponentRecord, sign, scoreB, scoreA);
-			if (opponentRecord.played === 0) {
-				delete playerRecord.opponents[opponentId];
-			} else {
-				playerRecord.opponents[opponentId] = opponentRecord;
-			}
-		});
-		//console.log(`Updated stats for player ${id} in team B: played=${playerRecord.played}, wins=${playerRecord.wins}, losses=${playerRecord.losses}, diff=${playerRecord.diff}`);
-	});
-}
-
-function revertQualificationMatchStats(match, score) {
-	applyQualificationMatchStats(match, score, -1);
 }
 
 //------------------------------------------------------------
@@ -912,13 +862,13 @@ genQualificationOut.addEventListener("change", (e) => {
 	const oldScore = qualificationScores[matchId] || { a: null, b: null };
 
 	// Revert the stats contribution of the previous score before applying the new one
-	if (found) revertQualificationMatchStats(found.match, oldScore);
+	if (found) revertMatchScore(qualificationPlayerStats, found.match, oldScore);
 
 	if (!qualificationScores[matchId]) qualificationScores[matchId] = { a: null, b: null };
 
 	qualificationScores[matchId][side] = val;
 
-	if (found) applyQualificationMatchStats(found.match, qualificationScores[matchId]);
+	if (found) applyMatchScore(qualificationPlayerStats, found.match, qualificationScores[matchId]);
 
 	saveQualificationScores();
 	saveQualificationPlayerStats();
@@ -930,11 +880,13 @@ function renderQualificationPlayerStats() {
 	console.log("Rendering qualification player stats", Object.values(qualificationPlayerStats));
 	genQualificationStatsTableBody.innerHTML = getSorted(Object.values(qualificationPlayerStats), "qualificationPlayerStats").map((stat) => {
 		return `<tr>
+			<td>${stat.rank ?? ""}</td>
 			<td>${stat.name}</td>
 			<td>${stat.played}</td>
 			<td>${stat.wins}</td>
 			<td>${stat.losses}</td>
 			<td>${stat.diff}</td>
+			<td>${stat.decidedBy ?? ""}</td>
 		</tr>`;
 	}).join("");
 	updateSortUI("qualificationPlayerStats");

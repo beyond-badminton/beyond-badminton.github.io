@@ -263,14 +263,7 @@ button[type="submit"]:active {
 	color: var(--ink-soft);
 }
 
-.csv-help {
-	font-size: 0.8rem;
-	color: var(--ink-soft);
-	line-height: 1.5;
-	margin: 0 0 8px;
-}
-
-.csv-columns {
+.section-hint-list {
 	margin: 0 0 12px;
 	padding-left: 18px;
 	font-size: 0.78rem;
@@ -278,7 +271,7 @@ button[type="submit"]:active {
 	line-height: 1.6;
 }
 
-.csv-columns code,
+.section-hint-list code,
 .code {
 	background: var(--paper);
 	border: 1px solid var(--line);
@@ -430,6 +423,34 @@ input[type="file"] {
 
 .players-panel-header-btns[hidden] {
 	display: none;
+}
+
+.select-btn {
+	border: 1px solid var(--line);
+	background: var(--card);
+	color: var(--ink-soft);
+	font-family: inherit;
+	font-size: 0.78rem;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: 7px;
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		color 0.15s ease;
+}
+
+.select-btn:hover {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.tiebreak-desc {
+	display: block;
+	font-size: 1.0em;
+	color: #666;
+	margin-top: 0.1em;
+	margin-bottom: 0.5em;
 }
 
 .clear-btn {
@@ -1124,13 +1145,13 @@ span.sort-active .sort-icon {
 	display: none;
 }
 
-.get-stats-table-wrap {
-	min-height: 320px;
+.gen-stats-table-wrap {
+	min-height: 150px;
 	max-height: 480px;
 	overflow-y: auto;
 }
 
-.get-stats-table-wrap thead th {
+.gen-stats-table-wrap thead th {
 	position: sticky;
 	top: 0;
 	background: var(--card);

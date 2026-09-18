@@ -101,21 +101,20 @@ function shuffle(array) {
 	return array;
 }
 
+// remember all sort keys
 const sortState = {
-	all: { field: "name", dir: "asc" },
-	active: { field: "name", dir: "asc" },
-	stats: { field: "name", dir: "asc" },
-	qualificationDraw: { field: "name", dir: "asc" },
-	qualificationPlayerStats: { field: "name", dir: "asc" },
-	qualificationP2PStats: { field: "name", dir: "asc" },
+	all: [{ field: "name", dir: "asc" }],
+	active: [{ field: "name", dir: "asc" }],
+	stats: [{ field: "name", dir: "asc" }],
+	qualificationDraw: [{ field: "name", dir: "asc" }],
+	qualificationPlayerStats: [{ field: "rank", dir: "asc" }],
+	qualificationP2PStats: [{ field: "name", dir: "asc" }],
 };
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used
 function getSorted(arr, listKey) {
-	console.log("Sorting", arr, listKey);
-	console.log("Sorting", listKey, "by", sortState[listKey].field, sortState[listKey].dir);
-	const { field, dir } = sortState[listKey];
-	return [...arr].sort((a, b) => {
+
+	const sortFunc = (a, b, field, dir) => {
 		if (field === "arrival") {
 			const va = timeToMins(a[field]);
 			const vb = timeToMins(b[field]);
@@ -133,7 +132,8 @@ function getSorted(arr, listKey) {
 			field === "wins" ||
 			field === "losses" ||
 			field === "winrate" ||
-			field === "diff"
+			field === "diff" ||
+			field === "rank"
 		) {
 			const va = a[field] || false;
 			const vb = b[field] || false;
@@ -175,12 +175,20 @@ function getSorted(arr, listKey) {
 		if (ret < 0) return dir === "asc" ? -1 : 1;
 		if (ret > 0) return dir === "asc" ? 1 : -1;
 		return 0;
+	};
+	
+	return [...arr].sort((a, b) => {
+		for (const { field, dir } of sortState[listKey]) {
+			const result = sortFunc(a, b, field, dir);
+			if (result !== 0) return result;
+		}
+		return 0; // If all criteria are equal, maintain original order
 	});
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used
 function updateSortUI(listKey) {
-	const { field, dir } = sortState[listKey];
+	const { field, dir } = sortState[listKey][0];
 	const arrow = dir === "asc" ? "↑" : "↓";
 
 	document
@@ -205,12 +213,28 @@ function cancelSortUI(listKey) {
 }
 
 function handleSort(listKey, field) {
-	if (sortState[listKey].field === field) {
-		sortState[listKey].dir = sortState[listKey].dir === "asc" ? "desc" : "asc";
+	if (sortState[listKey][0].field === field) {
+		sortState[listKey][0].dir = sortState[listKey][0].dir === "asc" ? "desc" : "asc";
 	} else {
-		sortState[listKey].field = field;
-		sortState[listKey].dir = "asc";
+		// find field in current list key and move it to position 0 (most recent sort)
+		const currentList = sortState[listKey];
+		const index = currentList.findIndex(s => s.field === field);
+		if (index > 0) {
+			sortState[listKey] = [
+				currentList[index],
+				...currentList.slice(0, index),
+				...currentList.slice(index + 1)
+			];
+		}
+		else {
+			// field not found in current list, add it to the beginning
+			sortState[listKey] = [
+				{ field, dir: "asc" },
+				...currentList
+			];
+		}
 	}
+	console.log(`Updated sort state for ${listKey}:`, sortState[listKey]);
 	//console.log(`Sorting ${listKey} by ${field} (${sortState[listKey].dir})`);
 	if (listKey === "all") renderAllPlayers();
 	else if (listKey === "active") renderActivePlayers();

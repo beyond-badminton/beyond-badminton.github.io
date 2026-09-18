@@ -64,15 +64,15 @@
 
 							<div class="import-section">
 								<h3>Import / Export CSV</h3>
-								<p class="csv-help">Data is stored in browser local storage. Export is useful if local storage is cleared or you wish to change browser or device.</p>
-								<p class="csv-help">Import format:</p>
-								<ul class="csv-columns">
+								<p class="section-hint">Data is stored in browser local storage. Export is useful if local storage is cleared or you wish to change browser or device.</p>
+								<p class="section-hint">Import format:</p>
+								<ul class="section-hint-list">
 									<li>One player per line</li>
 									<li>First line must include column headers</li>
 									<li>Header order is flexible</li>
 								</ul>
-								<p class="csv-help">Columns:</p>
-								<ul class="csv-columns">
+								<p class="section-hint">Columns:</p>
+								<ul class="section-hint-list">
 									<li><code>name</code> — player's name</li>
 									<li id="csv-skill-codes"></li>
 									<li><code>gender</code> — <code>m</code> (man), <code>w</code> (woman), <code>x</code> (N/A)</li>
@@ -458,11 +458,13 @@ Pikachu,3,x</pre>
 							<table class="gen-stats-table">
 								<thead>
 									<tr>
+										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
 										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
 										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
 										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
 										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
 										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
+										<th>Decided By<span class="help-icon" title="The rule that set the player's final position, whether decisive on its own or used to break a tie.">?</span></th>
 									</tr>
 								</thead>
 								<tbody id="qualification-stats-table-body">
@@ -479,13 +481,13 @@ Pikachu,3,x</pre>
 								</p>
 								<div class="p2p-filter-controls">
 									<input type="search" id="qualification-p2p-filter-search" placeholder="Search player…">
-									<button type="button" id="qualification-p2p-filter-all-btn" class="clear-btn">Select all</button>
+									<button type="button" id="qualification-p2p-filter-all-btn" class="select-btn">Select all</button>
 									<button type="button" id="qualification-p2p-filter-none-btn" class="clear-btn">Clear all</button>
 								</div>
 								<div id="qualification-p2p-player-filter" class="checkbox-list p2p-filter-list"></div>
 							</div>
 
-							<div class="get-stats-table-wrap">
+							<div class="gen-stats-table-wrap">
 								<table class="gen-stats-table">
 									<thead>
 										<tr>
@@ -502,6 +504,36 @@ Pikachu,3,x</pre>
 								</table>
 							</div>
 						</div>
+						
+					<div class="card">
+						<p class="gen-table-label">Ranking criteria</p>
+						<p class="section-hint">Applied in order below, only when players are tied on every rule above it.</p>
+						<ol class="section-hint-list">
+							<li>
+								<strong>WINS</strong> — total wins
+								<span class="tiebreak-desc">Higher total wins ranks first.</span>
+							</li>
+							<li>
+								<strong>PLAYED</strong> — games played
+								<span class="tiebreak-desc">Fewer games played ranks first.</span>
+							</li>
+							<li>
+								<strong>DIFF</strong> — overall score differential
+								<span class="tiebreak-desc">Higher across all games ranks first.</span>
+							</li>
+							<li>
+								<strong>P2P WINS</strong> — head-to-head wins within the tied group
+								<span class="tiebreak-desc">Only games played against others still tied at this point are counted.</span>
+							</li>
+							<li>
+								<strong>P2P DIFF</strong> — head-to-head score differential within the tied group
+								<span class="tiebreak-desc">Same head-to-head games as above, compared by score difference.</span>
+							</li>
+							<li>
+								<strong>PICK</strong> — draw pick number
+								<span class="tiebreak-desc">Lower pick number ranks first; always resolves any remaining tie.</span>
+							</li>
+						</ol>
 					</div>
 					
 					<div class="card gen-collapsible" id="gen-playoff-draw-card" hidden>
@@ -578,6 +610,7 @@ Pikachu,3,x</pre>
 		<script src="assets/js/training.js"></script>
 		<script src="assets/js/training.export.js"></script>
 		<script src="assets/js/tournament.js"></script>
+		<script src="assets/js/tournament.ranking.js"></script>
 		<script src="assets/js/exceljs.min.js"></script>
 		<script src="assets/js/init.js"></script>
 	</body>
