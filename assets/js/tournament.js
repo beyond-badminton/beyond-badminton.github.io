@@ -885,7 +885,7 @@ function renderQualificationPlayerStats() {
 			<td>${stat.played}</td>
 			<td>${stat.wins}</td>
 			<td>${stat.losses}</td>
-			<td>${stat.diff}</td>
+			<td>${valueWithSign(stat.diff)}</td>
 			<td>${stat.decidedBy ?? ""}</td>
 		</tr>`;
 	}).join("");
@@ -957,7 +957,6 @@ function renderQualificationP2PStats() {
 			.filter(([playerId]) => !qualificationP2PExcluded.has(Number(playerId)))
 			.flatMap(([, record]) => {
 				return Object.entries(record.opponents || {})
-					.filter(([opponentId]) => !qualificationP2PExcluded.has(Number(opponentId)))
 					.map(([, opponentRecord]) => {
 						return {
 							name: record.name,
@@ -977,7 +976,7 @@ function renderQualificationP2PStats() {
 					<td>${row.played}</td>
 					<td>${row.wins}</td>
 					<td>${row.losses}</td>
-					<td>${row.diff}</td>
+					<td>${valueWithSign(row.diff)}</td>
 				</tr>`;
 			})
 			.join("");

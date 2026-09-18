@@ -1307,11 +1307,6 @@ function penColor(val) {
 	return "pen-red";
 }
 
-function valueWithSign(val) {
-	if (val > 0) return `+${val}`;
-	if (val <= 0) return val;
-}
-
 function renderScoreboard() {
 	const totalGenerated =
 		generatedPenalties.skill +

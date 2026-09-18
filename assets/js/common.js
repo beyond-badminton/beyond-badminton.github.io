@@ -257,3 +257,12 @@ document.querySelectorAll('.gen-card-toggle').forEach(function (header) {
 		container.classList.toggle('gen-collapsed');
 	});
 });
+
+// ============================================================
+// ADDITIONAL UTILITIES
+// ============================================================
+
+function valueWithSign(val) {
+	if (val > 0) return `+${val}`;
+	return val;
+}
