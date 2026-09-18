@@ -63,6 +63,14 @@ const genExportTournamentBtn = document.getElementById("gen-export-tournament-bt
 const genQualificationStatsCard = document.getElementById("gen-qualification-stats-card");
 const genQualificationStatsTableBody = document.getElementById("qualification-stats-table-body");
 const genQualificationP2PStatsTableBody = document.getElementById("qualification-stats-p2p-table-body");
+const genQualificationP2PFilterList = document.getElementById("qualification-p2p-player-filter");
+const genQualificationP2PFilterCount = document.getElementById("qualification-p2p-filter-count");
+const genQualificationP2PFilterSearch = document.getElementById("qualification-p2p-filter-search");
+const genQualificationP2PFilterAllBtn = document.getElementById("qualification-p2p-filter-all-btn");
+const genQualificationP2PFilterNoneBtn = document.getElementById("qualification-p2p-filter-none-btn");
+
+// Player ids hidden from the P2P stats table (session-only, not persisted).
+const qualificationP2PExcluded = new Set();
 
 const genPlayoffDrawCard = document.getElementById("gen-playoff-draw-card");
 const genPlayoffDrawTitle = document.getElementById("gen-playoff-draw-title");
@@ -133,7 +141,7 @@ function clearGeneratedTournamentFromStorage() {
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_SCORES_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYERS_KEY);
-	} catch {}
+	} catch (we) { console.log("Error clearing generated tournament from storage.", we); }
 
 	//console.log("Cleared generated tournament from storage.", tournamentConfig);
 	renderTournament();
@@ -376,7 +384,7 @@ function generateQualificationRounds(
 			// exclude players that played all games;
 			// sort all players by how many times they have played,ascending order, so that players who have played less are prioritized;
 			// if players have played teh same maches, sort by how many times they have benched, descending order, so that players who have benched more are prioritized;
-			// then slice the list to only include enough players for the number of courts available (courts.length * 4);
+			// then slice the list to only include enough players for the number of courts available (courts.length * 4), taking multiples of 4 to ensure full teams;
 
 			const availablePlayers = players
 				.filter((player) => stats[player].played < matchCount)
@@ -385,8 +393,9 @@ function generateQualificationRounds(
 						stats[a].played - stats[b].played ||
 						stats[b].benched - stats[a].benched,
 				)
-				.slice(0, courts.length * 4);
+				.slice(0, Math.min(courts.length * 4, players.length - (players.length % 4)));
 
+			console.log("Available players:", availablePlayers);
 			if (availablePlayers.length === 0) {
 				// all players have played all matches
 				break;
@@ -890,6 +899,13 @@ function revertQualificationMatchStats(match, score) {
 genQualificationOut.addEventListener("change", (e) => {
 	const inp = e.target.closest(".gen-score-input");
 	if (!inp) return;
+
+	let val = inp.value === "" ? null : Number(inp.value);
+	if (val !== null && val < 0) {
+		inp.value = "";
+		return;
+	};
+
 	const { matchId, side } = inp.dataset;
 
 	const found = findQualificationMatch(matchId);
@@ -899,7 +915,7 @@ genQualificationOut.addEventListener("change", (e) => {
 	if (found) revertQualificationMatchStats(found.match, oldScore);
 
 	if (!qualificationScores[matchId]) qualificationScores[matchId] = { a: null, b: null };
-	const val = inp.value === "" ? null : Number(inp.value);
+
 	qualificationScores[matchId][side] = val;
 
 	if (found) applyQualificationMatchStats(found.match, qualificationScores[matchId]);
@@ -925,19 +941,81 @@ function renderQualificationPlayerStats() {
 }
 
 
+function renderQualificationP2PPlayerFilter() {
+	const players = tournamentPlayers
+		.map((playerId) => ({ id: Number(playerId), name: playerName(Number(playerId)) }))
+		.sort((a, b) => a.name.localeCompare(b.name));
+
+	genQualificationP2PFilterList.innerHTML = "";
+	players.forEach((p) => {
+		const isChecked = !qualificationP2PExcluded.has(p.id);
+		const label = document.createElement("label");
+		label.className = `checkbox-pill${isChecked ? " checked" : ""}`;
+		label.dataset.name = p.name.toLowerCase();
+		label.innerHTML = `<input type="checkbox" value="${p.id}" ${isChecked ? "checked" : ""}> ${p.name}`;
+		genQualificationP2PFilterList.appendChild(label);
+	});
+
+	applyQualificationP2PFilterSearch();
+	genQualificationP2PFilterCount.textContent = `${players.length - qualificationP2PExcluded.size}/${players.length}`;
+}
+
+function applyQualificationP2PFilterSearch() {
+	const term = genQualificationP2PFilterSearch.value.trim().toLowerCase();
+	genQualificationP2PFilterList.querySelectorAll(".checkbox-pill").forEach((label) => {
+		label.classList.toggle("filter-hidden", term !== "" && !label.dataset.name.includes(term));
+	});
+}
+
+genQualificationP2PFilterSearch.addEventListener("input", applyQualificationP2PFilterSearch);
+
+genQualificationP2PFilterAllBtn.addEventListener("click", () => {
+	qualificationP2PExcluded.clear();
+	renderQualificationP2PPlayerFilter();
+	renderQualificationP2PStats();
+});
+
+genQualificationP2PFilterNoneBtn.addEventListener("click", () => {
+	tournamentPlayers.forEach((playerId) => qualificationP2PExcluded.add(Number(playerId)));
+	renderQualificationP2PPlayerFilter();
+	renderQualificationP2PStats();
+});
+
+genQualificationP2PFilterList.addEventListener("change", (e) => {
+	const input = e.target.closest("input[type=checkbox]");
+	if (!input) return;
+
+	const playerId = Number(input.value);
+	const label = input.closest(".checkbox-pill");
+
+	if (input.checked) {
+		qualificationP2PExcluded.delete(playerId);
+		label.classList.add("checked");
+	} else {
+		qualificationP2PExcluded.add(playerId);
+		label.classList.remove("checked");
+	}
+
+	genQualificationP2PFilterCount.textContent = `${tournamentPlayers.length - qualificationP2PExcluded.size}/${tournamentPlayers.length}`;
+	renderQualificationP2PStats();
+});
+
 function renderQualificationP2PStats() {
-	const rows = Object.values(qualificationPlayerStats)
-			.flatMap((record) => {
-				return Object.entries(record.opponents || {}).map(([opponentId, opponentRecord]) => {
-					return {
-						name: record.name,
-						opponent: opponentRecord.name,
-						played: opponentRecord.played,
-						wins: opponentRecord.wins,
-						losses: opponentRecord.losses,
-						diff: opponentRecord.diff,
-					};
-				});
+	const rows = Object.entries(qualificationPlayerStats)
+			.filter(([playerId]) => !qualificationP2PExcluded.has(Number(playerId)))
+			.flatMap(([, record]) => {
+				return Object.entries(record.opponents || {})
+					.filter(([opponentId]) => !qualificationP2PExcluded.has(Number(opponentId)))
+					.map(([, opponentRecord]) => {
+						return {
+							name: record.name,
+							opponent: opponentRecord.name,
+							played: opponentRecord.played,
+							wins: opponentRecord.wins,
+							losses: opponentRecord.losses,
+							diff: opponentRecord.diff,
+						};
+					});
 			});
 	genQualificationP2PStatsTableBody.innerHTML = getSorted(rows, "qualificationP2PStats")
 			.map((row) => {
@@ -960,6 +1038,7 @@ function renderQualificationStats() {
 	}
 
 	renderQualificationPlayerStats();
+	renderQualificationP2PPlayerFilter();
 	renderQualificationP2PStats();
 
 	// const rows = tournamentPlayers.map((playerId) => {

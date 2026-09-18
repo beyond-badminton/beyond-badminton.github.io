@@ -471,21 +471,36 @@ Pikachu,3,x</pre>
 						</div>
 						<div class="card">
 							<p class="gen-table-label">Player vs Player</p>
-	
-							<table class="gen-stats-table">
-								<thead>
-									<tr>
-										<th><span class="sortable" data-list="qualificationP2PStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationP2PStats" data-field="opponent">Opponent <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationP2PStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationP2PStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationP2PStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationP2PStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
-									</tr>
-								</thead>
-								<tbody id="qualification-stats-p2p-table-body">
-								</tbody>
-							</table>
+
+							<div class="gen-collapsible gen-collapsed" id="qualification-p2p-filter-wrap">
+								<p class="gen-table-label gen-card-toggle">
+									<span class="gen-collapse-arrow">▾</span>
+									Filter players (<span id="qualification-p2p-filter-count"></span>)
+								</p>
+								<div class="p2p-filter-controls">
+									<input type="search" id="qualification-p2p-filter-search" placeholder="Search player…">
+									<button type="button" id="qualification-p2p-filter-all-btn" class="clear-btn">Select all</button>
+									<button type="button" id="qualification-p2p-filter-none-btn" class="clear-btn">Clear all</button>
+								</div>
+								<div id="qualification-p2p-player-filter" class="checkbox-list p2p-filter-list"></div>
+							</div>
+
+							<div class="get-stats-table-wrap">
+								<table class="gen-stats-table">
+									<thead>
+										<tr>
+											<th><span class="sortable" data-list="qualificationP2PStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationP2PStats" data-field="opponent">Opponent <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationP2PStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationP2PStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationP2PStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationP2PStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
+										</tr>
+									</thead>
+									<tbody id="qualification-stats-p2p-table-body">
+									</tbody>
+								</table>
+							</div>
 						</div>
 					</div>
 					

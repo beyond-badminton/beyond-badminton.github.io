@@ -1099,6 +1099,44 @@ span.sort-active .sort-icon {
 	transform: rotate(-90deg);
 }
 
+.p2p-filter-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 10px;
+}
+
+.p2p-filter-controls input[type="search"] {
+	flex: 1 1 auto;
+	max-width: 240px;
+}
+
+.p2p-filter-list {
+	max-height: 220px;
+	overflow-y: auto;
+	padding: 4px;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	margin-bottom: 34px;
+}
+
+.checkbox-pill.filter-hidden {
+	display: none;
+}
+
+.get-stats-table-wrap {
+	min-height: 320px;
+	max-height: 480px;
+	overflow-y: auto;
+}
+
+.get-stats-table-wrap thead th {
+	position: sticky;
+	top: 0;
+	background: var(--card);
+	z-index: 1;
+}
+
 .gen-block-header {
 	width: 100%;
 	text-align: left;
