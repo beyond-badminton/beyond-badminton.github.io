@@ -1127,6 +1127,14 @@ span.sort-active .sort-icon {
 	margin: 0 0 10px;
 }
 
+.gen-table-label {
+	font-size: 0.78rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--ink-soft);
+	margin: 0 0 20px;
+}
 .gen-matches-row {
 	display: flex;
 	flex-direction: column;

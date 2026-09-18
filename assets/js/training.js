@@ -963,7 +963,7 @@ function renderTraining() {
 		matchesRow.className = "gen-matches-row";
 
 		round.matches.forEach((match) => {
-			matchesRow.appendChild(buildMatchCard(match, scores[match.matchId] = { a: null, b: null }, round.roundId));
+			matchesRow.appendChild(buildMatchCard(match, scores[match.matchId] || { a: null, b: null }, round.roundId));
 		});
 
 		roundEl.appendChild(matchesRow);
@@ -1004,6 +1004,8 @@ function buildMatchCard(
 	courtLabel.className = "gen-court-label";
 	courtLabel.textContent = match.court;
 	card.appendChild(courtLabel);
+
+	console.log("Building match card for match:", match, "with score:", score);
 
 	["teamA", "teamB"].forEach((teamKey, ti) => {
 		const teamEl = document.createElement("div");

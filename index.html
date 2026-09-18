@@ -429,8 +429,8 @@ Pikachu,3,x</pre>
 								<table class="player-table" id="qualification-draw-table">
 									<thead>
 										<tr>
-											<th><span class="sortable" data-list="qualification" data-field="name">Name <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualification" data-field="pick">Pick <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationDraw" data-field="name">Name <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationDraw" data-field="pick">Pick <span class="sort-icon">↕</span></span></th>
 											<th></th>
 										</tr>
 									</thead>
@@ -448,12 +448,45 @@ Pikachu,3,x</pre>
 						<div id="gen-qualification-output"></div>
 					</div>
 					
-					<div class="card gen-collapsible" id="gen-qualification-scores-card" hidden>
+					<div class="card gen-collapsible" id="gen-qualification-stats-card" hidden>
 						<h2 class="gen-card-toggle">
 							<span class="gen-collapse-arrow">▾</span>
-							Qualification scores
+							Qualification stats
 						</h2>
-						<div id="gen-qualification-scores-output"></div>
+						<div class="card">
+							<p class="gen-table-label">Standings</p>
+							<table class="gen-stats-table">
+								<thead>
+									<tr>
+										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
+									</tr>
+								</thead>
+								<tbody id="qualification-stats-table-body">
+								</tbody>
+							</table>
+						</div>
+						<div class="card">
+							<p class="gen-table-label">Player vs Player</p>
+	
+							<table class="gen-stats-table">
+								<thead>
+									<tr>
+										<th><span class="sortable" data-list="qualificationP2PStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationP2PStats" data-field="opponent">Opponent <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationP2PStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationP2PStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationP2PStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="qualificationP2PStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
+									</tr>
+								</thead>
+								<tbody id="qualification-stats-p2p-table-body">
+								</tbody>
+							</table>
+						</div>
 					</div>
 					
 					<div class="card gen-collapsible" id="gen-playoff-draw-card" hidden>

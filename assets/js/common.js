@@ -105,12 +105,15 @@ const sortState = {
 	all: { field: "name", dir: "asc" },
 	active: { field: "name", dir: "asc" },
 	stats: { field: "name", dir: "asc" },
-	qualification: { field: "name", dir: "asc" },
-	qualificationScores: { field: "name", dir: "asc" },
+	qualificationDraw: { field: "name", dir: "asc" },
+	qualificationPlayerStats: { field: "name", dir: "asc" },
+	qualificationP2PStats: { field: "name", dir: "asc" },
 };
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used
 function getSorted(arr, listKey) {
+	console.log("Sorting", arr, listKey);
+	console.log("Sorting", listKey, "by", sortState[listKey].field, sortState[listKey].dir);
 	const { field, dir } = sortState[listKey];
 	return [...arr].sort((a, b) => {
 		if (field === "arrival") {
@@ -129,11 +132,11 @@ function getSorted(arr, listKey) {
 			field === "played" ||
 			field === "wins" ||
 			field === "losses" ||
-			field === "winrate"
+			field === "winrate" ||
+			field === "diff"
 		) {
 			const va = a[field] || false;
 			const vb = b[field] || false;
-			console.log(`Sorting by ${field}:`, a.name, va, b.name, vb);
 			if (va < vb) return dir === "asc" ? -1 : 1;
 			if (va > vb) return dir === "asc" ? 1 : -1;
 			return 0;
@@ -167,7 +170,8 @@ function getSorted(arr, listKey) {
 			return 0;
 		}
 
-		const ret = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+		// player name alphabetical sort as fallback
+		const ret = a[field].toLowerCase().localeCompare(b[field].toLowerCase());
 		if (ret < 0) return dir === "asc" ? -1 : 1;
 		if (ret > 0) return dir === "asc" ? 1 : -1;
 		return 0;
@@ -211,8 +215,9 @@ function handleSort(listKey, field) {
 	if (listKey === "all") renderAllPlayers();
 	else if (listKey === "active") renderActivePlayers();
 	else if (listKey === "stats") renderStatsTable();
-	else if (listKey === "qualification") renderQualificationDrawPlayers();
-	else if (listKey === "qualificationScores") renderQualificationScores();
+	else if (listKey === "qualificationDraw") renderQualificationDrawPlayers();
+	else if (listKey === "qualificationPlayerStats") renderQualificationStats();
+	else if (listKey === "qualificationP2PStats") renderQualificationP2PStats();
 }
 
 document.querySelectorAll("span.sortable").forEach((el) => {

@@ -500,7 +500,7 @@ document.addEventListener("click", (event) => {
 // ── Utility ───────────────────────────────────────────────────
 
 function playerName(allPlayerId) {
-	const p = allPlayers.find((p) => p.id === allPlayerId);
+	const p = allPlayers.find((p) => Number(p.id) === Number(allPlayerId));
 	return p ? p.name : "?";
 }
 
