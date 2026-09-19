@@ -301,7 +301,7 @@ Pikachu,3,x</pre>
 						</div>
 						<div class="gen-btn-row">
 							<button type="button" id="gen-generate-btn" class="gen-primary-btn">Generate</button>
-							<button type="button" id="gen-clear-btn" class="clear-btn" hidden>Clear matches</button>
+							<button type="button" id="gen-clear-btn" class="clear-btn" hidden>Discard</button>
 							<button type="button" id="gen-print-btn" class="secondary-btn" hidden>Print</button>
 							<button type="button" id="gen-export-btn" class="secondary-btn" hidden>Export</button>
 						</div>
@@ -387,7 +387,7 @@ Pikachu,3,x</pre>
 						</div>
 						<div class="gen-btn-row">
 							<button type="button" id="gen-generate-tournament-btn" class="gen-primary-btn">Generate</button>
-							<button type="button" id="gen-clear-tournament-btn" class="clear-btn" hidden>Clear matches</button>
+							<button type="button" id="gen-clear-tournament-btn" class="clear-btn" hidden>Discard</button>
 							<button type="button" id="gen-print-tournament-btn" class="secondary-btn" hidden>Print</button>
 							<button type="button" id="gen-export-tournament-btn" class="secondary-btn" hidden>Export</button>
 						</div>
@@ -418,7 +418,7 @@ Pikachu,3,x</pre>
 										<select id="qualification-draw-pick" name="qualificationDrawPick" disabled>
 										</select>
 									</div>
-									<button type="button" class="secondary-btn" id="submit-qualification-draw-btn" hidden>Confirm draw</button>
+									<button type="button" class="gen-primary-btn" id="submit-qualification-draw-btn" hidden>Confirm draw</button>
 								</form>
 							</div>
 
@@ -426,7 +426,7 @@ Pikachu,3,x</pre>
 								<div class="players-panel-header-btns" id="qualification-draw-panel-header">
 									<button type="button" class="clear-btn" id="clear-qualification-draw-btn">Clear all</button>
 								</div>
-								<table class="player-table" id="qualification-draw-table">
+								<table class="player-table compact-table" id="qualification-draw-table">
 									<thead>
 										<tr>
 											<th><span class="sortable" data-list="qualificationDraw" data-field="name">Name <span class="sort-icon">↕</span></span></th>
@@ -445,13 +445,26 @@ Pikachu,3,x</pre>
 							<span class="gen-collapse-arrow">▾</span>
 							Qualification rounds
 						</h2>
+						
+						<div class="gen-collapsible gen-collapsed" id="qualification-match-filter-wrap">
+							<p class="gen-table-label gen-card-toggle">
+								<span class="gen-collapse-arrow">▾</span>
+								Filter players (<span id="qualification-match-filter-count"></span>)
+							</p>
+							<div class="checkbox-filter-controls">
+								<input type="search" id="qualification-match-filter-search" placeholder="Search player…">
+								<button type="button" id="qualification-match-filter-all-btn" class="select-btn">Select all</button>
+								<button type="button" id="qualification-match-filter-none-btn" class="clear-btn">Clear all</button>
+							</div>
+							<div id="qualification-match-player-filter" class="checkbox-list checkbox-filter-list"></div>
+						</div>
 						<div id="gen-qualification-output"></div>
 					</div>
 					
 					<div class="card gen-collapsible" id="gen-qualification-stats-card" hidden>
 						<h2 class="gen-card-toggle">
 							<span class="gen-collapse-arrow">▾</span>
-							Qualification stats
+							Qualification results
 						</h2>
 						<div class="card">
 							<p class="gen-table-label">Standings</p>
@@ -479,12 +492,12 @@ Pikachu,3,x</pre>
 									<span class="gen-collapse-arrow">▾</span>
 									Filter players (<span id="qualification-p2p-filter-count"></span>)
 								</p>
-								<div class="p2p-filter-controls">
+								<div class="checkbox-filter-controls">
 									<input type="search" id="qualification-p2p-filter-search" placeholder="Search player…">
 									<button type="button" id="qualification-p2p-filter-all-btn" class="select-btn">Select all</button>
 									<button type="button" id="qualification-p2p-filter-none-btn" class="clear-btn">Clear all</button>
 								</div>
-								<div id="qualification-p2p-player-filter" class="checkbox-list p2p-filter-list"></div>
+								<div id="qualification-p2p-player-filter" class="checkbox-list checkbox-filter-list"></div>
 							</div>
 
 							<div class="gen-stats-table-wrap">
@@ -505,37 +518,43 @@ Pikachu,3,x</pre>
 							</div>
 						</div>
 						
-					<div class="card">
-						<p class="gen-table-label">Ranking criteria</p>
-						<p class="section-hint">Applied in order below, only when players are tied on every rule above it.</p>
-						<ol class="section-hint-list">
-							<li>
-								<strong>WINS</strong> — total wins
-								<span class="tiebreak-desc">Higher total wins ranks first.</span>
-							</li>
-							<li>
-								<strong>PLAYED</strong> — games played
-								<span class="tiebreak-desc">Fewer games played ranks first.</span>
-							</li>
-							<li>
-								<strong>DIFF</strong> — overall score differential
-								<span class="tiebreak-desc">Higher across all games ranks first.</span>
-							</li>
-							<li>
-								<strong>P2P WINS</strong> — head-to-head wins within the tied group
-								<span class="tiebreak-desc">Only games played against others still tied at this point are counted.</span>
-							</li>
-							<li>
-								<strong>P2P DIFF</strong> — head-to-head score differential within the tied group
-								<span class="tiebreak-desc">Same head-to-head games as above, compared by score difference.</span>
-							</li>
-							<li>
-								<strong>PICK</strong> — draw pick number
-								<span class="tiebreak-desc">Lower pick number ranks first; always resolves any remaining tie.</span>
-							</li>
-						</ol>
+						<div class="card">
+							<p class="gen-table-label">Ranking criteria</p>
+							<p class="section-hint">Applied in order below, only when players are tied on every rule above it.</p>
+							<ol class="section-hint-list">
+								<li>
+									<strong>WINS</strong> — total wins
+									<span class="tiebreak-desc">Higher total wins ranks first.</span>
+								</li>
+								<li>
+									<strong>PLAYED</strong> — games played
+									<span class="tiebreak-desc">Fewer games played ranks first.</span>
+								</li>
+								<li>
+									<strong>DIFF</strong> — overall score differential
+									<span class="tiebreak-desc">Higher across all games ranks first.</span>
+								</li>
+								<li>
+									<strong>P2P WINS</strong> — head-to-head wins within the tied group
+									<span class="tiebreak-desc">Only games played against others still tied at this point are counted.</span>
+								</li>
+								<li>
+									<strong>P2P DIFF</strong> — head-to-head score differential within the tied group
+									<span class="tiebreak-desc">Same head-to-head games as above, compared by score difference.</span>
+								</li>
+								<li>
+									<strong>PICK</strong> — draw pick number
+									<span class="tiebreak-desc">Lower pick number ranks first; always resolves any remaining tie.</span>
+								</li>
+								<li>
+									<strong>WITHDRAWN</strong> — players who withdrew
+									<span class="tiebreak-desc">Withdrawn players are ranked lower than all others.</span>
+								</li>
+							</ol>
+						</div>
+						<input type="button" class="gen-primary-btn" id="gen-qualification-confirm-btn" value="Confirm Qualification Results" hidden>
 					</div>
-					
+				
 					<div class="card gen-collapsible" id="gen-playoff-draw-card" hidden>
 						<h2 class="gen-card-toggle">
 							<span class="gen-collapse-arrow">▾</span>
@@ -552,7 +571,6 @@ Pikachu,3,x</pre>
 						<div id="gen-playoff-output"></div>
 					</div>
 
-				</div>
 			</div>
 			<!-- end generator tab -->
 			

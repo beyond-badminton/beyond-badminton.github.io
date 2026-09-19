@@ -125,6 +125,10 @@ function removeAllPlayer(id) {
 	) {
 		return;
 	}
+	const inTournament = qualificationDraw.some((p) => p.id === id);
+	if (inTournament && !alert("This player is currently in the tournament. Player cannot be removed.")) {
+		return;
+	}
 	allPlayers = allPlayers.filter((p) => p.id !== id);
 	activePlayers = activePlayers.filter((ap) => ap.allPlayerId !== id);
 	saveAllPlayersToStorage();

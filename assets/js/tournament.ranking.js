@@ -8,6 +8,7 @@
  *   4. P2P WINS  - wins within a mini-table built only from games among the tied group (desc)
  *   5. P2P DIFF  - diff within that same mini-table (desc)
  *   6. PICK      - lower drawn pick number wins
+ *   7. WITHDRAWN - players who withdrew are ranked lower
  *
  * Each returned player gets a `decidedBy` field naming the criterion that
  * actually separated them from everyone else still tied with them at that
@@ -22,12 +23,13 @@
  * equal P2P record for everyone in the group, and correctly falls through to
  * PICK for the whole group.
  *
- * @param {Object} stats - keyed by player id, each with { name, pick, played, wins, losses, diff, opponents }
+ * @param {Object} stats - keyed by player id, each with { name, pick, played, wins, losses, diff, opponents, withdrawn }
  * @param {boolean} inplace - if true, also modifies the original stats objects
  * @param {boolean} tiedOnly - if true, only tied-groups will contain the `decidedBy` field
  * @returns {Array} players sorted best -> worst, each annotated with `rank`, `decidedBy`
  */
 function rankPlayers(stats, inplace, tiedOnly = false) {
+	console.log("Ranking players with stats:", stats);
 	const players = Object.keys(stats).map((id) => ({
 		id,
 		...stats[id]
@@ -41,16 +43,17 @@ function rankPlayers(stats, inplace, tiedOnly = false) {
 		return players;
 	}
 
-	const orderedGroups = splitAndAssign(players, 0);
+	const orderedGroups = splitAndAssign(players, 0, 0);
 
 	if (tiedOnly) {
 		orderedGroups.forEach((group) => {
 			// Only keep `decidedBy` for players who were actually tied and needed it
-			if (group.length === 1) {
+			if (group.length === 1 || group[0].decidedBy !== "WITHDRAWN") {
 				delete group[0].decidedBy;
 			}
 		});
 	}
+
 	const flat = orderedGroups.flat();
 
 	flat.forEach((p, i) => {
@@ -68,6 +71,7 @@ function rankPlayers(stats, inplace, tiedOnly = false) {
 }
 
 const LEVELS = [
+	{ label: "WITHDRAWN", order: "asc", keyFn: null }, // computed per-group below
 	{ label: "WINS", order: "desc", keyFn: (p) => p.wins },
 	{ label: "PLAYED", order: "asc", keyFn: (p) => p.played },
 	{ label: "DIFF", order: "desc", keyFn: (p) => p.diff },
@@ -88,6 +92,26 @@ function splitAndAssign(group, levelIdx) {
 	if (levelIdx >= LEVELS.length) {
 		// Should not happen if pick numbers are unique - everyone stays tied.
 		return [group];
+	}
+
+
+	if (levelIdx === 0) {
+		const withdrawn = group.filter((p) => p.withdrawn || false);
+		if (withdrawn.length > 0) {
+			const levelLabel = LEVELS[levelIdx].label;
+			withdrawn.forEach((p) => {
+				p.decidedBy = levelLabel;
+			});
+
+			const orderedWithdrawnGroups = splitAndAssign(withdrawn, levelIdx + 1);
+			const orderedWithdrawn = orderedWithdrawnGroups.flat();
+			for (const p of orderedWithdrawn) {
+				p.decidedBy = "WITHDRAWN";
+			}
+
+			return [...splitAndAssign(group.filter((p) => !p.withdrawn), levelIdx + 1), ...orderedWithdrawn];
+		}
+		levelIdx++;
 	}
 
 	const level = LEVELS[levelIdx];

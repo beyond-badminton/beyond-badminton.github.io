@@ -678,7 +678,7 @@ genGenerateBtn.addEventListener("click", () => {
 });
 
 genClearBtn.addEventListener("click", () => {
-	if (!confirm("Clear the generated training and all scores?")) return;
+	if (!confirm("Discard the generated training and all scores?")) return;
 	clearGeneratedTrainingFromStorage();
 });
 
@@ -994,6 +994,7 @@ function buildMatchCard(
 	score,
 	roundId,
 	draggable = true,
+	disabledScore = false,
 	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
 ) {
 	const card = document.createElement("div");
@@ -1055,6 +1056,11 @@ function buildMatchCard(
 			inB.value = score.b !== null ? score.b : "";
 			inB.dataset.matchId = match.matchId;
 			inB.dataset.side = "b";
+			
+			if (disabledScore) {
+				inA.disabled = true;
+				inB.disabled = true;
+			}
 
 			scoreRow.appendChild(inA);
 			scoreRow.appendChild(sep);
