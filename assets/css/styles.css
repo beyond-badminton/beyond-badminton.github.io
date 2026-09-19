@@ -1158,19 +1158,6 @@ span.sort-active .sort-icon {
 	display: none;
 }
 
-.gen-stats-table-wrap {
-	min-height: 150px;
-	max-height: 480px;
-	overflow-y: auto;
-}
-
-.gen-stats-table-wrap thead th {
-	position: sticky;
-	top: 0;
-	background: var(--card);
-	z-index: 1;
-}
-
 .gen-block-header {
 	width: 100%;
 	text-align: left;
@@ -1334,17 +1321,25 @@ span.sort-active .sort-icon {
 	flex-shrink: 0;
 }
 
-.gen-stats-heading {
-	font-size: 0.82rem;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	color: var(--ink-soft);
-	font-weight: 700;
-	margin: 0 0 12px;
-}
 .gen-stats-scroll {
 	overflow-x: auto;
 }
+
+.gen-stats-table-wrap {
+	min-height: 150px;
+	max-height: 1000px;
+	height: 300px;
+	overflow-y: auto;
+	resize: vertical;
+}
+
+.gen-stats-table-wrap thead th {
+	position: sticky;
+	top: 0;
+	background: var(--card);
+	z-index: 1;
+}
+
 .gen-stats-table {
 	width: 100%;
 	border-collapse: collapse;
