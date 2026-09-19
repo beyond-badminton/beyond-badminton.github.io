@@ -672,13 +672,13 @@ const genEmpty = document.getElementById("gen-empty");
 
 // ── Generate button handler ───────────────────────────────────
 genGenerateBtn.addEventListener("click", () => {
-	if (training && !confirm("Replace the existing training with a new one?"))
+	if (training && !confirm("Replace the ongoing training with a new one?"))
 		return;
 	runGeneration();
 });
 
 genClearBtn.addEventListener("click", () => {
-	if (!confirm("Discard the generated training and all scores?")) return;
+	if (!confirm("Discard the ongoing training schedule and all scores?")) return;
 	clearGeneratedTrainingFromStorage();
 });
 
@@ -804,11 +804,11 @@ function normalizeBlock(blocks) {
 
 function runGeneration() {
 	if (activePlayers.length === 0) {
-		alert("Add active players first.");
+		alertDialog(null, "Add active players first.");
 		return;
 	}
 	if (courtBlocks.length === 0) {
-		alert("Add court availability blocks first.");
+		alertDialog(null, "Add court availability blocks first.");
 		return;
 	}
 
@@ -1555,6 +1555,39 @@ function clearGeneratedTrainingFromStorage() {
 	renderGeneratedTraining();
 }
 
+function saveTrainingDataToStorage(data) {
+	[
+		TRAINING_KEY,
+		SCORES_KEY,
+		GEN_PENALTIES_KEY,
+		TRAINING_DATE_KEY,
+		MATCHES_PER_HOUR_KEY
+	].forEach((key) => {
+		if (key in data) {
+			const value = data[key];
+			const toStore = typeof value === "string" ? value : JSON.stringify(value);
+			localStorage.setItem(key, toStore);
+		}
+	});
+}
+
+function getTrainingDataFromStorage() {
+	const data = {};
+	[
+		TRAINING_KEY,
+		SCORES_KEY,
+		GEN_PENALTIES_KEY,
+		TRAINING_DATE_KEY,
+		MATCHES_PER_HOUR_KEY
+	].forEach((key) => {
+		const value = localStorage.getItem(key);
+		if (value !== null) {
+			data[key] = value;
+		}
+	});
+	return data;
+}
+
 // ── Drag & Drop ───────────────────────────────────────────────
 let dragSrc = null; // { playerId, team, pos, matchId, roundId }
 
@@ -1740,3 +1773,48 @@ function swapPlayerOrBench(src, dst) {
 })();
 
 loadGeneratedTrainingFromStorage();
+
+
+const trainingDataDesc = "Training";
+
+window.StorageEvents.on(StorageEvents.Type.LOAD, trainingDataDesc, (data) => {
+	saveTrainingDataToStorage(data);
+	loadGeneratedTrainingFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.SAVE, trainingDataDesc, (data) => {
+	return getTrainingDataFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.DEL_EVENT_DATA, trainingDataDesc, (data) => {
+	clearGeneratedTrainingFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, trainingDataDesc, (data) => {
+	return (training?.rounds?.length || 0) > 0;
+});
+
+
+window.PlayerEvents.on(PlayerEvents.Type.MUST, trainingDataDesc, (id) => {
+	// training is generated from active players referencing all players
+	if ((training?.rounds?.length || 0) === 0) return false;
+
+	const activePlayer = activePlayers.find((ap) => ap.allPlayerId === id);
+	if (!activePlayer) return false;
+
+	for (const round of training.rounds) {
+		for (const match of round.matches) {
+			if (match.teamA.includes(activePlayer.id) || match.teamB.includes(activePlayer.id)) {
+				return true;
+			}
+		}
+	}
+	return false;
+});
+
+window.ActivePlayerEvents.on(ActivePlayerEvents.Type.MUST, trainingDataDesc, (id) => {
+	// training is generated from active players directly
+	// currently we are not able to determine if a specific active player must participate
+	// so we just return true if there are any rounds in the training
+	return (training?.rounds?.length || 0) > 0;
+});

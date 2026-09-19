@@ -104,35 +104,37 @@ function addAllPlayer(name, skill, gender) {
 	if (allPlayers.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
 		return `Player "${name}" already exists.`;
 	}
+	const playerId = nextAllPlayerId++;
 	allPlayers.push({
-		id: nextAllPlayerId++,
+		id: playerId,
 		name,
 		skill,
 		gender: gender || "x",
 	});
 	saveAllPlayersToStorage();
-	populateActivePlayerSelect();
+	PlayerEvents.emit(PlayerEvents.Type.ADD, playerId);
 	return null;
 }
 
-function removeAllPlayer(id) {
-	const isActive = activePlayers.some((ap) => ap.allPlayerId === id);
+async function removeAllPlayer(id) {
+	const mustBeActive = PlayerEvents.emit(PlayerEvents.Type.MUST, id).some(Boolean);
+
+	if (mustBeActive) {
+		alertDialog(`Player "${playerName(id)}" cannot be removed`, `Player is currently active in ${PlayerEvents.description(PlayerEvents.Type.MUST)}.`);
+		return;
+	}
+
+	const isActive = PlayerEvents.emit(PlayerEvents.Type.HAS, id).some(Boolean);
 	if (
 		isActive &&
-		!confirm(
-			"This player is currently active. Removing them will also remove them from the active players list. Proceed?",
-		)
+		!await confirmDialog(`Player "${playerName(id)}" is currently active`, `Removing them will also remove them from ${PlayerEvents.description(PlayerEvents.Type.HAS)}. Proceed?`,)
 	) {
 		return;
 	}
-	const inTournament = tournamentPlayersMap.has(id);
-	if (inTournament && !alert("This player is currently in the tournament. Player cannot be removed.")) {
-		return;
-	}
+	
 	allPlayers = allPlayers.filter((p) => p.id !== id);
-	activePlayers = activePlayers.filter((ap) => ap.allPlayerId !== id);
 	saveAllPlayersToStorage();
-	saveActivePlayersToStorage();
+	PlayerEvents.emit(PlayerEvents.Type.DEL, id);
 }
 
 function loadAllPlayersFromStorage() {
@@ -157,6 +159,34 @@ function saveAllPlayersToStorage(render = true) {
 	if (render) renderAllPlayers();
 }
 
+function saveAllPlayersDataToStorage(data) {
+	[
+		ALL_PLAYERS_KEY, 
+		ALL_PLAYERS_NEXT_ID_KEY
+	].forEach((key) => {
+		if (key in data) {
+			const value = data[key];
+			const toStore = typeof value === "string" ? value : JSON.stringify(value);
+			localStorage.setItem(key, toStore);
+		}
+	});
+}
+
+function getAllPlayersDataFromStorage() {
+	const data = {};
+	[
+		ALL_PLAYERS_KEY, 
+		ALL_PLAYERS_NEXT_ID_KEY
+	].forEach((key) => {
+		const value = localStorage.getItem(key);
+		if (value !== null) {
+			data[key] = value;
+		}
+	});
+	return data;
+}
+
+
 function clearAllPlayersFromStorage() {
 	allPlayers = [];
 	nextAllPlayerId = 1;
@@ -165,6 +195,7 @@ function clearAllPlayersFromStorage() {
 		localStorage.removeItem(ALL_PLAYERS_NEXT_ID_KEY);
 	} catch {}
 	renderAllPlayers();
+	PlayerEvents.emit(PlayerEvents.Type.CLEAR);
 }
 
 allPlayerTableBody.addEventListener("click", (e) => {
@@ -174,11 +205,17 @@ allPlayerTableBody.addEventListener("click", (e) => {
 
 document
 	.getElementById("clear-all-players-btn")
-	.addEventListener("click", () => {
+	.addEventListener("click", async () => {
 		if (allPlayers.length === 0) return;
-		if (confirm("Remove all players? This will also clear active players.")) {
+		
+		const canClear = !allPlayers.map((ap) => PlayerEvents.emit(PlayerEvents.Type.MUST, ap.id).some(Boolean)).some(Boolean);
+		if (!canClear) {
+			alertDialog("Cannot clear all players", `Some players are currently active in ${PlayerEvents.description(PlayerEvents.Type.MUST)}.`);
+			return;
+		}
+		if (await confirmDialog("Remove all players?", "This will also clear active players.")) {
+			PlayerEvents.emit(PlayerEvents.Type.CLEAR);
 			clearAllPlayersFromStorage();
-			clearActivePlayersFromStorage();
 		}
 	});
 
@@ -191,7 +228,7 @@ allPlayerForm.addEventListener("submit", (e) => {
 		apgenderInput.value,
 	);
 	if (error) {
-		alert(error);
+		alertDialog("Failed to add a player", error);
 		return;
 	}
 	allPlayerForm.reset();
@@ -298,7 +335,7 @@ document
 	.getElementById("export-all-players-btn")
 	.addEventListener("click", () => {
 		if (allPlayers.length === 0) {
-			alert("No players to export.");
+			alertDialog(null, "No players to export.");
 			return;
 		}
 		const csv = [
@@ -478,7 +515,7 @@ function onSkillChanged(targetPillElement, playerId, skillId) {
 		// here we can avoid to render all players again, just update the pill text and class
 		updateSkillPillElement(targetPillElement, skillId, true);
 
-		renderActivePlayers();
+		PlayerEvents.emit(PlayerEvents.Type.UPDATE, player.id);
 		renderGeneratedSchedule();
 
 		return true;
@@ -527,3 +564,23 @@ function playerIsWoman(allPlayerId) {
 // ============================================================
 populateAppSkillOptions();
 loadAllPlayersFromStorage();
+
+
+const allPlayersDataDesc = "All Players";
+
+window.StorageEvents.on(StorageEvents.Type.LOAD, allPlayersDataDesc, (data) => {
+	saveAllPlayersDataToStorage(data);
+	loadAllPlayersFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.SAVE, allPlayersDataDesc, (data) => {
+	return getAllPlayersDataFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.DEL_PERMANENT_DATA, allPlayersDataDesc, (data) => {
+	clearAllPlayersFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.HAS_PERMANENT_DATA, allPlayersDataDesc, (data) => {
+	return allPlayers.length > 0;
+});

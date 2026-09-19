@@ -68,18 +68,29 @@ const genDisableTwoMenVsTwoWomenCb = document.getElementById("disable-2men-vs-2w
 
 // ── Generate button handler ───────────────────────────────────
 genGenerateTournamentBtn.addEventListener("click", async () => {
-	if (hasTournament() && !await confirmDialog("Replace the existing tournament with a new one?"))
+	if (hasTournament() && !await confirmDialog("Replace the ongoing tournament with a new one?"))
 		return;
 	if (!genqualificationRoundsNum.value || isNaN(genqualificationRoundsNum.value) || genqualificationRoundsNum.value <= 0) {
-		alertDialog("Please enter the number of qualification rounds.");
+		alertDialog(null, "Please enter the number of qualification rounds.");
 		return;
 	}
+
 	if (!activePlayers.length) {
-		alertDialog("No active players available.");
+		alertDialog(null, "No active players available.");
 		return;
 	}
+
+	if (genDisableTwoMenVsTwoWomenCb.checked) {
+		const playersWithoutGender = activePlayers.filter(p => playerGender(p.allPlayerId) === "x");
+		if (playersWithoutGender.length > 0) {
+			console.log("Players without defined gender:", playersWithoutGender);
+			alertDialog("Players missing gender", ["To prevent 2 Men vs. 2 Women matches, all players must have a specified gender.", "Update players: " + playersWithoutGender.map((p) => playerName(p.allPlayerId)).join(", ")]);
+			return;
+		}
+	}
+
 	if ((genqualificationRoundsNum.value * activePlayers.length) % 4 > 0) {
-		alertDialog("The total number of matches must be divisible by 4. Please adjust the number of qualification rounds or the number of active players accordingly.");
+		alertDialog("The total number of matches must be divisible by 4", "Please adjust the number of qualification rounds or the number of active players accordingly.");
 		return;
 	}
 
@@ -87,7 +98,7 @@ genGenerateTournamentBtn.addEventListener("click", async () => {
 });
 
 genClearTournamentBtn.addEventListener("click", async () => {
-	if (!await confirmDialog("Discard the generated tournament?")) return;
+	if (!await confirmDialog("Discard the ongoing tournament?")) return;
 	clearGeneratedTournamentFromStorage();
 });
 
@@ -206,6 +217,43 @@ function saveTournamentToStorage(render = true) {
 	saveTournamentPlayers();
 
 	if (render) renderTournament();
+}
+
+function saveTournamentDataToStorage(data) {
+	[
+		TOURNAMENT_CONFIG_KEY, 
+		TOURNAMENT_QUALIFICATION_ROUNDS_KEY,
+		TOURNAMENT_QUALIFICATION_SCORES_KEY,
+		TOURNAMENT_PLAYOFF_DRAW_KEY,
+		TOURNAMENT_PLAYOFF_ROUNDS_KEY,
+		TOURNAMENT_PLAYOFF_SCORES_KEY,
+		TOURNAMENT_PLAYERS_KEY
+	].forEach((key) => {
+		if (key in data) {
+			const value = data[key];
+			const toStore = typeof value === "string" ? value : JSON.stringify(value);
+			localStorage.setItem(key, toStore);
+		}
+	});
+}
+
+function getTournamentDataFromStorage() {
+	const data = {};
+	[
+		TOURNAMENT_CONFIG_KEY, 
+		TOURNAMENT_QUALIFICATION_ROUNDS_KEY,
+		TOURNAMENT_QUALIFICATION_SCORES_KEY,
+		TOURNAMENT_PLAYOFF_DRAW_KEY,
+		TOURNAMENT_PLAYOFF_ROUNDS_KEY,
+		TOURNAMENT_PLAYOFF_SCORES_KEY,
+		TOURNAMENT_PLAYERS_KEY
+	].forEach((key) => {
+		const value = localStorage.getItem(key);
+		if (value !== null) {
+			data[key] = value;
+		}
+	});
+	return data;
 }
 
 function loadTournamentFromStorage() {
@@ -637,11 +685,11 @@ qualificationDrawPickField.addEventListener("change", (event) => {
 
 qualificationDrawSubmitButton.addEventListener("click", async () => {
 	if (tournamentPlayers.some((p) => p.pick === 0)) {
-		alertDialog("Please complete the qualification draw for all players before confirming.");
+		alertDialog(null, "Please complete the qualification draw for all players before confirming");
 		return;
 	}
 
-	if (await confirmDialog("Are you sure you want to confirm the selected qualification numbers? This action cannot be undone.")) { 
+	if (await confirmDialog("Do you want to confirm the selected qualification numbers?", "This action cannot be undone.")) { 
 		tournamentConfig.qualificationDrawConfirmed = true;
 		saveTournamentConfig();
 		renderTournament();
@@ -649,7 +697,7 @@ qualificationDrawSubmitButton.addEventListener("click", async () => {
 });
 
 qualificationDrawClearButton.addEventListener("click", async () => {
-	if (!await confirmDialog("Are you sure you want to clear the qualification draw?")) return;
+	if (!await confirmDialog("Do you want to clear the qualification draw?")) return;
 	tournamentPlayers.forEach(player => {
 		player.pick = 0;
 	});
@@ -1008,7 +1056,7 @@ function renderQualificationP2PStats() {
 
 genQualificationConfirmBtn.addEventListener("click", async () => {
 	// Handle confirmation of qualification results here
-	if (await confirmDialog("Confirm qualification results and proceed to the playoffs?")) {
+	if (await confirmDialog("Confirm qualification results and proceed to the playoffs?", "This action cannot be undone.")) {
 		tournamentConfig.qualificationFinished = true;
 		saveTournamentConfig();
 		renderTournament();
@@ -1171,3 +1219,26 @@ genQualificationDrawTableBody.addEventListener("click", async (e) => {
 
 
 loadTournamentFromStorage();
+
+const tournamentDataDesc = "Tournament";
+
+window.StorageEvents.on(StorageEvents.Type.LOAD, tournamentDataDesc, (data) => {
+	saveTournamentDataToStorage(data);
+	loadTournamentFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.SAVE, tournamentDataDesc, (data) => {
+	return getTournamentDataFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.DEL_EVENT_DATA, tournamentDataDesc, (data) => {
+	clearGeneratedTournamentFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, tournamentDataDesc, (data) => {
+	return (tournamentConfig?.matchesPerPlayer || 0) > 0;
+});
+
+window.PlayerEvents.on(PlayerEvents.Type.MUST, tournamentDataDesc, (id) => {
+	return tournamentPlayersMap.has(id);
+});

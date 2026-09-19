@@ -270,7 +270,7 @@ function valueWithSign(val) {
 /**
  * Opens a confirmation dialog with optional input verification.
  * @param {string|null} title - The title of the dialog.
- * @param {string|null} note - An optional note to display in the dialog.
+ * @param {string|string[]|null} note - An optional note to display in the dialog. Can contain a string or an array of additional information.
  * @param {boolean} confirmation - Whether this is a Confirm/Cancel dialog. If false, acts as an Alert (OK only).
  * @param {string|null} confirmationMatch - The exact text the user must type to enable the confirm button.
  */
@@ -290,7 +290,7 @@ function openDialog(title, note = null, confirmation = false, confirmationMatch 
 			<input type="text" id="modal-input" autocomplete="off" placeholder="Type here">
 			` : ""}
 			
-			${note ? `<p class="modal-note">${note}</p>` : ""}
+			${note ? (Array.isArray(note) ? note.map(n => `<p class="modal-note">${n}</p>`).join("") : `<p class="modal-note">${note}</p>`) : ""}
 
 			<div class="modal-actions">
 				${confirmation ? `<button type="button" id="cancel-btn" class="discard-btn">Cancel</button>`: ""}
@@ -350,10 +350,10 @@ function openDialog(title, note = null, confirmation = false, confirmationMatch 
 }
 
 // Helper Wrappers (Can simply return the Promise directly)
-function alertDialog(msg) {
-	return openDialog(null, msg, false, null);
+function alertDialog(title, note = null) {
+	return openDialog(title, note, false, null);
 }
 
-function confirmDialog(msg) {
-	return openDialog(null, msg, true, null);
+function confirmDialog(title, note = null) {
+	return openDialog(title, note, true, null);
 }

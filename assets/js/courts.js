@@ -30,7 +30,7 @@ function saveCourtNamesToStorage() {
 	renderCourtNames();
 }
 
-function _clearCourtNamesFromStorage() {
+function clearCourtNamesFromStorage() {
 	courtNames = [];
 	nextCourtNameId = 1;
 
@@ -91,8 +91,8 @@ function addCourtName(name) {
 function removeCourtName(id) {
 	const removed = courtNames.find((c) => c.id === id);
 	if (removed && courtBlocks.some((b) => b.courts.includes(removed.name))) {
-		alert(
-			`Cannot remove "${removed.name}" — it is used in one or more court availability blocks. Remove those blocks first.`,
+		alertDialog(
+			`Cannot remove "${removed.name}" court`, "It is used in one or more court schedule blocks. Remove those scheduled blocks first.",
 		);
 		return;
 	}
@@ -173,6 +173,39 @@ function clearCourtsFromStorage() {
 
 	renderCourts();
 }
+
+
+function saveCourtsDataToStorage(data) {
+	[
+		COURTS_STORAGE_KEY,
+		COURTS_NEXT_ID_KEY,
+		COURT_NAMES_STORAGE_KEY,
+		COURT_NAMES_NEXT_ID_KEY,
+	].forEach((key) => {
+		if (key in data) {
+			const value = data[key];
+			const toStore = typeof value === "string" ? value : JSON.stringify(value);
+			localStorage.setItem(key, toStore);
+		}
+	});
+}
+
+function getCourtsDataFromStorage() {
+	const data = {};
+	[
+		COURTS_STORAGE_KEY,
+		COURTS_NEXT_ID_KEY,
+		COURT_NAMES_STORAGE_KEY,
+		COURT_NAMES_NEXT_ID_KEY
+	].forEach((key) => {
+		const value = localStorage.getItem(key);
+		if (value !== null) {
+			data[key] = value;
+		}
+	});
+	return data;
+}
+
 
 // DOM refs
 const courtForm = document.getElementById("court-form");
@@ -377,3 +410,32 @@ loadCourtNamesFromStorage();
 loadCourtsFromStorage();
 populateTimeSelect(courtTimeInput);
 populateCourtDurationOptions();
+
+
+const courtsDataDesc = ["Court Names", "Court Schedule"];
+
+window.StorageEvents.on(StorageEvents.Type.LOAD, courtsDataDesc, (data) => {
+	saveCourtsDataToStorage(data);
+	loadCourtNamesFromStorage();
+	loadCourtsFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.SAVE, courtsDataDesc, (data) => {
+	return getCourtsDataFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.HAS_PERMANENT_DATA, courtsDataDesc[0], (data) => {
+	return courtNames.length > 0;
+});
+
+window.StorageEvents.on(StorageEvents.Type.DEL_PERMANENT_DATA, courtsDataDesc[0], (data) => {
+	clearCourtNamesFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, courtsDataDesc[1], (data) => {
+	return courtBlocks.length > 0;
+});
+
+window.StorageEvents.on(StorageEvents.Type.DEL_EVENT_DATA, courtsDataDesc[1], (data) => {
+	clearCourtsFromStorage();
+});
