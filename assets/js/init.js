@@ -2,78 +2,54 @@
 "use strict";
 
 // ============================================================
-// DISCARD TOURNAMENT
+// DISCARD ONGOING EVENTS
 // ============================================================
-async function discardEvent() {
+async function discardEvents() {
 	const hasData =
-		activePlayers.length > 0 ||
-		courtBlocks.length > 0 ||
-		(training != null && Object.keys(training).length > 0);
+		StorageEvents.emit(StorageEvents.Type.HAS_EVENT_DATA, null).some(Boolean);
 	if (
 		hasData &&
-		!confirm(
-			"Discard current event? Active players, courts, and matches will be removed. The All players list and the Court names are kept.",
+		!await confirmDialog(
+			`Discard all ongoing events?`,
+			`This will discard ${StorageEvents.description(StorageEvents.Type.DEL_EVENT_DATA)}.`
 		)
 	) {
 		return;
 	}
 
-	clearGeneratedTrainingFromStorage();
-	clearCourtsFromStorage();
-	clearActivePlayersFromStorage();
+	StorageEvents.emit(StorageEvents.Type.DEL_EVENT_DATA, null);
 }
 
-async function discardLocalStorane() {
+async function discardLocalStorage() {
 	const hasData =
-		allPlayers.length > 0 ||
-		activePlayers.length > 0 ||
-		courtBlocks.length > 0 ||
-		courtNames.length > 0 ||
-		(training != null && Object.keys(training).length > 0);
+		StorageEvents.emit(StorageEvents.Type.HAS_PERMANENT_DATA, null).some(Boolean) ||
+		StorageEvents.emit(StorageEvents.Type.HAS_EVENT_DATA, null).some(Boolean);
+
+	if (!hasData) {
+		return;
+	}
+
 	if (
-		hasData &&
-		!confirm(
-			'This will discard all data. Are you sure you want to proceed? To keep All players and Court names, use the "Discard Tournament" button instead.',
+		!await confirmDialog(
+			`Discard all stored data?`,
+			`To keep ${StorageEvents.description(StorageEvents.Type.DEL_PERMANENT_DATA)}, use the "Discard Events" button instead.`
 		)
 	) {
 		return;
 	}
 
-	clearGeneratedTrainingFromStorage();
-	clearCourtsFromStorage();
-	_clearCourtNamesFromStorage();
-	clearActivePlayersFromStorage();
-	clearAllPlayersFromStorage();
+	StorageEvents.emit(StorageEvents.Type.DEL_EVENT_DATA, null);
+	StorageEvents.emit(StorageEvents.Type.DEL_PERMANENT_DATA, null);
 }
-
-const STORAGE_KEYS = [
-	ALL_PLAYERS_KEY,
-	ALL_PLAYERS_NEXT_ID_KEY,
-	ACTIVE_PLAYERS_KEY,
-	ACTIVE_PLAYERS_NEXT_ID_KEY,
-	COURT_NAMES_STORAGE_KEY,
-	COURT_NAMES_NEXT_ID_KEY,
-	COURTS_STORAGE_KEY,
-	COURTS_NEXT_ID_KEY,
-	LEGACY_TRAINING_KEY,
-	LEGACY_TRAINING_DATE_KEY,
-	TRAINING_KEY,
-	TRAINING_DATE_KEY,
-	SCORES_KEY,
-	GEN_PENALTIES_KEY,
-];
 
 // Save selected localStorage keys to a JSON file (opens a save dialog)
 async function saveLocalStorageToFile() {
 	const data = {};
-	for (const key of STORAGE_KEYS) {
-		const value = localStorage.getItem(key);
-		if (value !== null) {
-			try {
-				data[key] = JSON.parse(value); // store as parsed JSON if possible
-			} catch {
-				data[key] = value; // fallback to raw string
-			}
+
+	const dataFromEvents = StorageEvents.emit(StorageEvents.Type.SAVE, null);
+	for (const eventData of dataFromEvents) {
+		for (const [key, value] of Object.entries(eventData)) {
+			data[key] = value; // merge event data into main data object
 		}
 	}
 
@@ -118,15 +94,13 @@ async function saveLocalStorageToFile() {
 // Load a JSON file (opens a file picker) and write its keys back into localStorage
 async function loadLocalStorageFromFile() {
 	const hasData =
-		allPlayers.length > 0 ||
-		activePlayers.length > 0 ||
-		courtBlocks.length > 0 ||
-		courtNames.length > 0 ||
-		(training != null && Object.keys(training).length > 0);
+		StorageEvents.emit(StorageEvents.Type.HAS_PERMANENT_DATA, null).some(Boolean) ||
+		StorageEvents.emit(StorageEvents.Type.HAS_EVENT_DATA, null).some(Boolean);
 	if (
 		hasData &&
-		!confirm(
-			"This will discard all current data. Are you sure you want to proceed?",
+		!await confirmDialog(
+			"Load will replace all current data",
+			"Are you sure you want to proceed?",
 		)
 	) {
 		return;
@@ -166,36 +140,24 @@ async function loadLocalStorageFromFile() {
 	const text = await file.text();
 	const data = JSON.parse(text);
 
-	for (const key of STORAGE_KEYS) {
-		if (key in data) {
-			const value = data[key];
-			const toStore = typeof value === "string" ? value : JSON.stringify(value);
-			localStorage.setItem(key, toStore);
-		}
-	}
-
-	loadAllPlayersFromStorage();
-	loadActivePlayersFromStorage();
-	loadCourtNamesFromStorage();
-	loadCourtsFromStorage();
-	loadGeneratedTrainingFromStorage();
+	StorageEvents.emit(StorageEvents.Type.LOAD, data);
 
 	return true;
 }
 
 document.getElementById("export-storage-btn").addEventListener("click", () => {
 	saveLocalStorageToFile().catch((err) => {
-		alert(`Error saving file: ${err.message}`);
+		alertDialog("Failed to save file", err.message);
 	});
 });
 document.getElementById("import-storage-btn").addEventListener("click", () => {
 	loadLocalStorageFromFile().catch((err) => {
-		alert(`Error loading file: ${err.message}`);
+		alertDialog("Failed to load file", err.message);
 	});
 });
 document.getElementById("discard-storage-btn").addEventListener("click", () => {
-	discardLocalStorane();
+	discardLocalStorage();
 });
 document.getElementById("discard-event-btn").addEventListener("click", () => {
-	discardEvent();
+	discardEvents();
 });

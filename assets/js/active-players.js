@@ -132,6 +132,34 @@ function clearActivePlayersFromStorage() {
 	renderActivePlayers();
 }
 
+function saveActivePlayersDataToStorage(data) {
+	[
+		ACTIVE_PLAYERS_KEY, 
+		ACTIVE_PLAYERS_NEXT_ID_KEY
+	].forEach((key) => {
+		if (key in data) {
+			const value = data[key];
+			const toStore = typeof value === "string" ? value : JSON.stringify(value);
+			localStorage.setItem(key, toStore);
+		}
+	});
+}
+
+function getActivePlayersDataFromStorage() {
+	const data = {};
+	[
+		ACTIVE_PLAYERS_KEY, 
+		ACTIVE_PLAYERS_NEXT_ID_KEY
+	].forEach((key) => {
+		const value = localStorage.getItem(key);
+		if (value !== null) {
+			data[key] = value;
+		}
+	});
+	return data;
+}
+
+
 function addActivePlayer(allPlayerId, arrival, playtime) {
 	activePlayers.push({
 		id: nextActivePlayerId++,
@@ -143,6 +171,10 @@ function addActivePlayer(allPlayerId, arrival, playtime) {
 }
 
 function removeActivePlayer(id) {
+	if (ActivePlayerEvents.emit(ActivePlayerEvents.Type.MUST, id).some(Boolean)) {
+		alertDialog(`Player '${activePlayerName(id)}' cannot be removed`, `Player is active in ${ActivePlayerEvents.description(ActivePlayerEvents.Type.MUST)}.`);
+		return;
+	}
 	activePlayers = activePlayers.filter((ap) => ap.id !== id);
 	saveActivePlayersToStorage();
 }
@@ -171,9 +203,14 @@ activePlayerTableBody.addEventListener("click", (e) => {
 
 document
 	.getElementById("clear-active-players-btn")
-	.addEventListener("click", () => {
+	.addEventListener("click", async () => {
 		if (activePlayers.length === 0) return;
-		if (confirm("Remove all active players from this tournament?")) {
+		const canClear = !activePlayers.map((ap) => ActivePlayerEvents.emit(ActivePlayerEvents.Type.MUST, ap.id).some(Boolean)).some(Boolean);
+		if (!canClear) {
+			alertDialog("Cannot clear all active players", `Some players are currently active in ${ActivePlayerEvents.description(ActivePlayerEvents.Type.MUST)}.`);
+			return;
+		}
+		if (await confirmDialog("Remove all active players?")) {
 			clearActivePlayersFromStorage();
 		}
 	});
@@ -231,3 +268,47 @@ function activePlayerIsWoman(activeId) {
 loadActivePlayersFromStorage();
 populateActivePlayerSelect();
 populateTimeSelect(activeArrivalInput);
+
+
+const activePlayersDataDesc = "Active Players";
+
+window.StorageEvents.on(StorageEvents.Type.LOAD, activePlayersDataDesc, (data) => {
+	saveActivePlayersDataToStorage(data);
+	loadActivePlayersFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.SAVE, activePlayersDataDesc, (data) => {
+	return getActivePlayersDataFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.DEL_EVENT_DATA, activePlayersDataDesc, (data) => {
+	clearActivePlayersFromStorage();
+});
+
+window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, activePlayersDataDesc, (data) => {
+	return activePlayers.length > 0;
+});
+
+
+window.PlayerEvents.on(PlayerEvents.Type.ADD, activePlayersDataDesc, (data) => {
+	populateActivePlayerSelect();
+});
+
+window.PlayerEvents.on(PlayerEvents.Type.DEL, activePlayersDataDesc, (id) => {
+	activePlayers = activePlayers.filter((ap) => ap.allPlayerId !== id);
+	saveActivePlayersToStorage();
+	populateActivePlayerSelect();
+});
+
+window.PlayerEvents.on(PlayerEvents.Type.HAS, activePlayersDataDesc, (id) => {
+	return activePlayers.some((ap) => ap.allPlayerId === id);
+});
+
+window.PlayerEvents.on(PlayerEvents.Type.CLEAR, activePlayersDataDesc, (data) => {
+	clearActivePlayersFromStorage();
+	populateActivePlayerSelect();
+});
+
+window.PlayerEvents.on(PlayerEvents.Type.UPDATE, activePlayersDataDesc, (data) => {
+	renderActivePlayers();
+});
