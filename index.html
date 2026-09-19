@@ -336,7 +336,7 @@ Pikachu,3,x</pre>
 							<span class="gen-collapse-arrow">▾</span>
 							Player stats
 						</h2>
-						
+
 						<div class="gen-stats-scroll">
 							<table class="gen-stats-table">
 								<thead>
@@ -426,16 +426,18 @@ Pikachu,3,x</pre>
 								<div class="players-panel-header-btns" id="qualification-draw-panel-header">
 									<button type="button" class="clear-btn" id="clear-qualification-draw-btn">Clear all</button>
 								</div>
-								<table class="player-table compact-table" id="qualification-draw-table">
-									<thead>
-										<tr>
-											<th><span class="sortable" data-list="qualificationDraw" data-field="name">Name <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationDraw" data-field="pick">Pick <span class="sort-icon">↕</span></span></th>
-											<th></th>
-										</tr>
-									</thead>
-									<tbody id="qualification-draw-table-body"></tbody>
-								</table>
+								<div class="gen-stats-table-wrap">
+									<table class="gen-stats-table compact-table" id="qualification-draw-table">
+										<thead>
+											<tr>
+												<th><span class="sortable" data-list="qualificationDraw" data-field="name">Name <span class="sort-icon">↕</span></span></th>
+												<th><span class="sortable" data-list="qualificationDraw" data-field="pick">Pick <span class="sort-icon">↕</span></span></th>
+												<th></th>
+											</tr>
+										</thead>
+										<tbody id="qualification-draw-table-body"></tbody>
+									</table>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -468,21 +470,24 @@ Pikachu,3,x</pre>
 						</h2>
 						<div class="card">
 							<p class="gen-table-label">Standings</p>
-							<table class="gen-stats-table">
-								<thead>
-									<tr>
-										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="qualificationPlayerStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
-										<th>Decided By<span class="help-icon" title="The rule that set the player's final position, whether decisive on its own or used to break a tie.">?</span></th>
-									</tr>
-								</thead>
-								<tbody id="qualification-stats-table-body">
-								</tbody>
-							</table>
+							
+							<div class="gen-stats-table-wrap">
+								<table class="gen-stats-table">
+									<thead>
+										<tr>
+											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
+											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
+											<th>Decided By<span class="help-icon" title="The rule that set the player's final position, whether decisive on its own or used to break a tie.">?</span></th>
+										</tr>
+									</thead>
+									<tbody id="qualification-stats-table-body">
+									</tbody>
+								</table>
+							</div>
 						</div>
 						<div class="card">
 							<p class="gen-table-label">Player vs Player</p>

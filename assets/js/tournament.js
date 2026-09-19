@@ -121,10 +121,15 @@ function hasTournament() {
 }
 
 function qualificationPlayerName(playerId) {
-	const player = qualificationPlayerStats[playerId];
+	console.log("Current qualificationPlayerStats:", JSON.stringify(qualificationPlayerStats), Object.keys(qualificationPlayerStats), Object.values(qualificationPlayerStats));
+	const player = qualificationPlayerStats[Number(playerId)];
+	console.log("Fetched player object for playerId:", playerId, "Player:", player);
 	if (player?.withdrawn || false) {
+
+		console.log("Player has withdrawn:", player);
 		return `(Withdrawn) ${player?.name || ""}`;
-	}	
+	}
+	console.log("Returning player name for playerId:", playerId, "Name:", player?.name || "");
 	return player?.name || "";
 }
 
@@ -648,9 +653,11 @@ qualificationDrawSubmitButton.addEventListener("click", () => {
 		return;
 	}
 
-	tournamentConfig.qualificationDrawConfirmed = true;
-	saveTournamentConfig();
-	renderTournament();
+	if (confirm("Are you sure you want to confirm the selected qualification numbers? This action cannot be undone.")) { 
+		tournamentConfig.qualificationDrawConfirmed = true;
+		saveTournamentConfig();
+		renderTournament();
+	}
 });
 
 qualificationDrawClearButton.addEventListener("click", () => {
@@ -1145,6 +1152,10 @@ function renderTournament() {
 		return;
 	}
 
+	if (!Object.keys(qualificationPlayerStats).length) {
+		initializeQualificationPlayerStats();
+	}
+
 	renderQualificationDraw();
 	
 	reassignQualificationMatches();
@@ -1152,10 +1163,6 @@ function renderTournament() {
 	renderQualificationMatchFilter();
 
 	renderQualificationRounds();
-
-	if (!Object.keys(qualificationPlayerStats).length) {
-		initializeQualificationPlayerStats();
-	}
 
 	renderQualificationP2PPlayerFilter();
 
