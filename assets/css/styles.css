@@ -447,7 +447,7 @@ input[type="file"] {
 
 .tiebreak-desc {
 	display: block;
-	font-size: 1.0em;
+	font-size: 1em;
 	color: #666;
 	margin-top: 0.1em;
 	margin-bottom: 0.5em;
@@ -599,7 +599,6 @@ input[type="file"] {
 .compact-table td:last-child {
 	text-align: right;
 }
-
 
 .skill-pill {
 	display: inline-block;

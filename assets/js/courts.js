@@ -51,11 +51,7 @@ const courtNameCount = document.getElementById("court-name-count");
 const noCourtsHint = document.getElementById("no-courts-hint");
 
 function renderCourtCheckboxes() {
-	const previouslyChecked = new Set(
-		Array.from(courtCheckboxList.querySelectorAll("input:checked")).map(
-			(i) => i.value,
-		),
-	);
+	const previouslyChecked = new Set(Array.from(courtCheckboxList.querySelectorAll("input:checked")).map((i) => i.value));
 	courtCheckboxList.innerHTML = "";
 	if (courtNames.length === 0) {
 		courtCheckboxList.appendChild(noCourtsHint);
@@ -91,9 +87,7 @@ function addCourtName(name) {
 function removeCourtName(id) {
 	const removed = courtNames.find((c) => c.id === id);
 	if (removed && courtBlocks.some((b) => b.courts.includes(removed.name))) {
-		alertDialog(
-			`Cannot remove "${removed.name}" court`, "It is used in one or more court schedule blocks. Remove those scheduled blocks first.",
-		);
+		alertDialog(`Cannot remove "${removed.name}" court`, "It is used in one or more court schedule blocks. Remove those scheduled blocks first.");
 		return;
 	}
 	courtNames = courtNames.filter((c) => c.id !== id);
@@ -108,9 +102,7 @@ courtNameList.addEventListener("click", (e) => {
 function validateCourtNameForm() {
 	const value = courtNameInput.value.trim();
 	const nameOk = value.length > 0;
-	const uniqueOk =
-		!nameOk ||
-		!courtNames.some((c) => c.name.toLowerCase() === value.toLowerCase());
+	const uniqueOk = !nameOk || !courtNames.some((c) => c.name.toLowerCase() === value.toLowerCase());
 	const isValid = nameOk && uniqueOk;
 	setCourtValid(courtNameField, isValid);
 
@@ -174,14 +166,8 @@ function clearCourtsFromStorage() {
 	renderCourts();
 }
 
-
 function saveCourtsDataToStorage(data) {
-	[
-		COURTS_STORAGE_KEY,
-		COURTS_NEXT_ID_KEY,
-		COURT_NAMES_STORAGE_KEY,
-		COURT_NAMES_NEXT_ID_KEY,
-	].forEach((key) => {
+	[COURTS_STORAGE_KEY, COURTS_NEXT_ID_KEY, COURT_NAMES_STORAGE_KEY, COURT_NAMES_NEXT_ID_KEY].forEach((key) => {
 		if (key in data) {
 			const value = data[key];
 			const toStore = typeof value === "string" ? value : JSON.stringify(value);
@@ -192,12 +178,7 @@ function saveCourtsDataToStorage(data) {
 
 function getCourtsDataFromStorage() {
 	const data = {};
-	[
-		COURTS_STORAGE_KEY,
-		COURTS_NEXT_ID_KEY,
-		COURT_NAMES_STORAGE_KEY,
-		COURT_NAMES_NEXT_ID_KEY
-	].forEach((key) => {
+	[COURTS_STORAGE_KEY, COURTS_NEXT_ID_KEY, COURT_NAMES_STORAGE_KEY, COURT_NAMES_NEXT_ID_KEY].forEach((key) => {
 		const value = localStorage.getItem(key);
 		if (value !== null) {
 			data[key] = value;
@@ -205,7 +186,6 @@ function getCourtsDataFromStorage() {
 	});
 	return data;
 }
-
 
 // DOM refs
 const courtForm = document.getElementById("court-form");
@@ -236,9 +216,7 @@ function setCourtValid(field, isValid) {
 }
 
 function getSelectedCourtNames() {
-	return Array.from(courtCheckboxList.querySelectorAll("input:checked")).map(
-		(i) => i.value,
-	);
+	return Array.from(courtCheckboxList.querySelectorAll("input:checked")).map((i) => i.value);
 }
 
 function validateCourtForm() {
@@ -268,9 +246,7 @@ function validateCourtAvailabilityForm() {
 	const duration = Number(courtDurationInput.value);
 
 	const failedCourts = courtBlocks.flatMap((block) => {
-		const courtsInterection = selectedCourts.filter((name) =>
-			block.courts.includes(name),
-		);
+		const courtsInterection = selectedCourts.filter((name) => block.courts.includes(name));
 
 		if (courtsInterection.length === 0) return [];
 
@@ -282,9 +258,7 @@ function validateCourtAvailabilityForm() {
 		return courtsInterection;
 	});
 
-	const orderedFailedCourts = [...new Set(failedCourts)].sort((a, b) =>
-		a.localeCompare(b),
-	);
+	const orderedFailedCourts = [...new Set(failedCourts)].sort((a, b) => a.localeCompare(b));
 
 	setCourtValid(courtSubmitField, failedCourts.length === 0);
 
@@ -308,9 +282,7 @@ courtDurationInput.addEventListener("change", () => {
 
 courtCheckboxList.addEventListener("change", (e) => {
 	if (e.target.matches('input[type="checkbox"]')) {
-		e.target
-			.closest(".checkbox-pill")
-			.classList.toggle("checked", e.target.checked);
+		e.target.closest(".checkbox-pill").classList.toggle("checked", e.target.checked);
 		if (courtSelectField.classList.contains("invalid")) validateCourtForm();
 		validateCourtAvailabilityForm();
 	}
@@ -319,19 +291,10 @@ courtCheckboxList.addEventListener("change", (e) => {
 courtForm.addEventListener("submit", (e) => {
 	e.preventDefault();
 	if (!validateCourtForm() || !validateCourtAvailabilityForm()) return;
-	addCourtBlock(
-		courtTimeInput.value,
-		courtDurationInput.value,
-		getSelectedCourtNames(),
-	);
+	addCourtBlock(courtTimeInput.value, courtDurationInput.value, getSelectedCourtNames());
 	courtForm.reset();
 	renderCourtCheckboxes();
-	[
-		courtTimeField,
-		courtDurationField,
-		courtSelectField,
-		courtSubmitField,
-	].forEach((f) => {
+	[courtTimeField, courtDurationField, courtSelectField, courtSubmitField].forEach((f) => {
 		f.classList.remove("invalid");
 	});
 });
@@ -344,9 +307,7 @@ function updateCourtCount() {
 function renderCourts() {
 	courtList.innerHTML = "";
 	courtTableBody.innerHTML = "";
-	const sorted = [...courtBlocks].sort(
-		(a, b) => a.start.localeCompare(b.start) || a.duration - b.duration,
-	);
+	const sorted = [...courtBlocks].sort((a, b) => a.start.localeCompare(b.start) || a.duration - b.duration);
 	sorted.forEach((block) => {
 		const end = addMinsToTime(block.start, block.duration);
 		const courtsLabel = block.courts.join(", ") || "—";
@@ -411,7 +372,6 @@ loadCourtsFromStorage();
 populateTimeSelect(courtTimeInput);
 populateCourtDurationOptions();
 
-
 const courtsDataDesc = ["Court Names", "Court Schedule"];
 
 window.StorageEvents.on(StorageEvents.Type.LOAD, courtsDataDesc, (data) => {
@@ -420,22 +380,22 @@ window.StorageEvents.on(StorageEvents.Type.LOAD, courtsDataDesc, (data) => {
 	loadCourtsFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.SAVE, courtsDataDesc, (data) => {
+window.StorageEvents.on(StorageEvents.Type.SAVE, courtsDataDesc, () => {
 	return getCourtsDataFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.HAS_PERMANENT_DATA, courtsDataDesc[0], (data) => {
+window.StorageEvents.on(StorageEvents.Type.HAS_PERMANENT_DATA, courtsDataDesc[0], () => {
 	return courtNames.length > 0;
 });
 
-window.StorageEvents.on(StorageEvents.Type.DEL_PERMANENT_DATA, courtsDataDesc[0], (data) => {
+window.StorageEvents.on(StorageEvents.Type.DEL_PERMANENT_DATA, courtsDataDesc[0], () => {
 	clearCourtNamesFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, courtsDataDesc[1], (data) => {
+window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, courtsDataDesc[1], () => {
 	return courtBlocks.length > 0;
 });
 
-window.StorageEvents.on(StorageEvents.Type.DEL_EVENT_DATA, courtsDataDesc[1], (data) => {
+window.StorageEvents.on(StorageEvents.Type.DEL_EVENT_DATA, courtsDataDesc[1], () => {
 	clearCourtsFromStorage();
 });

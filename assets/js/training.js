@@ -35,9 +35,7 @@ function workerMain() {
 	}
 
 	function sortPlayersByName(players) {
-		return players.sort((a, b) =>
-			a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
-		);
+		return players.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 	}
 
 	function sortPlayersByBenchPreference(players, sitCount, lastSitRound) {
@@ -45,31 +43,16 @@ function workerMain() {
 		// → last sit round (earliest sit first)
 		// → tie-break by sits (fewest sits first )
 		// → tie-break by playtime (longest playtime first)
-		return players.sort(
-			(a, b) =>
-				lastSitRound[a.id] - lastSitRound[b.id] ||
-				sitCount[a.id] - sitCount[b.id] ||
-				b.playtime - a.playtime,
-		);
+		return players.sort((a, b) => lastSitRound[a.id] - lastSitRound[b.id] || sitCount[a.id] - sitCount[b.id] || b.playtime - a.playtime);
 	}
 
-	function fillBench(
-		sitCount,
-		lastSitRound,
-		roundId,
-		eligiblePlayers,
-		doublesMatchCount,
-		singlesMatchCount,
-		playersWith1hPlaytimeShouldPlay,
-	) {
+	function fillBench(sitCount, lastSitRound, roundId, eligiblePlayers, doublesMatchCount, singlesMatchCount, playersWith1hPlaytimeShouldPlay) {
 		const totalPlayingCount = doublesMatchCount * 4 + singlesMatchCount * 2;
 		//console.log("eligibleForBench:", eligibleForBench.map(p => p.name));
 		const benchCount = Math.max(0, eligiblePlayers.length - totalPlayingCount);
 		//console.log("benchCount:", benchCount, "eligiblePlayers.length:", eligiblePlayers.length, "totalPlayingCount:", totalPlayingCount);
 
-		const shouldSitNow = eligiblePlayers.filter(
-			(p) => p.sit1stRound && p.roundsAttended === 0,
-		);
+		const shouldSitNow = eligiblePlayers.filter((p) => p.sit1stRound && p.roundsAttended === 0);
 
 		if (shouldSitNow.length > benchCount) {
 			return sortPlayersByName(shuffle(shouldSitNow)).slice(0, benchCount);
@@ -82,33 +65,21 @@ function workerMain() {
 		// filter those, that should always play
 		// - players with 1h playtime, if playersWith1hPlaytimeShouldPlay is true
 		// - excluding those that should explicitly sit their first round
-		const shouldPlay = eligiblePlayers.filter(
-			(p) =>
-				p.playtime === 1 &&
-				playersWith1hPlaytimeShouldPlay &&
-				!shouldSitNow.includes(p),
-		);
+		const shouldPlay = eligiblePlayers.filter((p) => p.playtime === 1 && playersWith1hPlaytimeShouldPlay && !shouldSitNow.includes(p));
 		//console.log("shouldPlay:", shouldPlay.map(p => p.name));
 
 		// filter out those that sat last round
-		const satRoundBefore = eligiblePlayers.filter(
-			(p) => lastSitRound[p.id] === roundId - 1 && !shouldPlay.includes(p),
-		);
+		const satRoundBefore = eligiblePlayers.filter((p) => lastSitRound[p.id] === roundId - 1 && !shouldPlay.includes(p));
 		//console.log("satRoundBefore:", satRoundBefore.map(p => p.name));
 		// filter those that sat 2 rounds before
-		const sat2RoundsBefore = eligiblePlayers.filter(
-			(p) => lastSitRound[p.id] === roundId - 2 && !shouldPlay.includes(p),
-		);
+		const sat2RoundsBefore = eligiblePlayers.filter((p) => lastSitRound[p.id] === roundId - 2 && !shouldPlay.includes(p));
 		//console.log("sat2RoundsBefore:", sat2RoundsBefore.map(p => p.name));
 
 		// filter trose that sat more than fair share of rounds (i.e. those that sat more than 1 round more than the player with the same playtime)
 		const sitMoreWithPlaytime = [];
 
 		// find max playtime
-		const maxPlaytime = eligiblePlayers.reduce(
-			(max, p) => Math.max(max, p.playtime),
-			0,
-		);
+		const maxPlaytime = eligiblePlayers.reduce((max, p) => Math.max(max, p.playtime), 0);
 
 		for (let i = 1; i <= maxPlaytime; i++) {
 			const playtimePlayers = eligiblePlayers.filter((p) => p.playtime === i);
@@ -121,11 +92,7 @@ function workerMain() {
 				return sitCount[min.id] < sitCount[p.id] ? min : p;
 			});
 			if (sitCount[maxP.id] - sitCount[minP.id] > 1) {
-				sitMoreWithPlaytime.push(
-					eligiblePlayers.filter(
-						(p) => sitCount[p.id] === maxP && !shouldPlay.includes(p),
-					),
-				);
+				sitMoreWithPlaytime.push(eligiblePlayers.filter((p) => sitCount[p.id] === maxP && !shouldPlay.includes(p)));
 			}
 		}
 		//console.log("sitMoreWithPlaytime:", sitMoreWithPlaytime.map(arr => arr.map(p => p.name)));
@@ -149,14 +116,9 @@ function workerMain() {
 			const fallback = sat2RoundsBefore.filter((p) => !canSitNow.includes(p));
 			canSitNow = canSitNow.concat(fallback);
 
-			while (
-				canSitNow.length < remainingBenchCount &&
-				sitMoreWithPlaytime.length > 0
-			) {
+			while (canSitNow.length < remainingBenchCount && sitMoreWithPlaytime.length > 0) {
 				// now we have to return some players that have high number of sits with same playtime
-				const fallback = sitMoreWithPlaytime
-					.pop()
-					.filter((p) => !canSitNow.includes(p));
+				const fallback = sitMoreWithPlaytime.pop().filter((p) => !canSitNow.includes(p));
 				canSitNow = canSitNow.concat(fallback);
 			}
 
@@ -170,27 +132,16 @@ function workerMain() {
 		// +30% bench count for better randomization
 		const extraBenchCount = Math.ceil(remainingBenchCount * 1.3);
 
-		canSitNow = sortPlayersByBenchPreference(
-			canSitNow,
-			sitCount,
-			lastSitRound,
-		).slice(0, extraBenchCount);
+		canSitNow = sortPlayersByBenchPreference(canSitNow, sitCount, lastSitRound).slice(0, extraBenchCount);
 
-		let benchPlayers = shouldSitNow.concat(
-			shuffle(canSitNow).slice(0, remainingBenchCount),
-		);
+		let benchPlayers = shouldSitNow.concat(shuffle(canSitNow).slice(0, remainingBenchCount));
 
 		// now shuffle and splice to final benchCount number of players
 		//let benchPlayers = shuffle(canSitNow).slice(0, remainingBenchCount);
 		//console.log("benchPlayers:", benchPlayers.map(p => p.name));
 		if (benchPlayers.length < remainingBenchCount) {
 			// if still not enough on the bench, add some players that should play
-			benchPlayers = benchPlayers.concat(
-				sortPlayersByBenchPreference(shouldPlay, sitCount, lastSitRound).slice(
-					0,
-					benchCount - benchPlayers.length,
-				),
-			);
+			benchPlayers = benchPlayers.concat(sortPlayersByBenchPreference(shouldPlay, sitCount, lastSitRound).slice(0, benchCount - benchPlayers.length));
 			//console.log("not enough players to sit, need to fallback to must play", "benchPlayers:", benchPlayers.map(p => p.name), "shouldPlay:", shouldPlay.map(p => p.name));
 		}
 
@@ -206,14 +157,7 @@ function workerMain() {
 
 	// ── Main message handler ──────────────────────────────────────
 	self.onmessage = (e) => {
-		const {
-			activePlayers,
-			allPlayers,
-			courtBlocks,
-			matchesPerHour,
-			allowSingles,
-			playersWith1hPlaytimeShouldPlay,
-		} = e.data;
+		const { activePlayers, allPlayers, courtBlocks, matchesPerHour, allowSingles, playersWith1hPlaytimeShouldPlay } = e.data;
 
 		const roundDuration = Math.floor(60 / matchesPerHour);
 
@@ -277,12 +221,8 @@ function workerMain() {
 			resetPlayers();
 
 			// Global history matrices (accumulated across all courtBlocks within a single training)
-			const sameTeamMatrix = Array.from({ length: players.length }, () =>
-				new Array(players.length).fill(0),
-			);
-			const opponentMatrix = Array.from({ length: players.length }, () =>
-				new Array(players.length).fill(0),
-			);
+			const sameTeamMatrix = Array.from({ length: players.length }, () => new Array(players.length).fill(0));
+			const opponentMatrix = Array.from({ length: players.length }, () => new Array(players.length).fill(0));
 
 			// Track sitting history for each player (accumulated across all courtBlocks within a single training)
 			const sitCount = {}; // Tracks how many times each player has sat
@@ -312,34 +252,23 @@ function workerMain() {
 					const slotEnd = slotStart + roundDuration;
 
 					// Players whose availability window fully covers this slot
-					const eligiblePlayers = players.filter(
-						(p) => p.startMin <= slotStart && p.endMin >= slotEnd,
-					);
+					const eligiblePlayers = players.filter((p) => p.startMin <= slotStart && p.endMin >= slotEnd);
 
 					const reportProgress = () => {
 						doneIterations++;
 						self.postMessage({
 							type: "progress",
-							pct: Math.min(
-								95,
-								Math.round((doneIterations / (totalIretations || 1)) * 95),
-							),
+							pct: Math.min(95, Math.round((doneIterations / (totalIretations || 1)) * 95)),
 						});
 					};
 
 					// How many matches fit?
 					// start with doubles assumption, then adjust if singles are allowed
-					const doublesMatchCount = Math.min(
-						courtBlock.courts.length,
-						Math.floor(eligiblePlayers.length / 4),
-					);
+					const doublesMatchCount = Math.min(courtBlock.courts.length, Math.floor(eligiblePlayers.length / 4));
 
-					const remainingPlayers =
-						eligiblePlayers.length - doublesMatchCount * 4;
+					const remainingPlayers = eligiblePlayers.length - doublesMatchCount * 4;
 					const remainingCourts = courtBlock.courts.length - doublesMatchCount;
-					const singlesMatchCount = allowSingles
-						? Math.min(remainingCourts, Math.floor(remainingPlayers / 2))
-						: 0;
+					const singlesMatchCount = allowSingles ? Math.min(remainingCourts, Math.floor(remainingPlayers / 2)) : 0;
 					const totalMatchCount = doublesMatchCount + singlesMatchCount;
 
 					let benchPlayers = null;
@@ -361,9 +290,7 @@ function workerMain() {
 						);
 
 						const benchSet = new Set(benchPlayers.map((p) => p.id));
-						const playingPlayers = eligiblePlayers.filter(
-							(p) => !benchSet.has(p.id),
-						);
+						const playingPlayers = eligiblePlayers.filter((p) => !benchSet.has(p.id));
 
 						matches = findBestDoublesMatches(
 							playingPlayers,
@@ -388,30 +315,19 @@ function workerMain() {
 						if (singlesMatchCount > 0) {
 							//console.log("eligible:", eligible.map(p => p.name), "matches:", matches, "benchPlayers:", benchPlayers.map(p => p.name));
 							const singlesPlayingPlayers = eligiblePlayers.filter(
-								(p) =>
-									!matches.some(
-										(m) => m.teamA.includes(p.id) || m.teamB.includes(p.id),
-									) && !benchSet.has(p.id),
+								(p) => !matches.some((m) => m.teamA.includes(p.id) || m.teamB.includes(p.id)) && !benchSet.has(p.id),
 							);
 							//console.log("singlesPlayingPlayers:", singlesPlayingPlayers.map(p => p.name), "singlesMatchCount:", singlesMatchCount, "benchPlayers:", benchPlayers.map(p => p.name));
 
 							const singlesMatches = findBestSinglesMatches(
 								singlesPlayingPlayers,
 								singlesMatchCount,
-								courtBlock.courts.slice(
-									doublesMatchCount,
-									doublesMatchCount + singlesMatchCount,
-								),
+								courtBlock.courts.slice(doublesMatchCount, doublesMatchCount + singlesMatchCount),
 							);
 							matches = matches.concat(singlesMatches);
 
 							singlesMatches.forEach((m) => {
-								incMatrix(
-									opponentMatrix,
-									indexOfPlayer,
-									m.teamA[0],
-									m.teamB[0],
-								);
+								incMatrix(opponentMatrix, indexOfPlayer, m.teamA[0], m.teamB[0]);
 							});
 						}
 					}
@@ -434,18 +350,8 @@ function workerMain() {
 
 			const training = { rounds: rounds };
 
-			const penalties = computePenalties(
-				training,
-				allPlayers,
-				activePlayers,
-				PENALTY_WEIGHTS,
-			);
-			const totalPenalty =
-				penalties.skill +
-				penalties.sameTeam +
-				penalties.opponent +
-				penalties.consecutiveBench +
-				penalties.extraBench;
+			const penalties = computePenalties(training, allPlayers, activePlayers, PENALTY_WEIGHTS);
+			const totalPenalty = penalties.skill + penalties.sameTeam + penalties.opponent + penalties.consecutiveBench + penalties.extraBench;
 
 			// console.log(" index: ", genIdx, "penalties: ", penalties, "total penalty: ", totalPenalty);
 			// console.log("penalties: ", penalties);
@@ -461,33 +367,13 @@ function workerMain() {
 	};
 
 	// ── Doubles Team assignment ───────────────────────────────────────────
-	function findBestDoublesMatches(
-		players,
-		matchCount,
-		courts,
-		sameTeamMatrix,
-		opponentMatrix,
-		indexOfPlayer,
-		skillOfPlayer,
-	) {
+	function findBestDoublesMatches(players, matchCount, courts, sameTeamMatrix, opponentMatrix, indexOfPlayer, skillOfPlayer) {
 		let best = seedTeams(players, matchCount);
-		let bestScore = scoreTeams(
-			best,
-			sameTeamMatrix,
-			opponentMatrix,
-			indexOfPlayer,
-			skillOfPlayer,
-		);
+		let bestScore = scoreTeams(best, sameTeamMatrix, opponentMatrix, indexOfPlayer, skillOfPlayer);
 
 		for (let i = 0; i < BEST_TEAMS_ITER; i++) {
 			const candidate = mutate(best);
-			const s = scoreTeams(
-				candidate,
-				sameTeamMatrix,
-				opponentMatrix,
-				indexOfPlayer,
-				skillOfPlayer,
-			);
+			const s = scoreTeams(candidate, sameTeamMatrix, opponentMatrix, indexOfPlayer, skillOfPlayer);
 			if (s < bestScore) {
 				best = candidate;
 				bestScore = s;
@@ -564,39 +450,23 @@ function workerMain() {
 			const mi = randInt(arr.length);
 			const pi = randInt(2),
 				pj = randInt(2);
-			[arr[mi].teamA[pi], arr[mi].teamB[pj]] = [
-				arr[mi].teamB[pj],
-				arr[mi].teamA[pi],
-			];
+			[arr[mi].teamA[pi], arr[mi].teamB[pj]] = [arr[mi].teamB[pj], arr[mi].teamA[pi]];
 		} else {
 			// Swap two players within the same team (minor re-ordering, still useful for history scoring)
 			const mi = randInt(arr.length);
 			const team = Math.random() < 0.5 ? "teamA" : "teamB";
-			[arr[mi][team][0], arr[mi][team][1]] = [
-				arr[mi][team][1],
-				arr[mi][team][0],
-			];
+			[arr[mi][team][0], arr[mi][team][1]] = [arr[mi][team][1], arr[mi][team][0]];
 		}
 		return arr;
 	}
 
-	function scoreTeams(
-		arrangement,
-		sameTeamMatrix,
-		opponentMatrix,
-		indexOfPlayer,
-		skillOfPlayer,
-	) {
+	function scoreTeams(arrangement, sameTeamMatrix, opponentMatrix, indexOfPlayer, skillOfPlayer) {
 		let score = 0;
 		for (const m of arrangement) {
 			const [a0, a1, b0, b1] = [...m.teamA, ...m.teamB];
 			// Same-team repeat
-			score +=
-				getMatrix(sameTeamMatrix, indexOfPlayer, a0, a1) *
-				PENALTY_WEIGHTS.SAME_TEAM;
-			score +=
-				getMatrix(sameTeamMatrix, indexOfPlayer, b0, b1) *
-				PENALTY_WEIGHTS.SAME_TEAM;
+			score += getMatrix(sameTeamMatrix, indexOfPlayer, a0, a1) * PENALTY_WEIGHTS.SAME_TEAM;
+			score += getMatrix(sameTeamMatrix, indexOfPlayer, b0, b1) * PENALTY_WEIGHTS.SAME_TEAM;
 			// Opponent repeat
 			score +=
 				(getMatrix(opponentMatrix, indexOfPlayer, a0, b0) +
@@ -652,9 +522,7 @@ const MATCHES_PER_HOUR_DEFDAULT = 5; // Default value for matches per hour
 // ── DOM refs ──────────────────────────────────────────────────
 const genMatchesPerHourSel = document.getElementById("matches-per-hour");
 const genAllowSinglesCb = document.getElementById("allow-singles");
-const gen1hPlaytimeShouldPlay = document.getElementById(
-	"gen-1h-playtime-should-play",
-);
+const gen1hPlaytimeShouldPlay = document.getElementById("gen-1h-playtime-should-play");
 const genGenerateBtn = document.getElementById("gen-generate-btn");
 const genClearBtn = document.getElementById("gen-clear-btn");
 const genDatePicker = document.getElementById("gen-date-picker");
@@ -672,8 +540,7 @@ const genEmpty = document.getElementById("gen-empty");
 
 // ── Generate button handler ───────────────────────────────────
 genGenerateBtn.addEventListener("click", () => {
-	if (training && !confirm("Replace the ongoing training with a new one?"))
-		return;
+	if (training && !confirm("Replace the ongoing training with a new one?")) return;
 	runGeneration();
 });
 
@@ -683,23 +550,11 @@ genClearBtn.addEventListener("click", () => {
 });
 
 genPrintBtn.addEventListener("click", () => {
-	printTraining(
-		training,
-		trainingDate,
-		scores,
-		document.getElementById("print-extra-match").checked,
-		false,
-	);
+	printTraining(training, trainingDate, scores, document.getElementById("print-extra-match").checked, false);
 });
 
 genExportBtn.addEventListener("click", () => {
-	downloadTrainingSpreadsheet(
-		training,
-		trainingDate,
-		scores,
-		document.getElementById("print-extra-match").checked,
-		false,
-	);
+	downloadTrainingSpreadsheet(training, trainingDate, scores, document.getElementById("print-extra-match").checked, false);
 });
 
 genDatePicker.addEventListener("change", () => {
@@ -765,8 +620,7 @@ function normalizeBlock(blocks) {
 			const currentStartMins = timeToMins(current.start);
 
 			// Check if the courts are identical
-			const sameCourts =
-				JSON.stringify(last.courts) === JSON.stringify(current.courts);
+			const sameCourts = JSON.stringify(last.courts) === JSON.stringify(current.courts);
 
 			// If they touch continuously and have the same courts, merge them
 			if (lastEndMins === currentStartMins && sameCourts) {
@@ -865,12 +719,7 @@ function runGeneration() {
 				});
 			}
 			scores = newScores;
-			generatedPenalties = computePenalties(
-				training,
-				allPlayers,
-				activePlayers,
-				PENALTY_WEIGHTS,
-			);
+			generatedPenalties = computePenalties(training, allPlayers, activePlayers, PENALTY_WEIGHTS);
 
 			saveGeneratedTrainingToStorage();
 		}
@@ -989,14 +838,7 @@ function renderTraining() {
 	// }
 }
 
-function buildMatchCard(
-	match,
-	score,
-	roundId,
-	draggable = true,
-	disabledScore = false,
-	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
-) {
+function buildMatchCard(match, score, roundId, draggable = true, disabledScore = false, buildPlayerSlotFunc = buildPlayerSlotInnerHtml) {
 	const card = document.createElement("div");
 	card.className = "gen-match-card";
 	card.dataset.matchId = match.matchId;
@@ -1056,7 +898,7 @@ function buildMatchCard(
 			inB.value = score.b !== null ? score.b : "";
 			inB.dataset.matchId = match.matchId;
 			inB.dataset.side = "b";
-			
+
 			if (disabledScore) {
 				inA.disabled = true;
 				inB.disabled = true;
@@ -1072,12 +914,7 @@ function buildMatchCard(
 	return card;
 }
 
-function buildBenchCard(
-	bench,
-	roundId,
-	draggable = true,
-	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
-) {
+function buildBenchCard(bench, roundId, draggable = true, buildPlayerSlotFunc = buildPlayerSlotInnerHtml) {
 	if (!bench || bench.length === 0) {
 		return null;
 	}
@@ -1193,8 +1030,7 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 			if (!benchSet.has(id) && !playingSet.has(id)) return;
 			if (benchSet.has(id)) {
 				consecBench[id] = (consecBench[id] || 0) + 1;
-				if (consecBench[id] >= 2)
-					consecutiveBenchPen += penaltyWeights.CONSEC_SIT;
+				if (consecBench[id] >= 2) consecutiveBenchPen += penaltyWeights.CONSEC_SIT;
 			} else {
 				consecBench[id] = 0;
 			}
@@ -1203,12 +1039,8 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 		round.matches.forEach((m) => {
 			const [a0, a1, b0, b1] = [...m.teamA, ...m.teamB];
 			// Skill
-			const sa =
-				getPlayerSkill(allPlayers, activePlayers, a0) +
-				getPlayerSkill(allPlayers, activePlayers, a1);
-			const sb =
-				getPlayerSkill(allPlayers, activePlayers, b0) +
-				getPlayerSkill(allPlayers, activePlayers, b1);
+			const sa = getPlayerSkill(allPlayers, activePlayers, a0) + getPlayerSkill(allPlayers, activePlayers, a1);
+			const sb = getPlayerSkill(allPlayers, activePlayers, b0) + getPlayerSkill(allPlayers, activePlayers, b1);
 			const diff = Math.abs(sa - sb);
 			if (diff === 1) skillPen += penaltyWeights.SKILL_1;
 			else if (diff === 2) skillPen += penaltyWeights.SKILL_2;
@@ -1218,10 +1050,7 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 			stPen += getM(stMat, b0, b1) * penaltyWeights.SAME_TEAM;
 			// Opponent repeat
 			oppPen +=
-				(getM(opponentMatrix, a0, b0) +
-					getM(opponentMatrix, a0, b1) +
-					getM(opponentMatrix, a1, b0) +
-					getM(opponentMatrix, a1, b1)) *
+				(getM(opponentMatrix, a0, b0) + getM(opponentMatrix, a0, b1) + getM(opponentMatrix, a1, b0) + getM(opponentMatrix, a1, b1)) *
 				penaltyWeights.OPPONENT;
 			// Now accumulate
 			incM(stMat, a0, a1);
@@ -1256,10 +1085,7 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 	//               *(3-2) = 1, which is the difference in playtime between the two players, which is used to scale the penalty based on how much more playtime the player with greater playtime has.
 
 	// find max playtime
-	const maxPlaytime = activePlayers.reduce(
-		(max, p) => Math.max(max, p.playtime),
-		0,
-	);
+	const maxPlaytime = activePlayers.reduce((max, p) => Math.max(max, p.playtime), 0);
 
 	for (let i = 1; i <= maxPlaytime; i++) {
 		const playtimePlayers = activePlayers.filter((p) => p.playtime === i);
@@ -1271,28 +1097,20 @@ function computePenalties(training, allPlayers, activePlayers, penaltyWeights) {
 					return sitCount[min.id] < sitCount[p.id] ? min : p;
 				}).id
 			];
-		const minSitSum = playtimePlayers.reduce(
-			(sum, p) => (sitCount[p.id] === minSitCount ? sum + 1 : sum),
-			0,
-		);
+		const minSitSum = playtimePlayers.reduce((sum, p) => (sitCount[p.id] === minSitCount ? sum + 1 : sum), 0);
 
 		extraBenchPen += playtimePlayers.reduce((penalty, p) => {
 			const diff = sitCount[p.id] - minSitCount;
-			if (diff > 1)
-				penalty += (diff - 1) * penaltyWeights.EXTRA_SIT * minSitSum;
+			if (diff > 1) penalty += (diff - 1) * penaltyWeights.EXTRA_SIT * minSitSum;
 			return penalty;
 		}, 0);
 
 		if (i > 1) {
-			const lesserPlaytimePlayers = activePlayers.filter(
-				(p) => p.playtime < i && sitCount[p.id] > minSitCount,
-			);
+			const lesserPlaytimePlayers = activePlayers.filter((p) => p.playtime < i && sitCount[p.id] > minSitCount);
 
 			extraBenchPen += lesserPlaytimePlayers.reduce((penalty, p) => {
 				const diff = sitCount[p.id] - minSitCount;
-				if (diff > 0)
-					penalty +=
-						diff * penaltyWeights.EXTRA_SIT * minSitSum * (i - p.playtime);
+				if (diff > 0) penalty += diff * penaltyWeights.EXTRA_SIT * minSitSum * (i - p.playtime);
 				return penalty;
 			}, 0);
 		}
@@ -1320,12 +1138,7 @@ function renderScoreboard() {
 		generatedPenalties.opponent +
 		generatedPenalties.consecutiveBench +
 		generatedPenalties.extraBench;
-	const adjustedPenalties = computePenalties(
-		training,
-		allPlayers,
-		activePlayers,
-		PENALTY_WEIGHTS,
-	);
+	const adjustedPenalties = computePenalties(training, allPlayers, activePlayers, PENALTY_WEIGHTS);
 	const totalAdjusted =
 		adjustedPenalties.skill +
 		adjustedPenalties.sameTeam +
@@ -1475,14 +1288,10 @@ function renderStatsTable() {
 // ── Persistence ───────────────────────────────────────────────
 function loadGeneratedTrainingFromStorage() {
 	try {
-		const s =
-			localStorage.getItem(TRAINING_KEY) ||
-			localStorage.getItem(LEGACY_TRAINING_KEY);
+		const s = localStorage.getItem(TRAINING_KEY) || localStorage.getItem(LEGACY_TRAINING_KEY);
 		const c = localStorage.getItem(SCORES_KEY);
 		const p = localStorage.getItem(GEN_PENALTIES_KEY);
-		const d =
-			localStorage.getItem(TRAINING_DATE_KEY) ||
-			localStorage.getItem(LEGACY_TRAINING_DATE_KEY);
+		const d = localStorage.getItem(TRAINING_DATE_KEY) || localStorage.getItem(LEGACY_TRAINING_DATE_KEY);
 		//const m = localStorage.getItem(MATCHES_PER_HOUR_KEY);
 		//if (m) matchesPerHour = Number(m);
 		if (s) training = JSON.parse(s);
@@ -1493,16 +1302,8 @@ function loadGeneratedTrainingFromStorage() {
 	} catch (_) {}
 
 	if (trainingDate == null) trainingDate = new Date();
-	if (
-		generatedPenalties == null ||
-		Object.keys(generatedPenalties).length === 0
-	)
-		generatedPenalties = computePenalties(
-			training,
-			allPlayers,
-			activePlayers,
-			PENALTY_WEIGHTS,
-		);
+	if (generatedPenalties == null || Object.keys(generatedPenalties).length === 0)
+		generatedPenalties = computePenalties(training, allPlayers, activePlayers, PENALTY_WEIGHTS);
 	// console.log(
 	// 	"Loaded training from storage:",
 	// 	training,
@@ -1556,13 +1357,7 @@ function clearGeneratedTrainingFromStorage() {
 }
 
 function saveTrainingDataToStorage(data) {
-	[
-		TRAINING_KEY,
-		SCORES_KEY,
-		GEN_PENALTIES_KEY,
-		TRAINING_DATE_KEY,
-		MATCHES_PER_HOUR_KEY
-	].forEach((key) => {
+	[TRAINING_KEY, SCORES_KEY, GEN_PENALTIES_KEY, TRAINING_DATE_KEY, MATCHES_PER_HOUR_KEY].forEach((key) => {
 		if (key in data) {
 			const value = data[key];
 			const toStore = typeof value === "string" ? value : JSON.stringify(value);
@@ -1573,13 +1368,7 @@ function saveTrainingDataToStorage(data) {
 
 function getTrainingDataFromStorage() {
 	const data = {};
-	[
-		TRAINING_KEY,
-		SCORES_KEY,
-		GEN_PENALTIES_KEY,
-		TRAINING_DATE_KEY,
-		MATCHES_PER_HOUR_KEY
-	].forEach((key) => {
+	[TRAINING_KEY, SCORES_KEY, GEN_PENALTIES_KEY, TRAINING_DATE_KEY, MATCHES_PER_HOUR_KEY].forEach((key) => {
 		const value = localStorage.getItem(key);
 		if (value !== null) {
 			data[key] = value;
@@ -1658,14 +1447,7 @@ function onDrop(e) {
 		bench: el.dataset.bench === "true",
 		roundId: el.dataset.roundId != null ? Number(el.dataset.roundId) : null,
 	};
-	if (
-		!dragSrc.bench &&
-		!dst.bench &&
-		dragSrc.matchId === dst.matchId &&
-		dragSrc.team === dst.team &&
-		dragSrc.pos === dst.pos
-	)
-		return;
+	if (!dragSrc.bench && !dst.bench && dragSrc.matchId === dst.matchId && dragSrc.team === dst.team && dragSrc.pos === dst.pos) return;
 	// Only allow moves within the same round
 	if (dragSrc.roundId !== dst.roundId) return;
 
@@ -1774,7 +1556,6 @@ function swapPlayerOrBench(src, dst) {
 
 loadGeneratedTrainingFromStorage();
 
-
 const trainingDataDesc = "Training";
 
 window.StorageEvents.on(StorageEvents.Type.LOAD, trainingDataDesc, (data) => {
@@ -1782,18 +1563,17 @@ window.StorageEvents.on(StorageEvents.Type.LOAD, trainingDataDesc, (data) => {
 	loadGeneratedTrainingFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.SAVE, trainingDataDesc, (data) => {
+window.StorageEvents.on(StorageEvents.Type.SAVE, trainingDataDesc, () => {
 	return getTrainingDataFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.DEL_EVENT_DATA, trainingDataDesc, (data) => {
+window.StorageEvents.on(StorageEvents.Type.DEL_EVENT_DATA, trainingDataDesc, () => {
 	clearGeneratedTrainingFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, trainingDataDesc, (data) => {
+window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, trainingDataDesc, () => {
 	return (training?.rounds?.length || 0) > 0;
 });
-
 
 window.PlayerEvents.on(PlayerEvents.Type.MUST, trainingDataDesc, (id) => {
 	// training is generated from active players referencing all players
@@ -1812,7 +1592,7 @@ window.PlayerEvents.on(PlayerEvents.Type.MUST, trainingDataDesc, (id) => {
 	return false;
 });
 
-window.ActivePlayerEvents.on(ActivePlayerEvents.Type.MUST, trainingDataDesc, (id) => {
+window.ActivePlayerEvents.on(ActivePlayerEvents.Type.MUST, trainingDataDesc, (/*id*/) => {
 	// training is generated from active players directly
 	// currently we are not able to determine if a specific active player must participate
 	// so we just return true if there are any rounds in the training

@@ -13,30 +13,15 @@
 // renderers can't drift apart on scoring / extra-match / empty-bench
 // behavior; only the actual rendering (HTML table vs. XLSX rows) differs.
 
-function buildTrainingRoundViewModels(
-	training,
-	scores,
-	printExtraMatch = true,
-	printEmptyBench = false,
-) {
+function buildTrainingRoundViewModels(training, scores, printExtraMatch = true, printEmptyBench = false) {
 	if (training == null || training.rounds == null) return [];
 
 	function formatMatchScore(match, scores) {
 		const matchScore = scores ? scores[match.matchId] || null : null;
-		return matchScore?.a || matchScore?.b
-			? `${matchScore.a || 0} : ${matchScore.b || 0}`
-			: "";
+		return matchScore?.a || matchScore?.b ? `${matchScore.a || 0} : ${matchScore.b || 0}` : "";
 	}
 
-	const buildRound = (
-		roundNumber,
-		courtBlockStart,
-		matches,
-		bench,
-		roundScores,
-		forceShowBench,
-		printCourtBlockStart,
-	) => ({
+	const buildRound = (roundNumber, courtBlockStart, matches, bench, roundScores, forceShowBench, printCourtBlockStart) => ({
 		roundNumber,
 		courtBlockStart,
 		printCourtBlockStart,
@@ -90,13 +75,7 @@ function buildTrainingRoundViewModels(
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used in training.js
-async function downloadTrainingSpreadsheet(
-	training,
-	trainingDate,
-	scores,
-	printExtraMatch = true,
-	printEmptyBench = false,
-) {
+async function downloadTrainingSpreadsheet(training, trainingDate, scores, printExtraMatch = true, printEmptyBench = false) {
 	// 1. Initialize Workbook and Worksheet
 	const workbook = new ExcelJS.Workbook();
 
@@ -136,13 +115,7 @@ async function downloadTrainingSpreadsheet(
 		worksheet.addRow([]);
 
 		// Column header row
-		const headerRow = worksheet.addRow([
-			"Round",
-			"Court",
-			"Team A",
-			"Score",
-			"Team B",
-		]);
+		const headerRow = worksheet.addRow(["Round", "Court", "Team A", "Score", "Team B"]);
 		headerRow.font = { bold: true };
 		headerRow.alignment = { vertical: "middle", horizontal: "center" };
 
@@ -163,12 +136,7 @@ async function downloadTrainingSpreadsheet(
 		// 3. Process the Data - built once via the shared view-model builder so
 		// scoring, the extra-match round, and empty-bench handling stay in
 		// sync with printTraining.
-		const rounds = buildTrainingRoundViewModels(
-			training,
-			scores,
-			printExtraMatch,
-			printEmptyBench,
-		);
+		const rounds = buildTrainingRoundViewModels(training, scores, printExtraMatch, printEmptyBench);
 
 		rounds.forEach((round) => {
 			if (round.matches.length === 0) return;
@@ -184,13 +152,7 @@ async function downloadTrainingSpreadsheet(
 			const roundStartRow = worksheet.rowCount;
 
 			round.matches.forEach((match) => {
-				const row = worksheet.addRow([
-					firstMatch ? round.roundNumber : "",
-					match.court,
-					match.teamAName,
-					match.scoreStr,
-					match.teamBName,
-				]);
+				const row = worksheet.addRow([firstMatch ? round.roundNumber : "", match.court, match.teamAName, match.scoreStr, match.teamBName]);
 
 				if (firstMatch) {
 					row.getCell(1).font = { bold: true };
@@ -211,17 +173,13 @@ async function downloadTrainingSpreadsheet(
 				firstMatch = false;
 			});
 
-			worksheet
-				.getRow(roundStartRow + 1)
-				.eachCell({ includeEmpty: false }, (cell) => {
-					cell.border = { ...(cell.border || {}), top: { style: "medium" } };
-				});
+			worksheet.getRow(roundStartRow + 1).eachCell({ includeEmpty: false }, (cell) => {
+				cell.border = { ...(cell.border || {}), top: { style: "medium" } };
+			});
 
-			worksheet
-				.getRow(worksheet.rowCount)
-				.eachCell({ includeEmpty: false }, (cell) => {
-					cell.border = { ...(cell.border || {}), bottom: { style: "medium" } };
-				});
+			worksheet.getRow(worksheet.rowCount).eachCell({ includeEmpty: false }, (cell) => {
+				cell.border = { ...(cell.border || {}), bottom: { style: "medium" } };
+			});
 
 			for (let i = roundStartRow + 1; i <= worksheet.rowCount; i++) {
 				let cell = worksheet.getRow(i).getCell(1);
@@ -259,13 +217,7 @@ async function downloadTrainingSpreadsheet(
 			}
 
 			if (round.showBench) {
-				const row = worksheet.addRow([
-					"",
-					"Bench:",
-					round.benchNames.join(", "),
-					"",
-					"",
-				]);
+				const row = worksheet.addRow(["", "Bench:", round.benchNames.join(", "), "", ""]);
 				// Apply borders and center alignment ONLY to cells that have data
 				for (let i = 1; i <= 5; i++) {
 					const cell = row.getCell(i);
@@ -313,13 +265,7 @@ async function downloadTrainingSpreadsheet(
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used in training.js
-function printTraining(
-	training,
-	trainingDate,
-	scores,
-	printExtraMatch = true,
-	printEmptyBench = false,
-) {
+function printTraining(training, trainingDate, scores, printExtraMatch = true, printEmptyBench = false) {
 	function printTrainingRound(round) {
 		const matches = round.matches;
 		if (matches.length === 0) return "";
@@ -353,9 +299,7 @@ function printTraining(
 				<td class="bench-names colspan-cell right-cell top-cell bottom-cell" colspan="3">${round.benchNames.join(", ")}</td>
 			</tr>`;
 
-		const blockStart = round.printCourtBlockStart
-			? `<tr><td colspan="5" class="block-start">${round.courtBlockStart}</td></tr>`
-			: "";
+		const blockStart = round.printCourtBlockStart ? `<tr><td colspan="5" class="block-start">${round.courtBlockStart}</td></tr>` : "";
 
 		return `<tbody class="round-block"><tr><td colspan="5" class="round-spacer"></td></tr>${blockStart}${matchRows}${benchRow}</tbody>`;
 	}
@@ -366,12 +310,7 @@ function printTraining(
 	// data (scores, the extra-match round, empty-bench handling) comes from
 	// the same shared builder downloadTrainingSpreadsheet uses, so the two
 	// exports can't drift apart on that logic.
-	const rounds = buildTrainingRoundViewModels(
-		training,
-		scores,
-		printExtraMatch,
-		printEmptyBench,
-	);
+	const rounds = buildTrainingRoundViewModels(training, scores, printExtraMatch, printEmptyBench);
 
 	let rowsHtml = "";
 	rounds.forEach((round) => {

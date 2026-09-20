@@ -5,14 +5,10 @@
 // DISCARD ONGOING EVENTS
 // ============================================================
 async function discardEvents() {
-	const hasData =
-		StorageEvents.emit(StorageEvents.Type.HAS_EVENT_DATA, null).some(Boolean);
+	const hasData = StorageEvents.emit(StorageEvents.Type.HAS_EVENT_DATA, null).some(Boolean);
 	if (
 		hasData &&
-		!await confirmDialog(
-			`Discard all ongoing events?`,
-			`This will discard ${StorageEvents.description(StorageEvents.Type.DEL_EVENT_DATA)}.`
-		)
+		!(await confirmDialog(`Discard all ongoing events?`, `This will discard ${StorageEvents.description(StorageEvents.Type.DEL_EVENT_DATA)}.`))
 	) {
 		return;
 	}
@@ -30,10 +26,10 @@ async function discardLocalStorage() {
 	}
 
 	if (
-		!await confirmDialog(
+		!(await confirmDialog(
 			`Discard all stored data?`,
-			`To keep ${StorageEvents.description(StorageEvents.Type.DEL_PERMANENT_DATA)}, use the "Discard Events" button instead.`
-		)
+			`To keep ${StorageEvents.description(StorageEvents.Type.DEL_PERMANENT_DATA)}, use the "Discard Events" button instead.`,
+		))
 	) {
 		return;
 	}
@@ -96,13 +92,7 @@ async function loadLocalStorageFromFile() {
 	const hasData =
 		StorageEvents.emit(StorageEvents.Type.HAS_PERMANENT_DATA, null).some(Boolean) ||
 		StorageEvents.emit(StorageEvents.Type.HAS_EVENT_DATA, null).some(Boolean);
-	if (
-		hasData &&
-		!await confirmDialog(
-			"Load will replace all current data",
-			"Are you sure you want to proceed?",
-		)
-	) {
+	if (hasData && !(await confirmDialog("Load will replace all current data", "Are you sure you want to proceed?"))) {
 		return;
 	}
 	let file;

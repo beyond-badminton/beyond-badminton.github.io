@@ -36,7 +36,9 @@ function rankPlayers(playersMap, inplace = true, tiedOnly = false) {
 		players.forEach((p) => {
 			p.decidedBy = "WINS";
 		});
-		players.forEach((p, i) => (p.rank = i + 1));
+		players.forEach((p, i) => {
+			p.rank = i + 1;
+		});
 		return players;
 	}
 
@@ -91,7 +93,6 @@ function splitAndAssign(group, levelIdx) {
 		return [group];
 	}
 
-
 	if (levelIdx === 0) {
 		const withdrawn = group.filter((p) => p.withdrawn || false);
 		if (withdrawn.length > 0) {
@@ -106,7 +107,13 @@ function splitAndAssign(group, levelIdx) {
 				p.decidedBy = "WITHDRAWN";
 			}
 
-			return [...splitAndAssign(group.filter((p) => !p.withdrawn), levelIdx + 1), ...orderedWithdrawn];
+			return [
+				...splitAndAssign(
+					group.filter((p) => !p.withdrawn),
+					levelIdx + 1,
+				),
+				...orderedWithdrawn,
+			];
 		}
 		levelIdx++;
 	}
@@ -195,9 +202,15 @@ function applyMatchScore(playersMap, match, score, sign = 1) {
 		//console.log(`Updating stats for player ${id} in team A: ${JSON.stringify(playerRecord)}`);
 		updatePlayerRecord(playerRecord, sign, scoreA, scoreB);
 		//console.log(`Updated stats for player ${id} in team A: ${JSON.stringify(playerRecord)}`);
-		
+
 		match.teamB.forEach((opponentId) => {
-			const opponentRecord = playerRecord.opponents[opponentId] || { name: playerName(opponentId), played : 0, wins: 0, losses: 0, diff: 0 };
+			const opponentRecord = playerRecord.opponents[opponentId] || {
+				name: playerName(opponentId),
+				played: 0,
+				wins: 0,
+				losses: 0,
+				diff: 0,
+			};
 			updatePlayerRecord(opponentRecord, sign, scoreA, scoreB);
 			if (opponentRecord.played === 0) {
 				delete playerRecord.opponents[opponentId];
@@ -215,9 +228,15 @@ function applyMatchScore(playersMap, match, score, sign = 1) {
 		//console.log(`Updating stats for player ${id} in team B: ${JSON.stringify(playerRecord)}`);
 		updatePlayerRecord(playerRecord, sign, scoreB, scoreA);
 		//console.log(`Updated stats for player ${id} in team B: ${JSON.stringify(playerRecord)}`);
-		
+
 		match.teamA.forEach((opponentId) => {
-			const opponentRecord = playerRecord.opponents[opponentId] || { name: playerName(opponentId), played : 0, wins: 0, losses: 0, diff: 0 };
+			const opponentRecord = playerRecord.opponents[opponentId] || {
+				name: playerName(opponentId),
+				played: 0,
+				wins: 0,
+				losses: 0,
+				diff: 0,
+			};
 			updatePlayerRecord(opponentRecord, sign, scoreB, scoreA);
 			if (opponentRecord.played === 0) {
 				delete playerRecord.opponents[opponentId];
@@ -239,6 +258,7 @@ function applyMatchScore(playersMap, match, score, sign = 1) {
  * @param {Object} score { a, b } the score originally applied for this match
  * @return {void}
  */
+// biome-ignore lint/correctness/noUnusedVariables: function is used
 function revertMatchScore(playersMap, match, score) {
 	applyMatchScore(playersMap, match, score, -1);
 }
