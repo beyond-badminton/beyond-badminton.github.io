@@ -41,21 +41,13 @@ document.querySelectorAll(".sub-tabs").forEach((subTabGroup) => {
 // ============================================================
 
 function timeToMins(t) {
-	console.assert(
-		typeof t === "string" && t.includes(":"),
-		"Invalid time format:",
-		t,
-	);
+	console.assert(typeof t === "string" && t.includes(":"), "Invalid time format:", t);
 	const [h, m] = t.split(":").map(Number);
 	return h * 60 + m;
 }
 
 function minsToTime(total) {
-	return (
-		String(Math.floor(total / 60) % 24).padStart(2, "0") +
-		":" +
-		String(total % 60).padStart(2, "0")
-	);
+	return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used
@@ -113,7 +105,6 @@ const sortState = {
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used
 function getSorted(arr, listKey) {
-
 	const sortFunc = (a, b, field, dir) => {
 		if (field === "arrival") {
 			const va = timeToMins(a[field]);
@@ -176,7 +167,7 @@ function getSorted(arr, listKey) {
 		if (ret > 0) return dir === "asc" ? 1 : -1;
 		return 0;
 	};
-	
+
 	return [...arr].sort((a, b) => {
 		for (const { field, dir } of sortState[listKey]) {
 			const result = sortFunc(a, b, field, dir);
@@ -191,25 +182,21 @@ function updateSortUI(listKey) {
 	const { field, dir } = sortState[listKey][0];
 	const arrow = dir === "asc" ? "↑" : "↓";
 
-	document
-		.querySelectorAll(`span.sortable[data-list="${listKey}"]`)
-		.forEach((span) => {
-			const active = span.dataset.field === field;
-			span.classList.toggle("sort-active", active);
-			const icon = span.querySelector(".sort-icon");
-			if (icon) icon.textContent = active ? arrow : "↕";
-		});
+	document.querySelectorAll(`span.sortable[data-list="${listKey}"]`).forEach((span) => {
+		const active = span.dataset.field === field;
+		span.classList.toggle("sort-active", active);
+		const icon = span.querySelector(".sort-icon");
+		if (icon) icon.textContent = active ? arrow : "↕";
+	});
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: function is used
 function cancelSortUI(listKey) {
-	document
-		.querySelectorAll(`span.sortable[data-list="${listKey}"]`)
-		.forEach((span) => {
-			span.classList.remove("sort-active");
-			const icon = span.querySelector(".sort-icon");
-			if (icon) icon.textContent = "↕";
-		});
+	document.querySelectorAll(`span.sortable[data-list="${listKey}"]`).forEach((span) => {
+		span.classList.remove("sort-active");
+		const icon = span.querySelector(".sort-icon");
+		if (icon) icon.textContent = "↕";
+	});
 }
 
 function handleSort(listKey, field) {
@@ -218,20 +205,12 @@ function handleSort(listKey, field) {
 	} else {
 		// find field in current list key and move it to position 0 (most recent sort)
 		const currentList = sortState[listKey];
-		const index = currentList.findIndex(s => s.field === field);
+		const index = currentList.findIndex((s) => s.field === field);
 		if (index > 0) {
-			sortState[listKey] = [
-				currentList[index],
-				...currentList.slice(0, index),
-				...currentList.slice(index + 1)
-			];
-		}
-		else {
+			sortState[listKey] = [currentList[index], ...currentList.slice(0, index), ...currentList.slice(index + 1)];
+		} else {
 			// field not found in current list, add it to the beginning
-			sortState[listKey] = [
-				{ field, dir: "asc" },
-				...currentList
-			];
+			sortState[listKey] = [{ field, dir: "asc" }, ...currentList];
 		}
 	}
 	console.log(`Updated sort state for ${listKey}:`, sortState[listKey]);
@@ -245,16 +224,14 @@ function handleSort(listKey, field) {
 }
 
 document.querySelectorAll("span.sortable").forEach((el) => {
-	el.addEventListener("click", () =>
-		handleSort(el.dataset.list, el.dataset.field),
-	);
+	el.addEventListener("click", () => handleSort(el.dataset.list, el.dataset.field));
 });
 
-document.querySelectorAll('.gen-card-toggle').forEach(function (header) {
-	header.addEventListener('click', function () {
-		const container = header.closest('.gen-collapsible');
+document.querySelectorAll(".gen-card-toggle").forEach((header) => {
+	header.addEventListener("click", () => {
+		const container = header.closest(".gen-collapsible");
 		if (!container) return;
-		container.classList.toggle('gen-collapsed');
+		container.classList.toggle("gen-collapsed");
 	});
 });
 
@@ -262,6 +239,7 @@ document.querySelectorAll('.gen-card-toggle').forEach(function (header) {
 // ADDITIONAL UTILITIES
 // ============================================================
 
+// biome-ignore lint/correctness/noUnusedVariables: function is used
 function valueWithSign(val) {
 	if (val > 0) return `+${val}`;
 	return val;
@@ -278,22 +256,26 @@ function openDialog(title, note = null, confirmation = false, confirmationMatch 
 	return new Promise((resolve) => {
 		const confirmDialog = document.createElement("dialog");
 		confirmDialog.className = "confirm-modal";
-		
+
 		// Only show input field if a match string is actually provided
-		const requireInput = typeof confirmationMatch === 'string' && confirmationMatch.trim() !== '';
+		const requireInput = typeof confirmationMatch === "string" && confirmationMatch.trim() !== "";
 
 		confirmDialog.innerHTML = `
 			${title ? `<h3>${title}</h3>` : ""}
 			
-			${requireInput ? `
+			${
+				requireInput
+					? `
 			<p>To confirm your intention, please type <strong>${confirmationMatch}</strong> below:</p>
 			<input type="text" id="modal-input" autocomplete="off" placeholder="Type here">
-			` : ""}
+			`
+					: ""
+			}
 			
-			${note ? (Array.isArray(note) ? note.map(n => `<p class="modal-note">${n}</p>`).join("") : `<p class="modal-note">${note}</p>`) : ""}
+			${note ? (Array.isArray(note) ? note.map((n) => `<p class="modal-note">${n}</p>`).join("") : `<p class="modal-note">${note}</p>`) : ""}
 
 			<div class="modal-actions">
-				${confirmation ? `<button type="button" id="cancel-btn" class="discard-btn">Cancel</button>`: ""}
+				${confirmation ? `<button type="button" id="cancel-btn" class="discard-btn">Cancel</button>` : ""}
 				<button type="button" id="confirm-btn" class="gen-primary-btn">${confirmation ? "Confirm" : "OK"}</button>
 			</div>`;
 
@@ -304,41 +286,41 @@ function openDialog(title, note = null, confirmation = false, confirmationMatch 
 			confirmDialog.remove(); // Safely clean up DOM
 		};
 
-		const input = confirmDialog.querySelector('#modal-input');
-		const cancelBtn = confirmDialog.querySelector('#cancel-btn');
-		const confirmBtn = confirmDialog.querySelector('#confirm-btn');
+		const input = confirmDialog.querySelector("#modal-input");
+		const cancelBtn = confirmDialog.querySelector("#cancel-btn");
+		const confirmBtn = confirmDialog.querySelector("#confirm-btn");
 
 		// Handle Cancel button click
 		if (cancelBtn) {
-			cancelBtn.addEventListener('click', () => {
+			cancelBtn.addEventListener("click", () => {
 				destroyModal();
 				resolve(false);
 			});
 		}
 
 		// Handle native 'Escape' key closing the dialog
-		confirmDialog.addEventListener('cancel', () => {
+		confirmDialog.addEventListener("cancel", () => {
 			destroyModal();
-			resolve(false); 
+			resolve(false);
 		});
 
 		// Disable button only if a text match is required
 		confirmBtn.disabled = requireInput;
 
 		// Handle Confirm button click
-		confirmBtn.addEventListener('click', () => {
+		confirmBtn.addEventListener("click", () => {
 			destroyModal();
 			resolve(true);
 		});
 
 		// Handle text input matching
 		if (requireInput && input) {
-			input.addEventListener('input', (e) => {
+			input.addEventListener("input", (e) => {
 				confirmBtn.disabled = e.target.value !== confirmationMatch;
 			});
 
-			input.addEventListener('keydown', (e) => {
-				if (e.key === 'Enter' && !confirmBtn.disabled) {
+			input.addEventListener("keydown", (e) => {
+				if (e.key === "Enter" && !confirmBtn.disabled) {
 					e.preventDefault(); // Prevents accidental form submission
 					confirmBtn.click();
 				}
@@ -350,10 +332,12 @@ function openDialog(title, note = null, confirmation = false, confirmationMatch 
 }
 
 // Helper Wrappers (Can simply return the Promise directly)
+// biome-ignore lint/correctness/noUnusedVariables: function is used
 function alertDialog(title, note = null) {
 	return openDialog(title, note, false, null);
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: function is used
 function confirmDialog(title, note = null) {
 	return openDialog(title, note, true, null);
 }

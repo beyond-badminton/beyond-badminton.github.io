@@ -127,11 +127,14 @@ async function removeAllPlayer(id) {
 	const isActive = PlayerEvents.emit(PlayerEvents.Type.HAS, id).some(Boolean);
 	if (
 		isActive &&
-		!await confirmDialog(`Player "${playerName(id)}" is currently active`, `Removing them will also remove them from ${PlayerEvents.description(PlayerEvents.Type.HAS)}. Proceed?`,)
+		!(await confirmDialog(
+			`Player "${playerName(id)}" is currently active`,
+			`Removing them will also remove them from ${PlayerEvents.description(PlayerEvents.Type.HAS)}. Proceed?`,
+		))
 	) {
 		return;
 	}
-	
+
 	allPlayers = allPlayers.filter((p) => p.id !== id);
 	saveAllPlayersToStorage();
 	PlayerEvents.emit(PlayerEvents.Type.DEL, id);
@@ -160,10 +163,7 @@ function saveAllPlayersToStorage(render = true) {
 }
 
 function saveAllPlayersDataToStorage(data) {
-	[
-		ALL_PLAYERS_KEY, 
-		ALL_PLAYERS_NEXT_ID_KEY
-	].forEach((key) => {
+	[ALL_PLAYERS_KEY, ALL_PLAYERS_NEXT_ID_KEY].forEach((key) => {
 		if (key in data) {
 			const value = data[key];
 			const toStore = typeof value === "string" ? value : JSON.stringify(value);
@@ -174,10 +174,7 @@ function saveAllPlayersDataToStorage(data) {
 
 function getAllPlayersDataFromStorage() {
 	const data = {};
-	[
-		ALL_PLAYERS_KEY, 
-		ALL_PLAYERS_NEXT_ID_KEY
-	].forEach((key) => {
+	[ALL_PLAYERS_KEY, ALL_PLAYERS_NEXT_ID_KEY].forEach((key) => {
 		const value = localStorage.getItem(key);
 		if (value !== null) {
 			data[key] = value;
@@ -185,7 +182,6 @@ function getAllPlayersDataFromStorage() {
 	});
 	return data;
 }
-
 
 function clearAllPlayersFromStorage() {
 	allPlayers = [];
@@ -203,30 +199,24 @@ allPlayerTableBody.addEventListener("click", (e) => {
 	if (btn) removeAllPlayer(Number(btn.dataset.id));
 });
 
-document
-	.getElementById("clear-all-players-btn")
-	.addEventListener("click", async () => {
-		if (allPlayers.length === 0) return;
-		
-		const canClear = !allPlayers.map((ap) => PlayerEvents.emit(PlayerEvents.Type.MUST, ap.id).some(Boolean)).some(Boolean);
-		if (!canClear) {
-			alertDialog("Cannot clear all players", `Some players are currently active in ${PlayerEvents.description(PlayerEvents.Type.MUST)}.`);
-			return;
-		}
-		if (await confirmDialog("Remove all players?", "This will also clear active players.")) {
-			PlayerEvents.emit(PlayerEvents.Type.CLEAR);
-			clearAllPlayersFromStorage();
-		}
-	});
+document.getElementById("clear-all-players-btn").addEventListener("click", async () => {
+	if (allPlayers.length === 0) return;
+
+	const canClear = !allPlayers.map((ap) => PlayerEvents.emit(PlayerEvents.Type.MUST, ap.id).some(Boolean)).some(Boolean);
+	if (!canClear) {
+		alertDialog("Cannot clear all players", `Some players are currently active in ${PlayerEvents.description(PlayerEvents.Type.MUST)}.`);
+		return;
+	}
+	if (await confirmDialog("Remove all players?", "This will also clear active players.")) {
+		PlayerEvents.emit(PlayerEvents.Type.CLEAR);
+		clearAllPlayersFromStorage();
+	}
+});
 
 allPlayerForm.addEventListener("submit", (e) => {
 	e.preventDefault();
 	if (!validateAllPlayerForm()) return;
-	const error = addAllPlayer(
-		apNameInput.value.trim(),
-		apSkillInput.value,
-		apgenderInput.value,
-	);
+	const error = addAllPlayer(apNameInput.value.trim(), apSkillInput.value, apgenderInput.value);
 	if (error) {
 		alertDialog("Failed to add a player", error);
 		return;
@@ -237,9 +227,7 @@ allPlayerForm.addEventListener("submit", (e) => {
 
 // ---- CSV Import ----
 const allPlayersCsvInput = document.getElementById("all-players-csv-input");
-const allPlayersImportResult = document.getElementById(
-	"all-players-import-result",
-);
+const allPlayersImportResult = document.getElementById("all-players-import-result");
 
 allPlayersCsvInput.addEventListener("change", () => {
 	const file = allPlayersCsvInput.files[0];
@@ -251,16 +239,13 @@ allPlayersCsvInput.addEventListener("change", () => {
 			.map((l) => l.trim())
 			.filter((l) => l.length > 0);
 		if (lines.length === 0) {
-			allPlayersImportResult.innerHTML =
-				'<span class="summary">The file is empty.</span>';
+			allPlayersImportResult.innerHTML = '<span class="summary">The file is empty.</span>';
 			allPlayersImportResult.className = "import-result error";
 			return;
 		}
 		const requiredHeaders = ["name", "skill", "gender"];
 		const fileHeaders = lines[0].split(",").map((c) => c.trim().toLowerCase());
-		const headersIndexes = requiredHeaders.map((header) =>
-			fileHeaders.indexOf(header),
-		);
+		const headersIndexes = requiredHeaders.map((header) => fileHeaders.indexOf(header));
 
 		console.log(
 			`File headers: ${JSON.stringify(fileHeaders)}, required headers: ${JSON.stringify(requiredHeaders)}, indexes: ${JSON.stringify(headersIndexes)}`,
@@ -273,33 +258,22 @@ allPlayersCsvInput.addEventListener("change", () => {
 		rows.forEach((line, i) => {
 			const values = line.split(",");
 			console.log(`Row ${i + 2}: values=${JSON.stringify(values)}`);
-			const [name, skill, gender] = headersIndexes.map(
-				(i) => values[i]?.trim() || "",
-			);
-			console.log(
-				`Row ${i + 2}: name="${name}", skill="${skill}", gender="${gender}"`,
-			);
+			const [name, skill, gender] = headersIndexes.map((i) => values[i]?.trim() || "");
+			console.log(`Row ${i + 2}: name="${name}", skill="${skill}", gender="${gender}"`);
 			if (!name) {
 				errors.push(`Row ${i + 2}: missing name`);
 				return;
 			}
 
 			if (!skillNumbers.includes(skill)) {
-				errors.push(
-					`Row ${i + 2}: Skill must be one of ${skillNumbers.join(", ")}`,
-				);
+				errors.push(`Row ${i + 2}: Skill must be one of ${skillNumbers.join(", ")}`);
 				return;
 			}
 
 			// gender is optional, can be missing, we accept undefined value which defaults to "X" (N/A)
-			if (
-				gender &&
-				!Object.keys(GENDER_LABELS).includes(gender.toLowerCase())
-			) {
+			if (gender && !Object.keys(GENDER_LABELS).includes(gender.toLowerCase())) {
 				errors.push(
-					`Row ${i + 2}: Gender must be empty or one of ${Object.entries(
-						GENDER_LABELS,
-					)
+					`Row ${i + 2}: Gender must be empty or one of ${Object.entries(GENDER_LABELS)
 						.map(([key, value]) => `'${key}' (${value})`)
 						.join(", ")}`,
 				);
@@ -313,11 +287,7 @@ allPlayersCsvInput.addEventListener("change", () => {
 			}
 			added++;
 		});
-		const summary =
-			`Imported ${added} player${added === 1 ? "" : "s"}.` +
-			(errors.length
-				? ` Skipped ${errors.length} row${errors.length === 1 ? "" : "s"}:`
-				: "");
+		const summary = `Imported ${added} player${added === 1 ? "" : "s"}.${errors.length ? ` Skipped ${errors.length} row${errors.length === 1 ? "" : "s"}:` : ""}`;
 		if (errors.length) {
 			allPlayersImportResult.innerHTML = `<span class="summary">${summary}</span><ul class="import-errors">${errors.map((e) => `<li>${e}</li>`).join("")}</ul>`;
 			allPlayersImportResult.className = "import-result error";
@@ -331,25 +301,20 @@ allPlayersCsvInput.addEventListener("change", () => {
 });
 
 // ---- CSV Export ----
-document
-	.getElementById("export-all-players-btn")
-	.addEventListener("click", () => {
-		if (allPlayers.length === 0) {
-			alertDialog(null, "No players to export.");
-			return;
-		}
-		const csv = [
-			"name,skill,gender",
-			...allPlayers.map((p) => `${p.name},${p.skill},${p.gender || "x"}`),
-		].join("\r\n");
-		const a = document.createElement("a");
-		a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-		a.download = "players.csv";
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(a.href);
-	});
+document.getElementById("export-all-players-btn").addEventListener("click", () => {
+	if (allPlayers.length === 0) {
+		alertDialog(null, "No players to export.");
+		return;
+	}
+	const csv = ["name,skill,gender", ...allPlayers.map((p) => `${p.name},${p.skill},${p.gender || "x"}`)].join("\r\n");
+	const a = document.createElement("a");
+	a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+	a.download = "players.csv";
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	URL.revokeObjectURL(a.href);
+});
 
 // gender/skill change
 
@@ -402,8 +367,7 @@ function createPickerPopover(targetPill) {
 function getPlayerIdFromPill(targetPill) {
 	// Retrieve player ID from the row's remove button or dataset
 	const row = targetPill.closest("tr");
-	const playerId =
-		targetPill.dataset.id || row.querySelector(".remove-btn")?.dataset.id;
+	const playerId = targetPill.dataset.id || row.querySelector(".remove-btn")?.dataset.id;
 
 	return playerId;
 }
@@ -545,6 +509,7 @@ function playerName(allPlayerId) {
 	return p ? p.name : "?";
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: function is used
 function playerSkill(allPlayerId) {
 	const p = allPlayers.find((p) => p.id === allPlayerId);
 	return p ? p.skill : "?";
@@ -555,6 +520,7 @@ function playerGender(allPlayerId) {
 	return p?.gender || "x";
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: function is used
 function playerIsWoman(allPlayerId) {
 	return playerGender(allPlayerId) === "w";
 }
@@ -565,7 +531,6 @@ function playerIsWoman(allPlayerId) {
 populateAppSkillOptions();
 loadAllPlayersFromStorage();
 
-
 const allPlayersDataDesc = "All Players";
 
 window.StorageEvents.on(StorageEvents.Type.LOAD, allPlayersDataDesc, (data) => {
@@ -573,14 +538,14 @@ window.StorageEvents.on(StorageEvents.Type.LOAD, allPlayersDataDesc, (data) => {
 	loadAllPlayersFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.SAVE, allPlayersDataDesc, (data) => {
+window.StorageEvents.on(StorageEvents.Type.SAVE, allPlayersDataDesc, () => {
 	return getAllPlayersDataFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.DEL_PERMANENT_DATA, allPlayersDataDesc, (data) => {
+window.StorageEvents.on(StorageEvents.Type.DEL_PERMANENT_DATA, allPlayersDataDesc, () => {
 	clearAllPlayersFromStorage();
 });
 
-window.StorageEvents.on(StorageEvents.Type.HAS_PERMANENT_DATA, allPlayersDataDesc, (data) => {
+window.StorageEvents.on(StorageEvents.Type.HAS_PERMANENT_DATA, allPlayersDataDesc, () => {
 	return allPlayers.length > 0;
 });
