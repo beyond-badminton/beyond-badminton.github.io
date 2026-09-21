@@ -247,9 +247,6 @@ allPlayersCsvInput.addEventListener("change", () => {
 		const fileHeaders = lines[0].split(",").map((c) => c.trim().toLowerCase());
 		const headersIndexes = requiredHeaders.map((header) => fileHeaders.indexOf(header));
 
-		console.log(
-			`File headers: ${JSON.stringify(fileHeaders)}, required headers: ${JSON.stringify(requiredHeaders)}, indexes: ${JSON.stringify(headersIndexes)}`,
-		);
 
 		const rows = lines.slice(1);
 		let added = 0;
@@ -257,9 +254,7 @@ allPlayersCsvInput.addEventListener("change", () => {
 		const skillNumbers = Object.keys(SKILL_LABELS);
 		rows.forEach((line, i) => {
 			const values = line.split(",");
-			console.log(`Row ${i + 2}: values=${JSON.stringify(values)}`);
 			const [name, skill, gender] = headersIndexes.map((i) => values[i]?.trim() || "");
-			console.log(`Row ${i + 2}: name="${name}", skill="${skill}", gender="${gender}"`);
 			if (!name) {
 				errors.push(`Row ${i + 2}: missing name`);
 				return;

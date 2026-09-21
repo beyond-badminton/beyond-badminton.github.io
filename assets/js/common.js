@@ -41,7 +41,6 @@ document.querySelectorAll(".sub-tabs").forEach((subTabGroup) => {
 // ============================================================
 
 function timeToMins(t) {
-	console.assert(typeof t === "string" && t.includes(":"), "Invalid time format:", t);
 	const [h, m] = t.split(":").map(Number);
 	return h * 60 + m;
 }
@@ -213,8 +212,7 @@ function handleSort(listKey, field) {
 			sortState[listKey] = [{ field, dir: "asc" }, ...currentList];
 		}
 	}
-	console.log(`Updated sort state for ${listKey}:`, sortState[listKey]);
-	//console.log(`Sorting ${listKey} by ${field} (${sortState[listKey].dir})`);
+	//console.log(`Updated sort state for ${listKey}:`, sortState[listKey]);
 	if (listKey === "all") renderAllPlayers();
 	else if (listKey === "active") renderActivePlayers();
 	else if (listKey === "stats") renderStatsTable();

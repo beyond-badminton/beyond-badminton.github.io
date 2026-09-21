@@ -80,7 +80,6 @@ genGenerateTournamentBtn.addEventListener("click", async () => {
 	if (genDisableTwoMenVsTwoWomenCb.checked) {
 		const playersWithoutGender = activePlayers.filter((p) => playerGender(p.allPlayerId) === "x");
 		if (playersWithoutGender.length > 0) {
-			console.log("Players without defined gender:", playersWithoutGender);
 			alertDialog("Players missing gender", [
 				"To prevent 2 Men vs. 2 Women matches, all players must have a specified gender.",
 				`Update players: ${playersWithoutGender.map((p) => playerName(p.allPlayerId)).join(", ")}`,
@@ -133,12 +132,9 @@ function hasTournament() {
 
 function qualificationPlayerName(playerId) {
 	const player = tournamentPlayersMap.get(Number(playerId));
-	console.log("Fetched player object for playerId:", playerId, "Player:", player);
 	if (player?.withdrawn || false) {
-		console.log("Player has withdrawn:", player);
 		return `(Withdrawn) ${player?.name || ""}`;
 	}
-	console.log("Returning player name for playerId:", playerId, "Name:", player?.name || "");
 	return player?.name || "";
 }
 
@@ -160,8 +156,8 @@ function clearGeneratedTournamentFromStorage() {
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYOFF_SCORES_KEY);
 		localStorage.removeItem(TOURNAMENT_PLAYERS_KEY);
-	} catch (we) {
-		console.log("Error clearing generated tournament from storage.", we);
+	} catch (err) {
+		console.log("Error clearing generated tournament from storage.", err);
 	}
 
 	//console.log("Cleared generated tournament from storage.", tournamentConfig);
@@ -182,35 +178,42 @@ function saveQualificationRounds() {
 
 function saveQualificationScores() {
 	try {
-		console.log("Saving qualification scores to localStorage:", qualificationScores);
 		localStorage.setItem(TOURNAMENT_QUALIFICATION_SCORES_KEY, JSON.stringify(qualificationScores));
-	} catch (_) {
-		console.log("Error saving qualification scores to localStorage:", _);
+	} catch (err) {
+		console.log("Error saving qualification scores to localStorage:", err);
 	}
 }
 
 function savePlayoffDraw() {
 	try {
 		localStorage.setItem(TOURNAMENT_PLAYOFF_DRAW_KEY, JSON.stringify(playoffDraw));
-	} catch (_) {}
+	} catch (err) {
+		console.log("Error saving playoff draw to localStorage:", err);
+	}
 }
 
-function saveplayoffRounds() {
+function savePlayoffRounds() {
 	try {
 		localStorage.setItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY, JSON.stringify(playoffRounds));
-	} catch (_) {}
+	} catch (err) {
+		console.log("Error saving playoff rounds to localStorage:", err);
+	}
 }
 
 function savePlayoffScores() {
 	try {
 		localStorage.setItem(TOURNAMENT_PLAYOFF_SCORES_KEY, JSON.stringify(playoffScores));
-	} catch (_) {}
+	} catch (err) {
+		console.log("Error saving playoff scores to localStorage:", err);
+	}
 }
 
 function saveTournamentPlayers() {
 	try {
 		localStorage.setItem(TOURNAMENT_PLAYERS_KEY, JSON.stringify(tournamentPlayers));
-	} catch (_) {}
+	} catch (err) {
+		console.log("Error saving tournament players to localStorage:", err);
+	}
 }
 
 function saveTournamentToStorage(render = true) {
@@ -218,7 +221,7 @@ function saveTournamentToStorage(render = true) {
 	saveQualificationRounds();
 	saveQualificationScores();
 	savePlayoffDraw();
-	saveplayoffRounds();
+	savePlayoffRounds();
 	savePlayoffScores();
 	saveTournamentPlayers();
 
@@ -265,10 +268,10 @@ function getTournamentDataFromStorage() {
 function loadTournamentFromStorage() {
 	try {
 		const savedTournamentConfig = localStorage.getItem(TOURNAMENT_CONFIG_KEY);
-		const savedqualificationRounds = localStorage.getItem(TOURNAMENT_QUALIFICATION_ROUNDS_KEY);
+		const savedQualificationRounds = localStorage.getItem(TOURNAMENT_QUALIFICATION_ROUNDS_KEY);
 		const savedQualificationScores = localStorage.getItem(TOURNAMENT_QUALIFICATION_SCORES_KEY);
 		const savedPlayoffDraw = localStorage.getItem(TOURNAMENT_PLAYOFF_DRAW_KEY);
-		const savedplayoffRounds = localStorage.getItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
+		const savedPlayoffRounds = localStorage.getItem(TOURNAMENT_PLAYOFF_ROUNDS_KEY);
 		const savedPlayoffScores = localStorage.getItem(TOURNAMENT_PLAYOFF_SCORES_KEY);
 		const savedTournamentPlayers = localStorage.getItem(TOURNAMENT_PLAYERS_KEY);
 
@@ -278,12 +281,12 @@ function loadTournamentFromStorage() {
 		} else {
 			tournamentConfig = newTournamentConfig();
 		}
-		if (savedqualificationRounds) qualificationRounds = JSON.parse(savedqualificationRounds);
+		if (savedQualificationRounds) qualificationRounds = JSON.parse(savedQualificationRounds);
 		if (savedQualificationScores) qualificationScores = JSON.parse(savedQualificationScores);
 		//console.log("Loading qualificationScores from storage:", qualificationScores);
 
 		if (savedPlayoffDraw) playoffDraw = JSON.parse(savedPlayoffDraw);
-		if (savedplayoffRounds) playoffRounds = JSON.parse(savedplayoffRounds);
+		if (savedPlayoffRounds) playoffRounds = JSON.parse(savedPlayoffRounds);
 		if (savedPlayoffScores) playoffScores = JSON.parse(savedPlayoffScores);
 		if (savedTournamentPlayers) tournamentPlayers = JSON.parse(savedTournamentPlayers);
 	} catch {
@@ -431,7 +434,6 @@ function generateQualificationRounds(activePlayerCount, activeWomenCount = null,
 				.sort((a, b) => stats[a].played - stats[b].played || stats[b].benched - stats[a].benched)
 				.slice(0, Math.min(courts.length * 4, players.length - (players.length % 4)));
 
-			console.log("Available players:", availablePlayers);
 			if (availablePlayers.length === 0) {
 				// all players have played all matches
 				break;
@@ -522,8 +524,6 @@ function generateTournament(activePlayers, courtBlocks) {
 	// keep map for lookup
 	tournamentPlayersMap = new Map(tournamentPlayers.map((p) => [Number(p.id), p]));
 
-	console.log("Tournament players set to:", tournamentPlayers);
-
 	//console.log("Generating tournament with players:", tournamentPlayers);
 	saveTournamentPlayers();
 
@@ -587,7 +587,6 @@ const qualificationDrawClearButton = document.getElementById("clear-qualificatio
 let currentDrawPlayerId = null;
 
 function populateQualificationDrawPlayerField() {
-	console.log("Populating qualification draw player field, tournamentPlayers:", tournamentPlayers);
 	const playerOptions = tournamentPlayers
 		.filter((p) => p.pick === 0)
 		.sort((a, b) => a.name.localeCompare(b.name))
@@ -841,14 +840,10 @@ function reassignQualificationMatches() {
 		return;
 	}
 
-	console.log("Reassigning qualification matches...", JSON.stringify(qualificationRounds));
-
 	const qualificationPickToPlayer = new Map();
 	tournamentPlayers.forEach((p) => {
 		qualificationPickToPlayer.set(p.pick, p);
 	});
-
-	console.log("Qualification pick to player mapping:", qualificationPickToPlayer);
 
 	// iterate over all matches and change player numbers to playerids
 	qualificationRounds.forEach((round) => {
@@ -865,8 +860,6 @@ function reassignQualificationMatches() {
 	saveQualificationRounds();
 	tournamentConfig.qualificationMatchesReassigned = true;
 	saveTournamentConfig();
-
-	console.log("Reassigning qualification matches done", JSON.stringify(qualificationRounds));
 }
 
 function renderQualificationRounds() {
@@ -955,7 +948,6 @@ function findQualificationMatch(matchId) {
 }
 
 function renderQualificationPlayerStats() {
-	console.log("Rendering qualification player stats", tournamentPlayers);
 	genQualificationStatsTableBody.innerHTML = getSorted(tournamentPlayers, "qualificationPlayerStats")
 		.map((stat) => {
 			return `<tr>
@@ -1061,7 +1053,6 @@ genQualificationConfirmBtn.addEventListener("click", async () => {
 
 function allMatchesComplete() {
 	const scores = Object.values(qualificationScores);
-	console.log(scores.length, (tournamentConfig.matchesPerPlayer * tournamentPlayers.length) / 4, scores);
 	return scores.length === (tournamentConfig.matchesPerPlayer * tournamentPlayers.length) / 4 && scores.every((score) => score.a !== score.b); // draw is not considered complete
 }
 
