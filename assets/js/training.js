@@ -775,7 +775,7 @@ function renderGeneratedTraining() {
 }
 
 function buildPlayerSlotInnerHtml(pid) {
-	return `${activePlayerName(pid)}&nbsp;${renderSkillPillHtml(activePlayerSkill(pid))}`;
+	return `<span>${activePlayerName(pid)}</span>${renderSkillPillHtml(activePlayerSkill(pid))}`;
 }
 
 // ── Training output ───────────────────────────────────────────
