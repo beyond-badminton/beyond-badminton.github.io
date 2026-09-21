@@ -860,6 +860,7 @@ function reassignQualificationMatches() {
 			match.teamB[1] = qualificationPickToPlayer.get(match.teamB[1])?.id || match.teamB[1];
 			//console.log("After reassignment:", match);
 		});
+		round.bench = round.bench.map((playerId) => qualificationPickToPlayer.get(playerId)?.id || playerId);
 	});
 	saveQualificationRounds();
 	tournamentConfig.qualificationMatchesReassigned = true;
@@ -917,7 +918,7 @@ function renderQualificationRounds() {
 
 		// Bench
 		if (round.bench && round.bench.length > 0) {
-			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, false, (number) => String(number)));
+			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, false, matchCardPlayerName));
 		}
 
 		blockEl.appendChild(roundEl);
