@@ -848,8 +848,6 @@ function buildMatchCard(match, score, roundId, draggable = true, disabledScore =
 	courtLabel.textContent = match.court;
 	card.appendChild(courtLabel);
 
-	console.log("Building match card for match:", match, "with score:", score);
-
 	["teamA", "teamB"].forEach((teamKey, ti) => {
 		const teamEl = document.createElement("div");
 		teamEl.className = `gen-team${ti === 1 ? " gen-team--right" : ""}`;
