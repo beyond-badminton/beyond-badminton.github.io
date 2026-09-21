@@ -2,13 +2,13 @@
  * Computes overall ranking of players from head-to-head stats + draw picks.
  *
  * Tie-break order (applied to a *group* of players tied on the levels above it):
- *   1. WINS      - total wins (desc)
- *   2. PLAYED    - total games played (asc) - this is temporary until all players have played the same number of games
+ *   1. WITHDRAWN - players who withdrew are automatically ranked lower, remaining criteria are applied only to non-withdrawn players
+ *   2. WINS      - total wins (desc)
  *   3. DIFF      - overall diff (desc)
- *   4. P2P WINS  - wins within a mini-table built only from games among the tied group (desc)
- *   5. P2P DIFF  - diff within that same mini-table (desc)
- *   6. PICK      - lower drawn pick number wins
- *   7. WITHDRAWN - players who withdrew are ranked lower
+ *   4. PLAYED    - total games played (asc) - this is temporary until all players have played the same number of games
+ *   5. P2P WINS  - wins within a mini-table built only from games among the tied group (desc)
+ *   6. P2P DIFF  - diff within that same mini-table (desc)
+ *   7. PICK      - lower drawn pick number wins
  *
  * Each returned player gets a `decidedBy` field naming the criterion that
  * actually separated them from everyone else still tied with them at that
@@ -29,8 +29,6 @@
  * @returns {Array} players sorted best -> worst, each annotated with `rank`, `decidedBy`
  */
 function rankPlayers(playersMap, inplace = true, tiedOnly = false) {
-	console.log("Ranking players with stats:", playersMap);
-
 	const players = Array.from(playersMap.values());
 	if (players.length <= 1) {
 		players.forEach((p) => {
@@ -72,8 +70,8 @@ function rankPlayers(playersMap, inplace = true, tiedOnly = false) {
 const LEVELS = [
 	{ label: "WITHDRAWN", order: "asc", keyFn: null }, // computed per-group below
 	{ label: "WINS", order: "desc", keyFn: (p) => p.wins },
-	{ label: "PLAYED", order: "asc", keyFn: (p) => p.played },
 	{ label: "DIFF", order: "desc", keyFn: (p) => p.diff },
+	{ label: "PLAYED", order: "asc", keyFn: (p) => p.played },
 	{ label: "P2P WINS", order: "desc", keyFn: null }, // computed per-group below
 	{ label: "P2P DIFF", order: "desc", keyFn: null }, // computed per-group below
 	{ label: "PICK", order: "asc", keyFn: (p) => p.pick },
@@ -86,7 +84,6 @@ const LEVELS = [
  * to be flattened by the caller.
  */
 function splitAndAssign(group, levelIdx) {
-	console.log(`Splitting group at level ${levelIdx}:`, group);
 	if (group.length <= 1) return [group];
 	if (levelIdx >= LEVELS.length) {
 		// Should not happen if pick numbers are unique - everyone stays tied.
@@ -122,7 +119,7 @@ function splitAndAssign(group, levelIdx) {
 	let keyed;
 
 	if (level.label === "P2P WINS" || level.label === "P2P DIFF") {
-		const ids = new Set(group.map((p) => p.id));
+		const ids = new Set(group.map((p) => String(p.id))); // convert IDs to strings for consistent comparison with opponent IDs
 		const mini = {};
 		group.forEach((p) => {
 			let w = 0;
@@ -158,7 +155,6 @@ function splitAndAssign(group, levelIdx) {
 
 	const result = [];
 	for (const sg of subgroups) {
-		console.log(`Processing subgroup with key ${sg.key}:`, sg.players);
 		if (sg.players.length === 1) {
 			sg.players[0].decidedBy = level.label;
 			result.push(sg.players);
@@ -204,6 +200,7 @@ function applyMatchScore(playersMap, match, score, sign = 1) {
 		//console.log(`Updated stats for player ${id} in team A: ${JSON.stringify(playerRecord)}`);
 
 		match.teamB.forEach((opponentId) => {
+			// don't bother normalizing opponentId before using it as a key, it'll be a string either way because opponents is plain object
 			const opponentRecord = playerRecord.opponents[opponentId] || {
 				name: playerName(opponentId),
 				played: 0,
