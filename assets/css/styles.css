@@ -1225,6 +1225,7 @@ span.sort-active .sort-icon {
 .gen-team {
 	display: flex;
 	flex-direction: row;
+	justify-content: flex-end;
 	gap: 4px;
 	align-items: center;
 	flex-wrap: wrap;
@@ -1232,17 +1233,20 @@ span.sort-active .sort-icon {
 	min-width: 0;
 }
 .gen-team--right {
-	justify-content: flex-end;
+	justify-content: flex-start;
 }
 .gen-team--right .gen-player-slot {
 	text-align: right;
 }
 
 .gen-player-slot {
-	padding: 5px 8px;
+	padding: 3px 8px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	border: 1px solid var(--line);
 	border-radius: 6px;
-	font-size: 0.82rem;
+	font-size: 0.9rem;
 	font-weight: 500;
 	background: var(--card);
 	user-select: none;
@@ -1268,6 +1272,7 @@ span.sort-active .sort-icon {
 	background: var(--accent-soft);
 }
 .gen-player-slot.bench-slot {
+	font-size: 0.85rem;
 	border-style: dashed;
 	color: var(--ink-soft);
 }
