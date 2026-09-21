@@ -838,7 +838,41 @@ function renderTraining() {
 	// }
 }
 
-function buildMatchCard(match, score, roundId, draggable = true, disabledScore = false, buildPlayerSlotFunc = buildPlayerSlotInnerHtml) {
+const PLAYER_SLOT = Object.freeze({
+	DRAGGABLE: 1, // Draggable player slot, displayed as a pill
+	PILL: 2, // Non-draggable player slot, displayed as a pill
+	CSV: 3, // Player slot represented in CSV format, no pill
+});
+
+function buildPlayerSlot(roundId, playerId, playerCard = PLAYER_SLOT.DRAGGABLE, lastSlot, buildPlayerSlotFunc) {
+	const slot = document.createElement("div");
+	slot.className = "gen-player-slot";
+	if (playerCard !== PLAYER_SLOT.CSV) {
+		slot.classList.add("gen-player-slot-pill");
+	}
+	if (playerCard === PLAYER_SLOT.DRAGGABLE) {
+		slot.classList.add("gen-player-slot-draggable");
+		slot.draggable = true;
+	}
+	slot.dataset.roundId = roundId;
+	slot.dataset.playerId = playerId;
+	const playerSlot = buildPlayerSlotFunc(playerId);
+	if (playerCard === PLAYER_SLOT.CSV) {
+		slot.innerHTML = `${playerSlot}${!lastSlot ? " ," : ""}`;
+	} else {
+		slot.innerHTML = playerSlot;
+	}
+	return slot;
+}
+
+function buildMatchCard(
+	match,
+	score,
+	roundId,
+	playerCard = PLAYER_SLOT.DRAGGABLE,
+	disabledScore = false,
+	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
+) {
 	const card = document.createElement("div");
 	card.className = "gen-match-card";
 	card.dataset.matchId = match.matchId;
@@ -855,15 +889,10 @@ function buildMatchCard(match, score, roundId, draggable = true, disabledScore =
 		teamEl.dataset.matchId = match.matchId;
 
 		match[teamKey].forEach((pid, pi) => {
-			const slot = document.createElement("div");
-			slot.className = `gen-player-slot ${draggable ? "gen-player-slot-draggable" : ""}`;
-			slot.draggable = draggable;
-			slot.dataset.playerId = pid;
+			const slot = buildPlayerSlot(roundId, pid, playerCard, pi + 1 === match[teamKey].length, buildPlayerSlotFunc);
+			slot.dataset.matchId = match.matchId;
 			slot.dataset.team = teamKey;
 			slot.dataset.pos = pi;
-			slot.dataset.matchId = match.matchId;
-			slot.dataset.roundId = roundId;
-			slot.innerHTML = buildPlayerSlotFunc(pid);
 			teamEl.appendChild(slot);
 		});
 
@@ -912,7 +941,7 @@ function buildMatchCard(match, score, roundId, draggable = true, disabledScore =
 	return card;
 }
 
-function buildBenchCard(bench, roundId, draggable = true, buildPlayerSlotFunc = buildPlayerSlotInnerHtml) {
+function buildBenchCard(bench, roundId, playerCard = PLAYER_SLOT.DRAGGABLE, buildPlayerSlotFunc = buildPlayerSlotInnerHtml) {
 	if (!bench || bench.length === 0) {
 		return null;
 	}
@@ -926,14 +955,10 @@ function buildBenchCard(bench, roundId, draggable = true, buildPlayerSlotFunc = 
 	benchEl.appendChild(bLabel);
 
 	bench.forEach((pid, bi) => {
-		const slot = document.createElement("div");
-		slot.className = `gen-player-slot ${draggable ? "gen-player-slot-draggable" : ""} bench-slot`;
-		slot.draggable = draggable;
-		slot.dataset.playerId = pid;
-		slot.dataset.bench = "true";
+		const slot = buildPlayerSlot(roundId, pid, playerCard, bi + 1 === bench.length, buildPlayerSlotFunc);
 		slot.dataset.pos = bi;
-		slot.dataset.roundId = roundId;
-		slot.innerHTML = buildPlayerSlotFunc(pid);
+		slot.dataset.bench = "true";
+		slot.classList.add("bench-slot");
 		benchEl.appendChild(slot);
 	});
 

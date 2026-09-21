@@ -1222,35 +1222,28 @@ span.sort-active .sort-icon {
 	flex-shrink: 0;
 }
 
-.gen-team {
+.gen-player-slot {
+	padding: 3px 4px;
 	display: flex;
-	flex-direction: row;
-	justify-content: flex-end;
-	gap: 4px;
 	align-items: center;
-	flex-wrap: wrap;
-	flex: 1;
-	min-width: 0;
-}
-.gen-team--right {
-	justify-content: flex-start;
-}
-.gen-team--right .gen-player-slot {
-	text-align: right;
+	font-size: 1.1rem;
+	gap: 8px;
+	font-weight: 500;
+	white-space: nowrap;
+	color: var(--ink);
 }
 
-.gen-player-slot {
+.gen-player-slot.bench-slot {
+	color: var(--ink-soft);
+}
+
+.gen-player-slot-pill {
 	padding: 3px 8px;
-	display: flex;
-	align-items: center;
-	gap: 8px;
 	border: 1px solid var(--line);
 	border-radius: 6px;
-	font-size: 0.9rem;
-	font-weight: 500;
 	background: var(--card);
 	user-select: none;
-	white-space: nowrap;
+	font-size: 0.9rem;
 	transition:
 		background 0.12s ease,
 		border-color 0.12s ease,
@@ -1271,10 +1264,25 @@ span.sort-active .sort-icon {
 	border-color: var(--accent);
 	background: var(--accent-soft);
 }
-.gen-player-slot.bench-slot {
-	font-size: 0.85rem;
+.gen-player-slot-pill.bench-slot {
 	border-style: dashed;
-	color: var(--ink-soft);
+}
+
+.gen-team {
+	display: flex;
+	flex-direction: row;
+	justify-content: flex-end;
+	gap: 4px;
+	align-items: center;
+	flex-wrap: wrap;
+	flex: 1;
+	min-width: 0;
+}
+.gen-team--right {
+	justify-content: flex-start;
+}
+.gen-team--right .gen-player-slot {
+	text-align: right;
 }
 
 .gen-score-row {
@@ -1282,6 +1290,7 @@ span.sort-active .sort-icon {
 	align-items: center;
 	justify-content: center;
 	gap: 4px;
+	padding: 0px 12px;
 	margin: 0;
 	flex: 0 0 auto;
 }

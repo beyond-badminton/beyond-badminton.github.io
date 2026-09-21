@@ -887,7 +887,7 @@ function renderQualificationRounds() {
 					match,
 					qualificationScores[match.matchId] || { a: null, b: null },
 					round.roundId,
-					false,
+					PLAYER_SLOT.CSV,
 					!tournamentConfig.qualificationDrawConfirmed || tournamentConfig.qualificationFinished,
 					matchCardPlayerName,
 				),
@@ -911,7 +911,7 @@ function renderQualificationRounds() {
 
 		// Bench
 		if (round.bench && round.bench.length > 0) {
-			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, false, matchCardPlayerName));
+			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, matchCardPlayerName));
 		}
 
 		blockEl.appendChild(roundEl);
