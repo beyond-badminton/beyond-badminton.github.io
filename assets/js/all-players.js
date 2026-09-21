@@ -247,7 +247,6 @@ allPlayersCsvInput.addEventListener("change", () => {
 		const fileHeaders = lines[0].split(",").map((c) => c.trim().toLowerCase());
 		const headersIndexes = requiredHeaders.map((header) => fileHeaders.indexOf(header));
 
-
 		const rows = lines.slice(1);
 		let added = 0;
 		const errors = [];
