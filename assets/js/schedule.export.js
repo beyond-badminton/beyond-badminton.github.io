@@ -1,44 +1,43 @@
 // biome-ignore lint/suspicious/noRedundantUseStrict: required for global scripts loaded via <script> tags
 "use strict";
 
+function buildRoundViewModel(roundNumber, courtBlockStart, matches, bench, scores, forceShowBench, printCourtBlockStart, playerNameFunc) {
+	return {
+		roundNumber,
+		courtBlockStart,
+		printCourtBlockStart,
+		matches: matches.map((match) => {
+			const matchScore = scores ? scores[match.matchId] || null : null;
+			return {
+				court: match.court,
+				teamAName: match.teamA.map((pid) => playerNameFunc(pid)).join(", "),
+				teamBName: match.teamB.map((pid) => playerNameFunc(pid)).join(", "),
+				scoreStr: matchScore?.a || matchScore?.b ? `${matchScore.a || 0} : ${matchScore.b || 0}` : "",
+			};
+		}),
+		benchNames: bench.map((pid) => playerNameFunc(pid)),
+		showBench: bench.length > 0 || forceShowBench,
+	};
+}
+
 // ---------------------------------------------------------------------------
-// Shared training "view model" builder
+// Shared schedule "view model" builder
 // ---------------------------------------------------------------------------
-// Both exports (Excel via downloadTrainingSpreadsheet, and print/PDF via
-// printTraining) turn a `training` into the same sequence of "round
+// Both exports (Excel via downloadScheduleSpreadsheet, and print/PDF via
+// printSchedule) turn a `schedule` into the same sequence of "round
 // blocks": a round number, its matches (with a formatted score string and
 // joined team names), its bench players, and whether the bench row should
 // be shown at all - plus the optional synthetic "extra match" round
 // appended at the end. Centralizing that computation here means the two
 // renderers can't drift apart on scoring / extra-match / empty-bench
 // behavior; only the actual rendering (HTML table vs. XLSX rows) differs.
-
-function buildTrainingRoundViewModels(training, scores, printExtraMatch = true, printEmptyBench = false) {
-	if (training == null || training.rounds == null) return [];
-
-	function formatMatchScore(match, scores) {
-		const matchScore = scores ? scores[match.matchId] || null : null;
-		return matchScore?.a || matchScore?.b ? `${matchScore.a || 0} : ${matchScore.b || 0}` : "";
-	}
-
-	const buildRound = (roundNumber, courtBlockStart, matches, bench, roundScores, forceShowBench, printCourtBlockStart) => ({
-		roundNumber,
-		courtBlockStart,
-		printCourtBlockStart,
-		matches: matches.map((match) => ({
-			court: match.court,
-			teamAName: match.teamA.map((pid) => activePlayerName(pid)).join(", "),
-			teamBName: match.teamB.map((pid) => activePlayerName(pid)).join(", "),
-			scoreStr: formatMatchScore(match, roundScores),
-		})),
-		benchNames: bench.map((pid) => activePlayerName(pid)),
-		showBench: bench.length > 0 || forceShowBench,
-	});
+function buildScheduleRoundViewModels(schedule, scores, printExtraMatch = true, printEmptyBench = false, playerNameFunc = activePlayerName) {
+	if (schedule == null || schedule.rounds == null) return [];
 
 	let courtBlockStart = null;
 
-	const roundVMs = training.rounds.map((round) => {
-		const r = buildRound(
+	const roundVMs = schedule.rounds.map((round) => {
+		const r = buildRoundViewModel(
 			round.roundId + 1,
 			round.courtBlockStart,
 			round.matches,
@@ -46,16 +45,17 @@ function buildTrainingRoundViewModels(training, scores, printExtraMatch = true, 
 			scores,
 			printEmptyBench,
 			round.courtBlockStart && courtBlockStart !== round.courtBlockStart,
+			playerNameFunc,
 		);
 		courtBlockStart = round.courtBlockStart;
 		return r;
 	});
 
-	if (training.rounds.length > 0 && printExtraMatch) {
-		const lastRound = training.rounds[training.rounds.length - 1];
+	if (schedule.rounds.length > 0 && printExtraMatch) {
+		const lastRound = schedule.rounds[schedule.rounds.length - 1];
 		roundVMs.push(
-			buildRound(
-				training.rounds.length + 1,
+			buildRoundViewModel(
+				schedule.rounds.length + 1,
 				"",
 				lastRound.matches.map((match) => ({
 					court: match.court,
@@ -66,25 +66,47 @@ function buildTrainingRoundViewModels(training, scores, printExtraMatch = true, 
 				null,
 				lastRound.bench.length > 0 || printEmptyBench,
 				false,
+				playerNameFunc,
 			),
 		);
 	}
 
-	//console.log("Built training round view models:", roundVMs);
+	//console.log("Built schedule round view models:", roundVMs);
 	return roundVMs;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used in training.js
-async function downloadTrainingSpreadsheet(training, trainingDate, scores, printExtraMatch = true, printEmptyBench = false) {
+/**
+ * Exports the schedule for the given event.
+
+ * @param {string} eventName - The name of the event.
+ * @param {object} schedule - The schedule object containing rounds: { rounds: [...] }.
+ * @param {Date} scheduleDate - The date of the schedule.
+ * @param {object} scores - The scores for the matches.
+ * @param {boolean} printExtraMatch - Whether to print extra matches.
+ * @param {boolean} printEmptyBench - Whether to print empty bench rows.
+ * @param {function} playerNameFunc - Function to get player names by ID. Defaults to activePlayerName.
+ * 
+ * @returns {void}
+ */
+// biome-ignore lint/correctness/noUnusedVariables: function is used in training.js and tournament.js
+async function downloadScheduleSpreadsheet(
+	eventName,
+	schedule,
+	scheduleDate,
+	scores,
+	printExtraMatch = true,
+	printEmptyBench = false,
+	playerNameFunc = activePlayerName,
+) {
 	// 1. Initialize Workbook and Worksheet
 	const workbook = new ExcelJS.Workbook();
 
-	if (training != null && training.rounds != null) {
+	if (schedule != null && schedule.rounds != null) {
 		const worksheet = workbook.addWorksheet("Matches");
 
 		// 2. Define Columns with widths (to handle those long placeholder names)
 		// (no `header` field here - we write the header row ourselves below so
-		// row 1 can hold the title/date, mirroring the header in printTraining)
+		// row 1 can hold the title/date, mirroring the header in printSchedule)
 		worksheet.columns = [
 			{ key: "round", width: 8 },
 			{ key: "court", width: 8 },
@@ -94,14 +116,14 @@ async function downloadTrainingSpreadsheet(training, trainingDate, scores, print
 		];
 
 		// Title + date header row, mirroring the .header/.title/.date block
-		// in printTraining (title on the left, date on the right, with a
+		// in printSchedule (title on the left, date on the right, with a
 		// rule underneath standing in for the <hr>).
-		const titleRow = worksheet.addRow(["Beyond Badminton"]);
+		const titleRow = worksheet.addRow([`Beyond Badminton - ${eventName}`]);
 		worksheet.mergeCells(`A${titleRow.number}:D${titleRow.number}`);
 		titleRow.getCell(1).font = { bold: true };
 		titleRow.getCell(1).alignment = { vertical: "middle", horizontal: "left" };
-		if (trainingDate) {
-			titleRow.getCell(5).value = trainingDate.toLocaleDateString("sk-SK");
+		if (scheduleDate) {
+			titleRow.getCell(5).value = scheduleDate.toLocaleDateString("sk-SK");
 		}
 		titleRow.getCell(5).font = { bold: true };
 		titleRow.getCell(5).alignment = {
@@ -135,8 +157,8 @@ async function downloadTrainingSpreadsheet(training, trainingDate, scores, print
 
 		// 3. Process the Data - built once via the shared view-model builder so
 		// scoring, the extra-match round, and empty-bench handling stay in
-		// sync with printTraining.
-		const rounds = buildTrainingRoundViewModels(training, scores, printExtraMatch, printEmptyBench);
+		// sync with printSchedule.
+		const rounds = buildScheduleRoundViewModels(schedule, scores, printExtraMatch, printEmptyBench, playerNameFunc);
 
 		rounds.forEach((round) => {
 			if (round.matches.length === 0) return;
@@ -160,7 +182,7 @@ async function downloadTrainingSpreadsheet(training, trainingDate, scores, print
 
 				row.getCell(2).font = { bold: true };
 				row.getCell(3).font = { bold: true };
-				// Bold to match printTraining, where the score cell inherits the
+				// Bold to match printSchedule, where the score cell inherits the
 				// page's bold body font (only the bench row is set non-bold there).
 				row.getCell(4).font = { bold: true };
 				row.getCell(5).font = { bold: true };
@@ -264,9 +286,30 @@ async function downloadTrainingSpreadsheet(training, trainingDate, scores, print
 	window.URL.revokeObjectURL(url);
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used in training.js
-function printTraining(training, trainingDate, scores, printExtraMatch = true, printEmptyBench = false) {
-	function printTrainingRound(round) {
+/**
+ * Prints the schedule for the given event.
+
+ * @param {string} eventName - The name of the event.
+ * @param {object} schedule - The schedule object containing rounds: { rounds: [...] }.
+ * @param {Date} scheduleDate - The date of the schedule.
+ * @param {object} scores - The scores for the matches.
+ * @param {boolean} printExtraMatch - Whether to print extra matches.
+ * @param {boolean} printEmptyBench - Whether to print empty bench rows.
+ * @param {function} playerNameFunc - Function to get the player's name by ID.
+ *
+ * @returns {void}
+ */
+// biome-ignore lint/correctness/noUnusedVariables: function is used in training.js and tournament.js
+function printSchedule(
+	eventName,
+	schedule,
+	scheduleDate,
+	scores,
+	printExtraMatch = true,
+	printEmptyBench = false,
+	playerNameFunc = activePlayerName,
+) {
+	function printScheduleRound(round) {
 		const matches = round.matches;
 		if (matches.length === 0) return "";
 
@@ -304,17 +347,17 @@ function printTraining(training, trainingDate, scores, printExtraMatch = true, p
 		return `<tbody class="round-block"><tr><td colspan="5" class="round-spacer"></td></tr>${blockStart}${matchRows}${benchRow}</tbody>`;
 	}
 
-	if (training == null || training.rounds == null) return;
+	if (schedule == null || schedule.rounds == null) return;
 
 	// 1. Build the HTML for the table, mirroring the Excel layout. The round
 	// data (scores, the extra-match round, empty-bench handling) comes from
-	// the same shared builder downloadTrainingSpreadsheet uses, so the two
+	// the same shared builder downloadScheduleSpreadsheet uses, so the two
 	// exports can't drift apart on that logic.
-	const rounds = buildTrainingRoundViewModels(training, scores, printExtraMatch, printEmptyBench);
+	const rounds = buildScheduleRoundViewModels(schedule, scores, printExtraMatch, printEmptyBench, playerNameFunc);
 
 	let rowsHtml = "";
 	rounds.forEach((round) => {
-		rowsHtml += printTrainingRound(round);
+		rowsHtml += printScheduleRound(round);
 	});
 
 	const html = `
@@ -322,7 +365,7 @@ function printTraining(training, trainingDate, scores, printExtraMatch = true, p
 		<html>
 		<head>
 			<meta charset="utf-8">
-			<title>Tournament Training</title>
+			<title>Beyond Badminton - ${eventName}</title>
 			<style>
 				@page { size: auto; margin: 12mm; }
 				* { box-sizing: border-box; }
@@ -415,8 +458,8 @@ function printTraining(training, trainingDate, scores, printExtraMatch = true, p
 		</head>
 		<body>
 			<div class="header">
-				<div class="title">Beyond Badminton</div>
-				<div class="date">${trainingDate.toLocaleDateString("sk-SK")}</div>
+				<div class="title">Beyond Badminton - ${eventName}</div>
+				<div class="date">${scheduleDate.toLocaleDateString("sk-SK")}</div>
 			</div>
 			<hr>
 			<table>
@@ -434,7 +477,7 @@ function printTraining(training, trainingDate, scores, printExtraMatch = true, p
 		</body>
 		</html>`;
 
-	//console.log("Printing training HTML:", html);
+	//console.log("Printing schedule HTML:", html);
 	// 2. Create a hidden iframe
 	const iframe = document.createElement("iframe");
 	iframe.style.position = "fixed";
