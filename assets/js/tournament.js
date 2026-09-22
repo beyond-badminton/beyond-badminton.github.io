@@ -105,37 +105,31 @@ genClearTournamentBtn.addEventListener("click", async () => {
 });
 
 genPrintTournamentBtn.addEventListener("click", () => {
-	// printTournament(
-	// 	tournament,
-	// 	tournamentPlayers,
-	// 	tournamentScores,
-	// );
+	const tournamentSchedule = { rounds: qualificationRounds };
+	printSchedule("Tournament", tournamentSchedule, new Date(tournamentConfig.tournamentDate), qualificationScores, false, false, tournamentPlayerName);
 });
 
 genExportTournamentBtn.addEventListener("click", () => {
-	// downloadTournamentSpreadsheet(
-	// 	tournament,
-	// 	tournamentPlayers,
-	// 	tournamentScores,
-	// );
+	const tournamentSchedule = { rounds: qualificationRounds };
+	downloadScheduleSpreadsheet(
+		"Tournament",
+		tournamentSchedule,
+		new Date(tournamentConfig.tournamentDate),
+		qualificationScores,
+		false,
+		false,
+		tournamentPlayerName,
+	);
 });
 
 genTournamentDatePicker.addEventListener("change", () => {
 	if (!hasTournament()) return;
-	tournament.tournamentDate = genTournamentDatePicker.valueAsDate.toISOString();
-	saveTournamentToStorage(false);
+	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate.toISOString();
+	saveTournamentConfig();
 });
 
 function hasTournament() {
 	return (tournamentConfig?.matchesPerPlayer || 0) > 0;
-}
-
-function qualificationPlayerName(playerId) {
-	const player = tournamentPlayersMap.get(Number(playerId));
-	if (player?.withdrawn || false) {
-		return `(Withdrawn) ${player?.name || ""}`;
-	}
-	return player?.name || "";
 }
 
 function clearGeneratedTournamentFromStorage() {
@@ -504,7 +498,9 @@ function generateTournament(activePlayers, courtBlocks) {
 
 	tournamentConfig.disable2MenVs2Women = genDisableTwoMenVsTwoWomenCb.checked;
 	tournamentConfig.matchesPerPlayer = Number(genqualificationRoundsNum.value);
-	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate ? genTournamentDatePicker.valueAsDate.toISOString() : null;
+	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate
+		? genTournamentDatePicker.valueAsDate.toISOString()
+		: new Date().toISOString();
 	saveTournamentConfig();
 
 	// Initialize qualification player stats for active players, get all relevant information from all players to avoid additional lookup.
@@ -831,8 +827,16 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 	}
 });
 
-function matchCardPlayerName(playerId) {
-	return tournamentConfig.qualificationMatchesReassigned ? qualificationPlayerName(playerId) : String(playerId);
+function tournamentPlayerName(playerId) {
+	if (tournamentConfig.qualificationMatchesReassigned) {
+		const player = tournamentPlayersMap.get(Number(playerId));
+		if (player?.withdrawn || false) {
+			return `(Withdrawn) ${player?.name || ""}`;
+		}
+		return player?.name || "";
+	}
+
+	return String(playerId);
 }
 
 function reassignQualificationMatches() {
@@ -889,7 +893,7 @@ function renderQualificationRounds() {
 					round.roundId,
 					PLAYER_SLOT.CSV,
 					!tournamentConfig.qualificationDrawConfirmed || tournamentConfig.qualificationFinished,
-					matchCardPlayerName,
+					tournamentPlayerName,
 				),
 			);
 		});
@@ -911,7 +915,7 @@ function renderQualificationRounds() {
 
 		// Bench
 		if (round.bench && round.bench.length > 0) {
-			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, matchCardPlayerName));
+			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, tournamentPlayerName));
 		}
 
 		blockEl.appendChild(roundEl);
@@ -1118,11 +1122,8 @@ function renderTournament() {
 	//console.log("Rendering tournament, hasTournament:", hasTournamentValue);
 
 	genClearTournamentBtn.hidden = !hasTournamentValue;
-
-	// not yet implemented
-	// genPrintTournamentBtn.hidden = !hasTournamentValue;
-	// genExportTournamentBtn.hidden = !hasTournamentValue;
-
+	genPrintTournamentBtn.hidden = !hasTournamentValue;
+	genExportTournamentBtn.hidden = !hasTournamentValue;
 	genTournamentEmpty.hidden = hasTournamentValue;
 	genQualificationDrawCard.hidden = !hasTournamentValue;
 	genQualificationCard.hidden = !hasTournamentValue;
@@ -1130,8 +1131,11 @@ function renderTournament() {
 	genQualificationConfirmEmpty.hidden = !genQualificationStatsCard.hidden && allMatchesComplete();
 
 	if (!hasTournamentValue) {
+		genTournamentDatePicker.valueAsDate = null;
 		return;
 	}
+
+	genTournamentDatePicker.valueAsDate = tournamentConfig.tournamentDate ? new Date(tournamentConfig.tournamentDate) : null;
 
 	rankPlayers(tournamentPlayersMap);
 
@@ -1146,12 +1150,6 @@ function renderTournament() {
 	renderQualificationP2PPlayerFilter();
 
 	renderQualificationStats();
-
-	genTournamentDatePicker.valueAsDate = tournamentConfig.tournamentDate ? new Date(tournamentConfig.tournamentDate) : null;
-
-	// if (trainingDate) {
-	// 	genDatePicker.valueAsDate = trainingDate; // Format as YYYY-MM-DD for input[type=date]
-	// }
 }
 
 function openWithdrawPlayerDialog(player) {

@@ -550,11 +550,11 @@ genClearBtn.addEventListener("click", () => {
 });
 
 genPrintBtn.addEventListener("click", () => {
-	printTraining(training, trainingDate, scores, document.getElementById("print-extra-match").checked, false);
+	printSchedule("Training", training, trainingDate, scores, document.getElementById("print-extra-match").checked, false);
 });
 
 genExportBtn.addEventListener("click", () => {
-	downloadTrainingSpreadsheet(training, trainingDate, scores, document.getElementById("print-extra-match").checked, false);
+	downloadScheduleSpreadsheet("Training", training, trainingDate, scores, document.getElementById("print-extra-match").checked, false);
 });
 
 genDatePicker.addEventListener("change", () => {
