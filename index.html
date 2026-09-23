@@ -311,10 +311,6 @@ Pikachu,3,x</pre>
 						</div>
 					</div>
 
-					<p class="empty gen-empty-hint" id="gen-empty">
-						Add active players and court availability, then click <strong>Generate</strong>.
-					</p>
-
 					<div class="card gen-scoreboard-card gen-collapsible" id="gen-scoreboard" hidden>
 						<h2 class="gen-card-toggle gen-injected-header">
 							<span class="gen-collapse-arrow">▾</span>
@@ -356,6 +352,10 @@ Pikachu,3,x</pre>
 							</table>
 						</div>
 					</div>
+					
+					<p class="empty gen-empty-hint" id="gen-empty">
+						Add active players and court availability, then click <strong>Generate</strong>.
+					</p>
 				</div>
 				
 				<div id="tournament-section" class="sub-tab-content">
@@ -375,14 +375,13 @@ Pikachu,3,x</pre>
 								<label for="gen-tournament-date-picker">Date of the tournament</label>
 								<input type="date" id="gen-tournament-date-picker" />
 							</div>
-							<div>
-								<div class="checkbox-group">
-									<label class="gen-checkbox-label" for="disable-2men-vs-2women">
-										<input type="checkbox" id="disable-2men-vs-2women" checked>
-										Disable 2 men vs 2 women matchups
-									</label>
-									<span class="help-icon" title="Blocks uneven matches between all-male and all-female teams. All players must have a specified gender.">?</span>
-								</div>
+							<div class="field gen-field-inline">
+								<label for="two-men-vs-two-women">Two Men vs Two Women Matches<span class="help-icon" title="Choose how to handle matches between all-male and all-female teams.">?</span></label>
+								<select id="two-men-vs-two-women">
+									<option value="enabled">Allow all matches regardless of gender</option>
+									<option value="disabled">Block two men vs two women matches</option>
+									<option value="manual">Flag these matches for organizer review</option>
+								</select>
 							</div>
 						</div>
 						<p class="section-hint">Time-based scheduling is not supported. All active players and courts are assumed to be available at all times.</p>
@@ -394,10 +393,6 @@ Pikachu,3,x</pre>
 						</div>
 					</div>
 
-					<p class="empty gen-empty-hint" id="gen-tournament-empty">
-						Add active players and court availability, then click <strong>Generate</strong>.
-					</p>
-					
 					<div class="card gen-collapsible" id="gen-qualification-draw-card" hidden>
 						<h2 class="gen-card-toggle">
 							<span class="gen-collapse-arrow">▾</span>
@@ -405,6 +400,7 @@ Pikachu,3,x</pre>
 						</h2>
 						<div class="players-layout">
 							<div class="card form-card" id="gen-qualification-draw-form-card">
+								<p class="section-hint"></p>
 								<p class="section-hint">Select player and his draw pick into the qualification.</p>
 								
 								<form id="gen-qualification-draw-form">
@@ -446,10 +442,19 @@ Pikachu,3,x</pre>
 					<div class="card gen-collapsible" id="gen-qualification-card" hidden>
 						<h2 class="gen-card-toggle">
 							<span class="gen-collapse-arrow">▾</span>
-							Qualification rounds
+							<span id="gen-qualification-card-label">Qualification rounds</span>
 						</h2>
 						
-						<div class="gen-collapsible gen-collapsed" id="qualification-match-filter-wrap">
+						<div id="qualification-edit-filter-wrap">
+							<div class="checkbox-group">
+								<label class="gen-checkbox-label" for="qualification-edit-filter-editable">
+									<input type="checkbox" id="qualification-edit-filter-editable" checked>
+									Show editable matches only
+								</label>
+							</div>
+						</div>
+
+						<div class="gen-collapsible" id="qualification-match-filter-wrap">
 							<p class="gen-table-label gen-card-toggle">
 								<span class="gen-collapse-arrow">▾</span>
 								Filter players (<span id="qualification-match-filter-count"></span>)
@@ -462,6 +467,10 @@ Pikachu,3,x</pre>
 							<div id="qualification-match-player-filter" class="checkbox-list checkbox-filter-list"></div>
 						</div>
 						<div id="gen-qualification-output"></div>
+						
+						<div>
+							<input type="button" class="gen-primary-btn" id="gen-qualification-start-btn" value="Confirm Qualification Matchups" hidden>
+						</div>
 					</div>
 					
 					<div class="card gen-collapsible" id="gen-qualification-stats-card" hidden>
@@ -559,11 +568,13 @@ Pikachu,3,x</pre>
 								</li>
 							</ol>
 						</div>
-						<input type="button" class="gen-primary-btn" id="gen-qualification-confirm-btn" value="Confirm Qualification Results" hidden>
-						
-						<p class="empty gen-empty-hint" id="gen-qualification-confirm-empty">
-							All matches must have a winner to unlock the playoffs.
-						</p>
+						<div>
+							<input type="button" class="gen-primary-btn" id="gen-qualification-confirm-btn" value="Confirm Qualification Results" hidden>
+							
+							<p class="empty gen-empty-hint" id="gen-qualification-confirm-empty">
+								All matches must have a winner to unlock the playoffs.
+							</p>
+						</div>
 					</div>
 				
 					<div class="card gen-collapsible" id="gen-playoff-draw-card" hidden>
@@ -582,6 +593,10 @@ Pikachu,3,x</pre>
 						<div id="gen-playoff-output"></div>
 					</div>
 				</div>
+				
+				<p class="empty gen-empty-hint" id="gen-tournament-empty">
+					Add active players and court availability, then click <strong>Generate</strong>.
+				</p>
 			</div>
 			<!-- end generator tab -->
 			
@@ -635,6 +650,7 @@ Pikachu,3,x</pre>
 
 		<script src="assets/js/common.js"></script>
 		<script src="assets/js/events.js"></script>
+		<script src="assets/js/drag-and-drop.js"></script>
 		<script src="assets/js/all-players.js"></script>
 		<script src="assets/js/active-players.js"></script>
 		<script src="assets/js/courts.js"></script>

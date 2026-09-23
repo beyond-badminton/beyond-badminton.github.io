@@ -92,7 +92,7 @@ async function loadLocalStorageFromFile() {
 	const hasData =
 		StorageEvents.emit(StorageEvents.Type.HAS_PERMANENT_DATA, null).some(Boolean) ||
 		StorageEvents.emit(StorageEvents.Type.HAS_EVENT_DATA, null).some(Boolean);
-	if (hasData && !(await confirmDialog("Load will replace all current data", "Are you sure you want to proceed?"))) {
+	if (hasData && !(await confirmDialog("Load will replace all current data", "Do you want to proceed?"))) {
 		return;
 	}
 	let file;
