@@ -16,9 +16,9 @@ function newTournamentConfig() {
 	return {
 		tournamentDate: null,
 		matchesPerPlayer: 0,
-		disable2MenVs2Women: false,
+		twoMenVsTwoWomen: "enabled",
 		qualificationDrawConfirmed: false,
-		qualificationMatchesReassigned: false,
+		qualificationStarted: false,
 		qualificationFinished: false,
 		playoffDrawConfirmed: false,
 		playoffFinished: false,
@@ -29,6 +29,8 @@ function newTournamentConfig() {
 // - tournamentDate: Date of the tournament
 // - matchesPerPlayer: Number of matches each player should play
 // - qualificationDrawConfirmed: Boolean indicating whether the draw has been confirmed
+// - qualificationStarted: Boolean indicating whether the qualification rounds have started
+
 // - qualificationRounds: Array of rounds, each containing matches and bench players
 // - qualificationScores: Object containing match scores
 // - playoffDraw: first of every 4 players will draw its teammate from the next 3 players, and then the next 4 players will do the same, etc.
@@ -44,7 +46,11 @@ let playoffScores = {};
 
 // Array of all active players with pick and stats: { allPlayerId: { id, rank, pick, played, wins, losses, diff, isWoman, opponents } }
 let tournamentPlayers = [];
+
+// this isn't persisted in local storage, it's just a runtime map for quick lookups
 let tournamentPlayersMap = new Map();
+// this isn't persisted in local storage either, it's just a runtime count of women players
+let tournamentWomenCount = 0;
 
 // ── DOM refs ──────────────────────────────────────────────────
 
@@ -60,9 +66,8 @@ const genExportTournamentBtn = document.getElementById("gen-export-tournament-bt
 // const genPlayoffOut = document.getElementById("gen-playoff-output");
 
 const genTournamentEmpty = document.getElementById("gen-tournament-empty");
-const genQualificationConfirmEmpty = document.getElementById("gen-qualification-confirm-empty");
 const genqualificationRoundsNum = document.getElementById("qualification-matches");
-const genDisableTwoMenVsTwoWomenCb = document.getElementById("disable-2men-vs-2women");
+const genDTwoMenVsTwoWomenSelect = document.getElementById("two-men-vs-two-women");
 
 // ── Generate button handler ───────────────────────────────────
 genGenerateTournamentBtn.addEventListener("click", async () => {
@@ -77,11 +82,11 @@ genGenerateTournamentBtn.addEventListener("click", async () => {
 		return;
 	}
 
-	if (genDisableTwoMenVsTwoWomenCb.checked) {
+	if (genDTwoMenVsTwoWomenSelect.value !== "enabled") {
 		const playersWithoutGender = activePlayers.filter((p) => playerGender(p.allPlayerId) === "x");
 		if (playersWithoutGender.length > 0) {
 			alertDialog("Players missing gender", [
-				"To prevent 2 Men vs. 2 Women matches, all players must have a specified gender.",
+				`To '${genDTwoMenVsTwoWomenSelect.options[genDTwoMenVsTwoWomenSelect.selectedIndex].text}', all players must have a specified gender.`,
 				`Update players: ${playersWithoutGender.map((p) => playerName(p.allPlayerId)).join(", ")}`,
 			]);
 			return;
@@ -141,6 +146,7 @@ function clearGeneratedTournamentFromStorage() {
 	playoffScores = {};
 	tournamentPlayers = [];
 	tournamentPlayersMap = new Map();
+	tournamentWomenCount = 0;
 
 	try {
 		localStorage.removeItem(TOURNAMENT_CONFIG_KEY);
@@ -259,6 +265,16 @@ function getTournamentDataFromStorage() {
 	return data;
 }
 
+function getWomenCount() {
+	if (!tournamentPlayers || tournamentPlayers.length === 0) {
+		return 0;
+	}
+
+	return tournamentPlayers.reduce((count, player) => {
+		return player.isWoman ? count + 1 : count;
+	}, 0);
+}
+
 function loadTournamentFromStorage() {
 	try {
 		const savedTournamentConfig = localStorage.getItem(TOURNAMENT_CONFIG_KEY);
@@ -292,6 +308,7 @@ function loadTournamentFromStorage() {
 
 	// keep map for lookup
 	tournamentPlayersMap = new Map(tournamentPlayers.map((p) => [Number(p.id), p]));
+	tournamentWomenCount = getWomenCount(tournamentPlayers);
 
 	renderTournament();
 }
@@ -300,13 +317,13 @@ function loadTournamentFromStorage() {
  * Generate an independent random doubles tournament.
  *
  * IMPORTANT:
- * - Uses anonymous numbers 1..activePlayerCount.
+ * - Uses anonymous numbers 1..playersCount.
  * - Does NOT use activePlayers IDs.
  * - Does NOT use the existing schedule.
  * - Does NOT use player names.
  *
- * @param {number} activePlayerCount Total number of active players.
- * @param {number} activeWomenCount If set, number of women portion of active players. If set, then disable 2 men vs 2 women matches.
+ * @param {number} playersCount Total number of active players.
+ * @param {number} womenCount If set, number of women portion of active players. If set, then disable 2 men vs 2 women matches.
  * @param {number} matchCount Number of matches per player.
  * @param {string[]} courts Available court names, e.g. ["C1", "C2", "C3"]
  *
@@ -316,17 +333,17 @@ function loadTournamentFromStorage() {
  *   stats: Object
  * }}
  */
-function generateQualificationRounds(activePlayerCount, activeWomenCount = null, matchCount, courts = []) {
+function generateQualificationRounds(playersCount, womenCount = null, matchCount, courts = []) {
 	// ------------------------------------------------------------
 	// Validation
 	// ------------------------------------------------------------
 
-	if (!Number.isInteger(activePlayerCount) || activePlayerCount < 4) {
-		throw new Error("activePlayerCount must be at least 4.");
+	if (!Number.isInteger(playersCount) || playersCount < 4) {
+		throw new Error("playersCount must be at least 4.");
 	}
 
-	if (Number.isInteger(activeWomenCount) && activeWomenCount > activePlayerCount) {
-		throw new Error("activeWomenCount must null or to be less or equal activePlayerCount.");
+	if (Number.isInteger(womenCount) && womenCount > playersCount) {
+		throw new Error("womenCount must null or to be less or equal playersCount.");
 	}
 
 	if (!Number.isInteger(matchCount) || matchCount < 1) {
@@ -346,15 +363,15 @@ function generateQualificationRounds(activePlayerCount, activeWomenCount = null,
 	// These numbers have NOTHING to do with activePlayers.id.
 	// ------------------------------------------------------------
 
-	const players = Array.from({ length: activePlayerCount }, (_, i) => i + 1);
+	const players = Array.from({ length: playersCount }, (_, i) => i + 1);
 
 	const gender = new Map();
 
-	const allowTwoMenVsTwoWomen = !Number.isInteger(activeWomenCount);
+	const allowTwoMenVsTwoWomen = !Number.isInteger(womenCount);
 
 	if (!allowTwoMenVsTwoWomen) {
 		players.forEach((player, i) => {
-			gender.set(player, i < activeWomenCount ? "W" : "M");
+			gender.set(player, i < womenCount ? "W" : "M");
 		});
 	}
 
@@ -483,20 +500,10 @@ function generateQualificationRounds(activePlayerCount, activeWomenCount = null,
 	return rounds;
 }
 
-function getWomenCount() {
-	if (!tournamentPlayers || tournamentPlayers.length === 0) {
-		return 0;
-	}
-
-	return tournamentPlayers.reduce((count, player) => {
-		return player.isWoman ? count + 1 : count;
-	}, 0);
-}
-
 function generateTournament(activePlayers, courtBlocks) {
 	clearGeneratedTournamentFromStorage();
 
-	tournamentConfig.disable2MenVs2Women = genDisableTwoMenVsTwoWomenCb.checked;
+	tournamentConfig.twoMenVsTwoWomen = genDTwoMenVsTwoWomenSelect.value;
 	tournamentConfig.matchesPerPlayer = Number(genqualificationRoundsNum.value);
 	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate
 		? genTournamentDatePicker.valueAsDate.toISOString()
@@ -519,11 +526,12 @@ function generateTournament(activePlayers, courtBlocks) {
 
 	// keep map for lookup
 	tournamentPlayersMap = new Map(tournamentPlayers.map((p) => [Number(p.id), p]));
+	tournamentWomenCount = getWomenCount(tournamentPlayers);
 
 	//console.log("Generating tournament with players:", tournamentPlayers);
 	saveTournamentPlayers();
 
-	const activeWomenCount = tournamentConfig.disable2MenVs2Women ? getWomenCount() : null;
+	const activeWomenCount = tournamentConfig.twoMenVsTwoWomen !== "enabled" ? tournamentWomenCount : null;
 
 	// also remove duplicit court names
 	const courts = Array.from(new Set(courtBlocks.reduce((arr, block) => arr.concat(block.courts), []))).sort();
@@ -602,7 +610,7 @@ function populateQualificationDrawPickField() {
 		let start = 1;
 		let end = tournamentPlayers.length;
 
-		if (tournamentConfig.disable2MenVs2Women) {
+		if (tournamentConfig.twoMenVsTwoWomen === "disabled") {
 			const womenCount = getWomenCount();
 			if (playerIsWoman(currentDrawPlayerId)) {
 				end = womenCount;
@@ -672,21 +680,86 @@ qualificationDrawPickField.addEventListener("change", (event) => {
 	}
 });
 
+function reassignQualificationMatches() {
+	const qualificationPickToPlayer = new Map();
+	tournamentPlayers.forEach((p) => {
+		qualificationPickToPlayer.set(p.pick, p);
+	});
+
+	// iterate over all matches and change player numbers to playerids
+	qualificationRounds.forEach((round) => {
+		round.matches.forEach((match) => {
+			//console.log("Before reassignment:", match);
+			match.teamA[0] = qualificationPickToPlayer.get(match.teamA[0])?.id || match.teamA[0];
+			match.teamA[1] = qualificationPickToPlayer.get(match.teamA[1])?.id || match.teamA[1];
+			match.teamB[0] = qualificationPickToPlayer.get(match.teamB[0])?.id || match.teamB[0];
+			match.teamB[1] = qualificationPickToPlayer.get(match.teamB[1])?.id || match.teamB[1];
+			//console.log("After reassignment:", match);
+		});
+		round.bench = round.bench.map((playerId) => qualificationPickToPlayer.get(Number(playerId))?.id || playerId);
+	});
+	saveQualificationRounds();
+}
+
+function allManVsAllWomanMatch(match) {
+	// const teamA1player = tournamentPlayersMap.get(Number(match.teamA[0])) || null;
+	// const teamA2player = tournamentPlayersMap.get(Number(match.teamA[1])) || null;
+	// const teamB1player = tournamentPlayersMap.get(Number(match.teamB[0])) || null;
+	// const teamB2player = tournamentPlayersMap.get(Number(match.teamB[1])) || null;
+	// console.log("Processing match:", JSON.stringify(tournamentPlayersMap.get(Number(match.teamA[0]))), JSON.stringify(tournamentPlayersMap.get(Number(match.teamA[1]))), JSON.stringify(tournamentPlayersMap.get(Number(match.teamB[0]))), JSON.stringify(tournamentPlayersMap.get(Number(match.teamB[1]))));
+	// console.log("teamA1player:", teamA1player, "teamA2player:", teamA2player, "teamB1player:", teamB1player, "teamB2player:", teamB2player);
+
+	const teamA1IsWoman = tournamentPlayersMap.get(Number(match.teamA[0]))?.isWoman ?? null;
+	const teamA2IsWoman = tournamentPlayersMap.get(Number(match.teamA[1]))?.isWoman ?? null;
+
+	const teamB1IsWoman = tournamentPlayersMap.get(Number(match.teamB[0]))?.isWoman ?? null;
+	const teamB2IsWoman = tournamentPlayersMap.get(Number(match.teamB[1]))?.isWoman ?? null;
+	//console.log("teamA1IsWoman:", teamA1IsWoman, "teamA2IsWoman:", teamA2IsWoman, "teamB1IsWoman:", teamB1IsWoman, "teamB2IsWoman:", teamB2IsWoman);
+	return teamA1IsWoman === teamA2IsWoman && teamB1IsWoman === teamB2IsWoman && teamA1IsWoman !== teamB1IsWoman;
+}
+
 qualificationDrawSubmitButton.addEventListener("click", async () => {
 	if (tournamentPlayers.some((p) => p.pick === 0)) {
 		alertDialog(null, "Please complete the qualification draw for all players before confirming");
 		return;
 	}
 
-	if (await confirmDialog("Do you want to confirm the selected qualification numbers?", "This action cannot be undone.")) {
+	if (await confirmDialog("Confirm these drawn numbers?", "This action cannot be undone.")) {
+		reassignQualificationMatches();
+
 		tournamentConfig.qualificationDrawConfirmed = true;
+		tournamentConfig.qualificationStarted = tournamentConfig.twoMenVsTwoWomen !== "manual";
+
 		saveTournamentConfig();
+
+		if (tournamentConfig.twoMenVsTwoWomen === "manual") {
+			let menVsWomenMatchFound = false;
+			for (const round of qualificationRounds) {
+				//console.log("Checking round for '2 Men vs 2 Women' matches:", round);
+				for (const match of round.matches) {
+					//console.log("Checking match for '2 Men vs 2 Women':", match, allManVsAllWomanMatch(match));
+					if (allManVsAllWomanMatch(match)) {
+						//console.log("Found '2 Men vs 2 Women' match:", match);
+						menVsWomenMatchFound = true;
+						match.editable = true;
+					}
+				}
+			}
+			if (!menVsWomenMatchFound) {
+				alertDialog("Qualification started", "No '2 Men vs 2 Women' matches found. No edit mode required.");
+				tournamentConfig.qualificationStarted = true;
+				saveTournamentConfig();
+			} else {
+				alertDialog("Entering edit mode", "A '2 Men vs 2 Women' match was found. Check the matches before starting the qualification.");
+			}
+		}
+
 		renderTournament();
 	}
 });
 
 qualificationDrawClearButton.addEventListener("click", async () => {
-	if (!(await confirmDialog("Do you want to clear the qualification draw?"))) return;
+	if (!(await confirmDialog("Clear these drawn numbers?"))) return;
 	tournamentPlayers.forEach((player) => {
 		player.pick = 0;
 	});
@@ -733,6 +806,17 @@ function renderQualificationDraw() {
 	qualificationDrawFormCard.hidden = tournamentConfig.qualificationDrawConfirmed;
 	genQualificationDrawTitle.innerText = tournamentConfig.qualificationDrawConfirmed ? "Qualification draw" : "Enter qualification draw results";
 
+	if (!tournamentConfig.qualificationDrawConfirmed) {
+		const hint = qualificationDrawFormCard.querySelector("p.section-hint");
+		if (tournamentConfig.twoMenVsTwoWomen === "enabled") {
+			hint.innerText = "2 Men vs. 2 Women matches are allowed. Men and women share the same draw pool.";
+		} else if (tournamentConfig.twoMenVsTwoWomen === "disabled") {
+			hint.innerHTML = `2 Men vs. 2 Women matches are blocked. Men and women draw from separate pools: <ul class="section-hint-list"><li>Women: 1–${tournamentWomenCount}</li><li>Men: ${tournamentWomenCount + 1}–${tournamentPlayers.length}</li></ul>`;
+		} else if (tournamentConfig.twoMenVsTwoWomen === "manual") {
+			hint.innerText =
+				"2 Men vs. 2 Women matches are allowed but flagged for organizer review using a shared draw pool. If any are created, confirming draws opens edit mode automatically.";
+		}
+	}
 	qualificationDrawSubmitButton.disabled = tournamentConfig.qualificationDrawConfirmed || tournamentPlayers.some((p) => p.pick === 0);
 	qualificationDrawSubmitButton.hidden = qualificationDrawSubmitButton.disabled;
 	qualificationDrawClearButton.disabled = tournamentConfig.qualificationDrawConfirmed;
@@ -752,6 +836,11 @@ function renderQualificationDraw() {
 
 const genQualificationCard = document.getElementById("gen-qualification-card");
 const genQualificationOut = document.getElementById("gen-qualification-output");
+const genQualificationStartBtn = document.getElementById("gen-qualification-start-btn");
+const genQualificationCardLabel = document.getElementById("gen-qualification-card-label");
+const genQualificationEditFilterWrap = document.getElementById("qualification-edit-filter-wrap");
+const genQualificationEditFilterCheckbox = document.getElementById("qualification-edit-filter-editable");
+const genQualificationMatchFilterWrap = document.getElementById("qualification-match-filter-wrap");
 const genQualificationMatchFilterList = document.getElementById("qualification-match-player-filter");
 const genQualificationMatchFilterCount = document.getElementById("qualification-match-filter-count");
 const genQualificationMatchFilterSearch = document.getElementById("qualification-match-filter-search");
@@ -784,23 +873,24 @@ function applyQualificationMatchFilterSearch() {
 		label.classList.toggle("filter-hidden", term !== "" && !label.dataset.name.includes(term));
 	});
 }
+genQualificationEditFilterCheckbox.addEventListener("change", renderQualificationRounds);
 
 genQualificationMatchFilterSearch.addEventListener("input", applyQualificationMatchFilterSearch);
 
 genQualificationMatchFilterAllBtn.addEventListener("click", () => {
 	qualificationMatchPlayerExcluded.clear();
 	renderQualificationMatchFilter();
-	if (tournamentConfig.qualificationMatchesReassigned) {
+	if (tournamentConfig.qualificationStarted) {
 		renderQualificationRounds();
 	}
 });
 
 genQualificationMatchFilterNoneBtn.addEventListener("click", () => {
-	tournamentPlayers.forEach((playerId) => {
+	tournamentPlayersMap.keys().forEach((playerId) => {
 		qualificationMatchPlayerExcluded.add(Number(playerId));
 	});
 	renderQualificationMatchFilter();
-	if (tournamentConfig.qualificationMatchesReassigned) {
+	if (tournamentConfig.qualificationStarted) {
 		renderQualificationRounds();
 	}
 });
@@ -822,13 +912,21 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 
 	genQualificationMatchFilterCount.textContent = `${tournamentPlayers.length - qualificationMatchPlayerExcluded.size}/${tournamentPlayers.length}`;
 
-	if (tournamentConfig.qualificationMatchesReassigned) {
+	if (tournamentConfig.qualificationStarted) {
 		renderQualificationRounds();
 	}
 });
 
+genQualificationStartBtn.addEventListener("click", async () => {
+	if (await confirmDialog("Start qualification with these matchups?", "This action cannot be undone.")) {
+		tournamentConfig.qualificationStarted = true;
+		saveTournamentConfig();
+		renderTournament();
+	}
+});
+
 function tournamentPlayerName(playerId) {
-	if (tournamentConfig.qualificationMatchesReassigned) {
+	if (tournamentConfig.qualificationDrawConfirmed) {
 		const player = tournamentPlayersMap.get(Number(playerId));
 		if (player?.withdrawn || false) {
 			return `(Withdrawn) ${player?.name || ""}`;
@@ -839,36 +937,53 @@ function tournamentPlayerName(playerId) {
 	return String(playerId);
 }
 
-function reassignQualificationMatches() {
-	if (!tournamentConfig.qualificationDrawConfirmed || tournamentConfig.qualificationMatchesReassigned) {
+// Find a qualification match (and its round) by matchId
+function findQualificationMatch(matchId) {
+	for (const round of qualificationRounds) {
+		const match = round.matches.find((m) => m.matchId === matchId);
+		if (match) return match;
+	}
+	return null;
+}
+
+function qualificationRoundPlayersSwap(dragSrc, dragDst) {
+	// Only allow moves within the same match
+	if (dragSrc.roundId !== dragDst.roundId || dragSrc.matchId !== dragDst.matchId || dragSrc.bench || dragDst.bench) {
 		return;
 	}
 
-	const qualificationPickToPlayer = new Map();
-	tournamentPlayers.forEach((p) => {
-		qualificationPickToPlayer.set(p.pick, p);
-	});
+	// Prevent swapping the same player in the same slot
+	if (dragSrc.team === dragDst.team && dragSrc.pos === dragDst.pos) {
+		return;
+	}
 
-	// iterate over all matches and change player numbers to playerids
-	qualificationRounds.forEach((round) => {
-		round.matches.forEach((match) => {
-			//console.log("Before reassignment:", match);
-			match.teamA[0] = qualificationPickToPlayer.get(match.teamA[0])?.id || match.teamA[0];
-			match.teamA[1] = qualificationPickToPlayer.get(match.teamA[1])?.id || match.teamA[1];
-			match.teamB[0] = qualificationPickToPlayer.get(match.teamB[0])?.id || match.teamB[0];
-			match.teamB[1] = qualificationPickToPlayer.get(match.teamB[1])?.id || match.teamB[1];
-			//console.log("After reassignment:", match);
-		});
-		round.bench = round.bench.map((playerId) => qualificationPickToPlayer.get(playerId)?.id || playerId);
-	});
+	const match = findQualificationMatch(dragSrc.matchId);
+	if (!match) {
+		return;
+	}
+
+	const tmp = match[dragSrc.team][dragSrc.pos];
+	match[dragSrc.team][dragSrc.pos] = match[dragDst.team][dragDst.pos];
+	match[dragDst.team][dragDst.pos] = tmp;
+
 	saveQualificationRounds();
-	tournamentConfig.qualificationMatchesReassigned = true;
-	saveTournamentConfig();
+	renderQualificationRounds();
 }
 
 function renderQualificationRounds() {
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
+
+	const manualEdit =
+		tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && tournamentConfig.twoMenVsTwoWomen === "manual";
+
+	genQualificationCardLabel.textContent = `Qualification rounds ${manualEdit ? " (Edit Mode)" : ""}`;
+	genQualificationMatchFilterWrap.style.display = tournamentConfig.qualificationStarted ? "block" : "none";
+	genQualificationEditFilterWrap.style.display = manualEdit ? "block" : "none";
+	genQualificationStartBtn.hidden = !manualEdit;
+	genQualificationStartBtn.disabled = !manualEdit;
+
+	const filterEditableMatches = manualEdit && genQualificationEditFilterCheckbox.checked;
 
 	//console.log("Rendering qualification rounds:", tournamentConfig);
 	qualificationRounds.forEach((round) => {
@@ -879,6 +994,7 @@ function renderQualificationRounds() {
 		round.matches.forEach((match) => {
 			// check if all players are excluded
 			if (
+				!manualEdit && // only apply exclusion filter when not in manual edit mode
 				qualificationMatchPlayerExcluded.has(match.teamA[0]) &&
 				qualificationMatchPlayerExcluded.has(match.teamA[1]) &&
 				qualificationMatchPlayerExcluded.has(match.teamB[0]) &&
@@ -886,19 +1002,26 @@ function renderQualificationRounds() {
 			) {
 				return;
 			}
+
+			if (filterEditableMatches && !match.editable) {
+				// in manual edit, display only '2 Men vs 2 Women' matches that are object of manual editing
+				return;
+			}
+
 			matchesRow.appendChild(
 				buildMatchCard(
 					match,
 					qualificationScores[match.matchId] || { a: null, b: null },
 					round.roundId,
-					PLAYER_SLOT.CSV,
-					!tournamentConfig.qualificationDrawConfirmed || tournamentConfig.qualificationFinished,
+					manualEdit && match.editable ? PLAYER_SLOT.DRAGGABLE : PLAYER_SLOT.CSV,
+					!tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished,
 					tournamentPlayerName,
+					manualEdit && match.editable,
 				),
 			);
 		});
 
-		if (qualificationMatchPlayerExcluded.size !== 0 && matchesRow.children.length === 0) {
+		if (matchesRow.children.length === 0) {
 			// filter applied
 			return;
 		}
@@ -914,7 +1037,8 @@ function renderQualificationRounds() {
 		roundEl.appendChild(matchesRow);
 
 		// Bench
-		if (round.bench && round.bench.length > 0) {
+		// display bench only if not in exclusion filter mode and not in manual edit mode with filtering
+		if ((!manualEdit || qualificationMatchPlayerExcluded.size === 0) && !filterEditableMatches && round.bench && round.bench.length > 0) {
 			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, tournamentPlayerName));
 		}
 
@@ -923,6 +1047,8 @@ function renderQualificationRounds() {
 
 	genQualificationOut.innerHTML = "";
 	genQualificationOut.appendChild(blockEl);
+
+	attachDragHandlers(genQualificationOut, qualificationRoundPlayersSwap);
 }
 
 //------------------------------------------------------------
@@ -938,18 +1064,10 @@ const genQualificationP2PFilterSearch = document.getElementById("qualification-p
 const genQualificationP2PFilterAllBtn = document.getElementById("qualification-p2p-filter-all-btn");
 const genQualificationP2PFilterNoneBtn = document.getElementById("qualification-p2p-filter-none-btn");
 const genQualificationConfirmBtn = document.getElementById("gen-qualification-confirm-btn");
+const genQualificationConfirmEmpty = document.getElementById("gen-qualification-confirm-empty");
 
 // Player ids hidden from the P2P stats table (session-only, not persisted).
 const qualificationP2PExcluded = new Set();
-
-// Find a qualification match (and its round) by matchId
-function findQualificationMatch(matchId) {
-	for (const round of qualificationRounds) {
-		const match = round.matches.find((m) => m.matchId === matchId);
-		if (match) return { round, match };
-	}
-	return null;
-}
 
 function renderQualificationPlayerStats() {
 	genQualificationStatsTableBody.innerHTML = getSorted(tournamentPlayers, "qualificationPlayerStats")
@@ -990,8 +1108,8 @@ genQualificationP2PFilterAllBtn.addEventListener("click", () => {
 });
 
 genQualificationP2PFilterNoneBtn.addEventListener("click", () => {
-	tournamentPlayers.forEach((p) => {
-		qualificationP2PExcluded.add(Number(p.id));
+	tournamentPlayersMap.keys().forEach((playerId) => {
+		qualificationP2PExcluded.add(playerId);
 	});
 	renderQualificationP2PPlayerFilter();
 	renderQualificationP2PStats();
@@ -1062,7 +1180,7 @@ function allMatchesComplete() {
 
 function renderQualificationStats() {
 	const confirmButtonShow =
-		tournamentConfig.qualificationDrawConfirmed &&
+		tournamentConfig.qualificationStarted &&
 		!tournamentConfig.qualificationFinished &&
 		(tournamentConfig?.matchesPerPlayer || 0) > 0 &&
 		allMatchesComplete();
@@ -1071,7 +1189,7 @@ function renderQualificationStats() {
 	genQualificationConfirmBtn.disabled = !confirmButtonShow;
 	genQualificationConfirmBtn.hidden = !confirmButtonShow;
 
-	if (!tournamentConfig?.qualificationDrawConfirmed) {
+	if (!tournamentConfig?.qualificationStarted) {
 		return;
 	}
 
@@ -1095,17 +1213,17 @@ genQualificationOut.addEventListener("change", (e) => {
 
 	const { matchId, side } = inp.dataset;
 
-	const found = findQualificationMatch(matchId);
+	const match = findQualificationMatch(matchId);
 	const oldScore = qualificationScores[matchId] || { a: null, b: null };
 
 	// Revert the stats contribution of the previous score before applying the new one
-	if (found) revertMatchScore(tournamentPlayersMap, found.match, oldScore);
+	if (match) revertMatchScore(tournamentPlayersMap, match, oldScore);
 
 	if (!qualificationScores[matchId]) qualificationScores[matchId] = { a: null, b: null };
 
 	qualificationScores[matchId][side] = val;
 
-	if (found) applyMatchScore(tournamentPlayersMap, found.match, qualificationScores[matchId]);
+	if (match) applyMatchScore(tournamentPlayersMap, match, qualificationScores[matchId]);
 
 	saveTournamentPlayers();
 	saveQualificationScores();
@@ -1127,7 +1245,7 @@ function renderTournament() {
 	genTournamentEmpty.hidden = hasTournamentValue;
 	genQualificationDrawCard.hidden = !hasTournamentValue;
 	genQualificationCard.hidden = !hasTournamentValue;
-	genQualificationStatsCard.hidden = !tournamentConfig?.qualificationDrawConfirmed;
+	genQualificationStatsCard.hidden = !tournamentConfig?.qualificationStarted;
 	genQualificationConfirmEmpty.hidden = !genQualificationStatsCard.hidden && allMatchesComplete();
 
 	if (!hasTournamentValue) {
@@ -1140,8 +1258,6 @@ function renderTournament() {
 	rankPlayers(tournamentPlayersMap);
 
 	renderQualificationDraw();
-
-	reassignQualificationMatches();
 
 	renderQualificationMatchFilter();
 
@@ -1189,15 +1305,6 @@ genQualificationDrawTableBody.addEventListener("click", async (e) => {
 		return;
 	}
 });
-
-// const rounds = generateRandomDoublesTournament({
-// 	activePlayerCount: 14,
-// 	matchCount: 4,
-// 	activeWomenCount: 4,
-// 	courts: ["C1", "C2", "C3"],
-// });
-
-// //console.log("Generated tournament rounds:", rounds);
 
 loadTournamentFromStorage();
 
