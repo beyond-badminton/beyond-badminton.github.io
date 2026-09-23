@@ -1,3 +1,6 @@
+// biome-ignore lint/suspicious/noRedundantUseStrict: required for global scripts loaded via <script> tags
+"use strict";
+
 // ============================================================
 // COURT NAMES
 // ============================================================

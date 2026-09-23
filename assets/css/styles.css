@@ -7,6 +7,9 @@
 	--card: #ffffff;
 	--accent: #1f7a5c;
 	--accent-soft: #e6f2ec;
+	--card-accent: #ffaeae;
+	--accent-red: #c8503a;
+	--accent-red-soft: #ffaeae;
 	--radius: 10px;
 	font-family: "Segoe UI", Helvetica, Arial, sans-serif;
 }
@@ -137,7 +140,14 @@ header h1 {
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
 	padding: 22px;
-	margin-bottom: 16px;
+}
+
+.card + .card {
+	margin-top: 16px;
+}
+
+.card > div + div {
+	margin-top: 30px;
 }
 
 .card .card {
@@ -156,6 +166,10 @@ header h1 {
 	display: flex;
 	flex-direction: column;
 	gap: 16px;
+}
+
+.players-layout > div + div {
+	margin-top: 0px !important;
 }
 
 .card h2 {
@@ -323,7 +337,6 @@ input[type="file"] {
 .form-stack {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
 }
 
 .chip-list {
@@ -952,6 +965,12 @@ span.sort-active .sort-icon {
 	letter-spacing: 0;
 	padding-bottom: 2px;
 	width: fit-content; /* Keeps the label tight around the text */
+
+	-webkit-touch-callout: none; /* Disables iOS Safari long-press callout menu */
+	-webkit-user-select: none; /* Safari & older WebKit/Blink browsers */
+	-moz-user-select: none; /* Firefox (legacy) */
+	-ms-user-select: none; /* Internet Explorer / Edge 12-18 */
+	user-select: none; /* Standard syntax (Chrome, Edge, Firefox, Opera) */
 }
 .gen-checkbox-label input[type="checkbox"] {
 	width: auto;
@@ -1014,7 +1033,6 @@ span.sort-active .sort-icon {
 }
 
 .gen-empty-hint {
-	padding: 20px 0 8px;
 	text-align: center;
 }
 
@@ -1122,10 +1140,10 @@ span.sort-active .sort-icon {
 
 /* Hide everything in a collapsible container except its toggle header */
 .gen-collapsible.gen-collapsed > *:not(.gen-card-toggle) {
-	display: none;
+	display: none !important;
 }
 .gen-collapsible.gen-collapsed {
-	padding-bottom: 14px;
+	padding-bottom: 0px;
 }
 
 .gen-collapsible.gen-collapsed .gen-collapse-arrow {
@@ -1148,9 +1166,8 @@ span.sort-active .sort-icon {
 	max-height: 220px;
 	overflow-y: auto;
 	padding: 4px;
-	border: 1px solid var(--line);
+	border: 0px solid var(--line);
 	border-radius: 8px;
-	margin-bottom: 34px;
 }
 
 .checkbox-pill.filter-hidden {
@@ -1191,7 +1208,6 @@ span.sort-active .sort-icon {
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
 	color: var(--ink-soft);
-	margin: 0 0 20px;
 }
 .gen-matches-row {
 	display: flex;
@@ -1266,6 +1282,10 @@ span.sort-active .sort-icon {
 }
 .gen-player-slot-pill.bench-slot {
 	border-style: dashed;
+}
+
+.gen-player-slot-accent {
+	border-color: var(--accent);
 }
 
 .gen-team {

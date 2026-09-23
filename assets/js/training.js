@@ -827,7 +827,7 @@ function renderTraining() {
 
 	genTrainingOut.appendChild(blockEl);
 
-	attachDragHandlers();
+	attachDragHandlers(genTrainingOut, trainingRoundPlayersSwap);
 
 	if (trainingDate) {
 		genDatePicker.valueAsDate = trainingDate; // Format as YYYY-MM-DD for input[type=date]
@@ -844,7 +844,7 @@ const PLAYER_SLOT = Object.freeze({
 	CSV: 3, // Player slot represented in CSV format, no pill
 });
 
-function buildPlayerSlot(roundId, playerId, playerCard = PLAYER_SLOT.DRAGGABLE, lastSlot, buildPlayerSlotFunc) {
+function buildPlayerSlot(roundId, playerId, playerCard = PLAYER_SLOT.DRAGGABLE, lastSlot, buildPlayerSlotFunc, accentColor) {
 	const slot = document.createElement("div");
 	slot.className = "gen-player-slot";
 	if (playerCard !== PLAYER_SLOT.CSV) {
@@ -853,6 +853,9 @@ function buildPlayerSlot(roundId, playerId, playerCard = PLAYER_SLOT.DRAGGABLE, 
 	if (playerCard === PLAYER_SLOT.DRAGGABLE) {
 		slot.classList.add("gen-player-slot-draggable");
 		slot.draggable = true;
+	}
+	if (accentColor) {
+		slot.classList.add("gen-player-slot-accent");
 	}
 	slot.dataset.roundId = roundId;
 	slot.dataset.playerId = playerId;
@@ -872,6 +875,7 @@ function buildMatchCard(
 	playerCard = PLAYER_SLOT.DRAGGABLE,
 	disabledScore = false,
 	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
+	accentColor = false,
 ) {
 	const card = document.createElement("div");
 	card.className = "gen-match-card";
@@ -889,7 +893,7 @@ function buildMatchCard(
 		teamEl.dataset.matchId = match.matchId;
 
 		match[teamKey].forEach((pid, pi) => {
-			const slot = buildPlayerSlot(roundId, pid, playerCard, pi + 1 === match[teamKey].length, buildPlayerSlotFunc);
+			const slot = buildPlayerSlot(roundId, pid, playerCard, pi + 1 === match[teamKey].length, buildPlayerSlotFunc, accentColor);
 			slot.dataset.matchId = match.matchId;
 			slot.dataset.team = teamKey;
 			slot.dataset.pos = pi;
@@ -941,7 +945,7 @@ function buildMatchCard(
 	return card;
 }
 
-function buildBenchCard(bench, roundId, playerCard = PLAYER_SLOT.DRAGGABLE, buildPlayerSlotFunc = buildPlayerSlotInnerHtml) {
+function buildBenchCard(bench, roundId, playerCard = PLAYER_SLOT.DRAGGABLE, buildPlayerSlotFunc = buildPlayerSlotInnerHtml, accentColor = false) {
 	if (!bench || bench.length === 0) {
 		return null;
 	}
@@ -955,7 +959,7 @@ function buildBenchCard(bench, roundId, playerCard = PLAYER_SLOT.DRAGGABLE, buil
 	benchEl.appendChild(bLabel);
 
 	bench.forEach((pid, bi) => {
-		const slot = buildPlayerSlot(roundId, pid, playerCard, bi + 1 === bench.length, buildPlayerSlotFunc);
+		const slot = buildPlayerSlot(roundId, pid, playerCard, bi + 1 === bench.length, buildPlayerSlotFunc, accentColor);
 		slot.dataset.pos = bi;
 		slot.dataset.bench = "true";
 		slot.classList.add("bench-slot");
@@ -1400,112 +1404,112 @@ function getTrainingDataFromStorage() {
 	return data;
 }
 
-// ── Drag & Drop ───────────────────────────────────────────────
-let dragSrc = null; // { playerId, team, pos, matchId, roundId }
+// ── Drag & Drop Helpers ───────────────────────────────────────
+// let dragSrc = null; // { playerId, team, pos, matchId, roundId }
 
-function attachDragHandlers() {
-	genTrainingOut.querySelectorAll(".gen-player-slot").forEach((el) => {
-		el.addEventListener("dragstart", onDragStart);
-		el.addEventListener("dragover", onDragOver);
-		el.addEventListener("dragleave", onDragLeave);
-		el.addEventListener("drop", onDrop);
-		el.addEventListener("dragend", onDragEnd);
-	});
-	// Bench slots also act as drop targets
-	genTrainingOut.querySelectorAll(".gen-bench").forEach((el) => {
-		el.addEventListener("dragover", (e) => {
-			e.preventDefault();
-			el.classList.add("drag-over");
-		});
-		el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
-		el.addEventListener("drop", (e) => {
-			e.preventDefault();
-			el.classList.remove("drag-over");
-			onDropBench(el);
-		});
-	});
-}
+// function attachDragHandlers() {
+// 	genTrainingOut.querySelectorAll(".gen-player-slot").forEach((el) => {
+// 		el.addEventListener("dragstart", onDragStart);
+// 		el.addEventListener("dragover", onDragOver);
+// 		el.addEventListener("dragleave", onDragLeave);
+// 		el.addEventListener("drop", onDrop);
+// 		el.addEventListener("dragend", onDragEnd);
+// 	});
+// 	// Bench slots also act as drop targets
+// 	genTrainingOut.querySelectorAll(".gen-bench").forEach((el) => {
+// 		el.addEventListener("dragover", (e) => {
+// 			e.preventDefault();
+// 			el.classList.add("drag-over");
+// 		});
+// 		el.addEventListener("dragleave", () => el.classList.remove("drag-over"));
+// 		el.addEventListener("drop", (e) => {
+// 			e.preventDefault();
+// 			el.classList.remove("drag-over");
+// 			onDropBench(el);
+// 		});
+// 	});
+// }
 
-function onDragStart(e) {
-	const el = e.currentTarget;
-	dragSrc = {
-		playerId: Number(el.dataset.playerId),
-		team: el.dataset.team || null,
-		pos: Number(el.dataset.pos),
-		matchId: el.dataset.matchId || null,
-		bench: el.dataset.bench === "true",
-		roundId: el.dataset.roundId != null ? Number(el.dataset.roundId) : null,
-	};
-	el.classList.add("dragging");
-	e.dataTransfer.effectAllowed = "move";
-}
+// function onDragStart(e) {
+// 	const el = e.currentTarget;
+// 	dragSrc = {
+// 		playerId: Number(el.dataset.playerId),
+// 		team: el.dataset.team || null,
+// 		pos: Number(el.dataset.pos),
+// 		matchId: el.dataset.matchId || null,
+// 		bench: el.dataset.bench === "true",
+// 		roundId: el.dataset.roundId != null ? Number(el.dataset.roundId) : null,
+// 	};
+// 	el.classList.add("dragging");
+// 	e.dataTransfer.effectAllowed = "move";
+// }
 
-function onDragOver(e) {
-	e.preventDefault();
-	e.dataTransfer.dropEffect = "move";
-	e.currentTarget.classList.add("drag-over");
-}
+// function onDragOver(e) {
+// 	e.preventDefault();
+// 	e.dataTransfer.dropEffect = "move";
+// 	e.currentTarget.classList.add("drag-over");
+// }
 
-function onDragLeave(e) {
-	e.preventDefault();
-	e.dataTransfer.dropEffect = "move";
-	e.currentTarget.classList.remove("drag-over");
-}
-function onDragEnd(e) {
-	e.currentTarget.classList.remove("dragging");
-	genTrainingOut.querySelectorAll(".drag-over").forEach((el) => {
-		el.classList.remove("drag-over");
-	});
-}
+// function onDragLeave(e) {
+// 	e.preventDefault();
+// 	e.dataTransfer.dropEffect = "move";
+// 	e.currentTarget.classList.remove("drag-over");
+// }
+// function onDragEnd(e) {
+// 	e.currentTarget.classList.remove("dragging");
+// 	genTrainingOut.querySelectorAll(".drag-over").forEach((el) => {
+// 		el.classList.remove("drag-over");
+// 	});
+// }
 
-function onDrop(e) {
-	e.preventDefault();
-	if (!dragSrc) return;
-	const el = e.currentTarget;
-	const dst = {
-		playerId: Number(el.dataset.playerId),
-		team: el.dataset.team || null,
-		pos: Number(el.dataset.pos),
-		matchId: el.dataset.matchId || null,
-		bench: el.dataset.bench === "true",
-		roundId: el.dataset.roundId != null ? Number(el.dataset.roundId) : null,
-	};
-	if (!dragSrc.bench && !dst.bench && dragSrc.matchId === dst.matchId && dragSrc.team === dst.team && dragSrc.pos === dst.pos) return;
-	// Only allow moves within the same round
-	if (dragSrc.roundId !== dst.roundId) return;
+// function onDrop(e) {
+// 	e.preventDefault();
+// 	if (!dragSrc) return;
+// 	const el = e.currentTarget;
+// 	const dst = {
+// 		playerId: Number(el.dataset.playerId),
+// 		team: el.dataset.team || null,
+// 		pos: Number(el.dataset.pos),
+// 		matchId: el.dataset.matchId || null,
+// 		bench: el.dataset.bench === "true",
+// 		roundId: el.dataset.roundId != null ? Number(el.dataset.roundId) : null,
+// 	};
+// 	if (!dragSrc.bench && !dst.bench && dragSrc.matchId === dst.matchId && dragSrc.team === dst.team && dragSrc.pos === dst.pos) return;
+// 	// Only allow moves within the same round
+// 	if (dragSrc.roundId !== dst.roundId) return;
 
-	swapPlayerOrBench(dragSrc, dst);
-	saveGeneratedTrainingToStorage();
-	dragSrc = null;
-}
+// 	swapPlayerOrBench(dragSrc, dst);
+// 	saveGeneratedTrainingToStorage();
+// 	dragSrc = null;
+// }
 
-// Drop onto the bench container (empty area between bench slots)
-function onDropBench(benchEl) {
-	if (!dragSrc) return;
-	if (String(dragSrc.roundId) !== String(benchEl.dataset.roundId)) return;
-	const roundId = Number(benchEl.dataset.roundId);
-	// Find the round
-	const round = training.rounds.find((r) => r.roundId === roundId);
-	if (!round) return;
-	if (dragSrc.bench) return; // already on bench
-	// Move playing player to bench; move first bench player to the vacated slot
-	const srcMatch = findMatchInTraining(dragSrc.roundId, dragSrc.matchId);
-	if (!srcMatch) return;
-	if (round.bench.length === 0) {
-		// No bench player to swap with — just move to bench
-		round.bench.push(dragSrc.playerId);
-		srcMatch[dragSrc.team].splice(dragSrc.pos, 1, null);
-		// Compact: remove nulls (match is now short — not ideal, but guard)
-		srcMatch[dragSrc.team] = srcMatch[dragSrc.team].filter((x) => x != null);
-	} else {
-		// Swap first bench player into the vacated slot
-		const benchPid = round.bench[0];
-		srcMatch[dragSrc.team][dragSrc.pos] = benchPid;
-		round.bench[0] = dragSrc.playerId;
-	}
-	saveGeneratedTrainingToStorage();
-	dragSrc = null;
-}
+// // Drop onto the bench container (empty area between bench slots)
+// function onDropBench(benchEl) {
+// 	if (!dragSrc) return;
+// 	if (String(dragSrc.roundId) !== String(benchEl.dataset.roundId)) return;
+// 	const roundId = Number(benchEl.dataset.roundId);
+// 	// Find the round
+// 	const round = training.rounds.find((r) => r.roundId === roundId);
+// 	if (!round) return;
+// 	if (dragSrc.bench) return; // already on bench
+// 	// Move playing player to bench; move first bench player to the vacated slot
+// 	const srcMatch = findMatchInTraining(dragSrc.roundId, dragSrc.matchId);
+// 	if (!srcMatch) return;
+// 	if (round.bench.length === 0) {
+// 		// No bench player to swap with — just move to bench
+// 		round.bench.push(dragSrc.playerId);
+// 		srcMatch[dragSrc.team].splice(dragSrc.pos, 1, null);
+// 		// Compact: remove nulls (match is now short — not ideal, but guard)
+// 		srcMatch[dragSrc.team] = srcMatch[dragSrc.team].filter((x) => x != null);
+// 	} else {
+// 		// Swap first bench player into the vacated slot
+// 		const benchPid = round.bench[0];
+// 		srcMatch[dragSrc.team][dragSrc.pos] = benchPid;
+// 		round.bench[0] = dragSrc.playerId;
+// 	}
+// 	saveGeneratedTrainingToStorage();
+// 	dragSrc = null;
+// }
 
 function findMatchInTraining(roundId, matchId) {
 	for (const round of training.rounds) {
@@ -1559,6 +1563,17 @@ function swapPlayerOrBench(src, dst) {
 		if (bi === -1 || bj === -1) return;
 		[round.bench[bi], round.bench[bj]] = [round.bench[bj], round.bench[bi]];
 	}
+}
+
+function trainingRoundPlayersSwap(dragSrc, dragDst) {
+	// Only allow moves within the same round
+	if (dragSrc.roundId !== dragDst.roundId) return;
+
+	// Prevent swapping the same player in the same slot
+	if (!dragSrc.bench && !dragDst.bench && dragSrc.matchId === dragDst.matchId && dragSrc.team === dragDst.team && dragSrc.pos === dragDst.pos) return;
+
+	swapPlayerOrBench(dragSrc, dragDst);
+	saveGeneratedTrainingToStorage();
 }
 
 // ============================================================
