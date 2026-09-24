@@ -838,6 +838,25 @@ function renderTraining() {
 	// }
 }
 
+function updateScoreUI(score, scoreInput) {
+	if (!score || !scoreInput) return;
+
+	const scoreRow = scoreInput.closest(".gen-score-row");
+	if (!scoreRow) return;
+
+	const winnerOrLoserAclass = score.a !== null && score.a > (score.b || 0) ? "winner" : "loser";
+	const winnerOrLoserBclass = score.b !== null && score.b > (score.a || 0) ? "winner" : "loser";
+
+	scoreRow.querySelectorAll(".gen-score-input").forEach((input) => {
+		const side = input.dataset.side;
+		if (side === "a") {
+			input.className = `gen-score-input ${winnerOrLoserAclass}`;
+		} else if (side === "b") {
+			input.className = `gen-score-input ${winnerOrLoserBclass}`;
+		}
+	});
+}
+
 const PLAYER_SLOT = Object.freeze({
 	DRAGGABLE: 1, // Draggable player slot, displayed as a pill
 	PILL: 2, // Non-draggable player slot, displayed as a pill
@@ -908,11 +927,14 @@ function buildMatchCard(
 			const hasScore = score.a !== null || score.b !== null;
 			scoreRow.className = `gen-score-row${hasScore ? "" : " score-blank"}`;
 
+			const winnerOrLoserAclass = score.a !== null && score.a > (score.b || 0) ? "winner" : "loser";
+			const winnerOrLoserBclass = score.b !== null && score.b > (score.a || 0) ? "winner" : "loser";
+
 			const inA = document.createElement("input");
 			inA.type = "number";
 			inA.min = "0";
 			inA.placeholder = "0";
-			inA.className = "gen-score-input";
+			inA.className = `gen-score-input ${winnerOrLoserAclass}`;
 			inA.value = score.a !== null ? score.a : "";
 			inA.dataset.matchId = match.matchId;
 			inA.dataset.side = "a";
@@ -925,7 +947,7 @@ function buildMatchCard(
 			inB.type = "number";
 			inB.min = "0";
 			inB.placeholder = "0";
-			inB.className = "gen-score-input";
+			inB.className = `gen-score-input ${winnerOrLoserBclass}`;
 			inB.value = score.b !== null ? score.b : "";
 			inB.dataset.matchId = match.matchId;
 			inB.dataset.side = "b";
@@ -978,6 +1000,8 @@ genTrainingOut.addEventListener("change", (e) => {
 	const val = inp.value === "" ? null : Number(inp.value);
 	scores[matchId][side] = val;
 	saveScores();
+
+	updateScoreUI(scores[matchId], inp);
 });
 
 // ── Scoreboard ────────────────────────────────────────────────

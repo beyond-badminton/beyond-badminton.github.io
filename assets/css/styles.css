@@ -1338,6 +1338,16 @@ span.sort-active .sort-icon {
 	color: var(--ink-soft);
 }
 
+.gen-score-input.winner {
+	font-weight: 700;
+	background: var(--accent-soft);
+	border: 1px solid var(--accent);
+}
+
+.gen-score-input.loser {
+	font-weight: 700; /* currently no special styling for losers */
+}
+
 .gen-bench {
 	display: flex;
 	align-items: center;
