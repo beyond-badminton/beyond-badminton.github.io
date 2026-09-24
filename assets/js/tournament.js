@@ -22,6 +22,7 @@ function newTournamentConfig() {
 		qualificationFinished: false,
 		playoffDrawConfirmed: false,
 		playoffFinished: false,
+		playoffPlayersCount: 0,
 	};
 }
 
@@ -77,8 +78,8 @@ genGenerateTournamentBtn.addEventListener("click", async () => {
 		return;
 	}
 
-	if (!activePlayers.length) {
-		alertDialog(null, "No active players available.");
+	if ((activePlayers.length || 0) < 4) {
+		alertDialog(null, "There must be at least 4 active players.");
 		return;
 	}
 
@@ -508,12 +509,19 @@ function generateTournament(activePlayers, courtBlocks) {
 	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate
 		? genTournamentDatePicker.valueAsDate.toISOString()
 		: new Date().toISOString();
+	if (activePlayers.length < 8) {
+		tournamentConfig.playoffPlayersCount = 4;
+	} else if (activePlayers.length < 16) {
+		tournamentConfig.playoffPlayersCount = 8;
+	} else {
+		tournamentConfig.playoffPlayersCount = 16;
+	}
 	saveTournamentConfig();
 
 	// Initialize qualification player stats for active players, get all relevant information from all players to avoid additional lookup.
 	tournamentPlayers = activePlayers.map((ap) => ({
 		id: ap.allPlayerId,
-		rank: null,
+		rank: 0,
 		name: playerName(ap.allPlayerId),
 		isWoman: playerIsWoman(ap.allPlayerId),
 		pick: 0,
@@ -1072,8 +1080,11 @@ const qualificationP2PExcluded = new Set();
 function renderQualificationPlayerStats() {
 	genQualificationStatsTableBody.innerHTML = getSorted(tournamentPlayers, "qualificationPlayerStats")
 		.map((stat) => {
-			return `<tr>
-			<td>${stat.rank ?? ""}</td>
+			const sortState = stat.rank === tournamentConfig.playoffPlayersCount ? getSortState("qualificationPlayerStats") : null;
+			const playoffLine = sortState && sortState.field === "rank" && sortState.dir === "asc" ? ' class="playoff-line"' : "";
+			const playoffSpot = stat.rank <= tournamentConfig.playoffPlayersCount ? ' class="playoff-spot"' : "";
+			return `<tr${playoffLine}>
+			<td${playoffSpot}>${stat.rank}</td>
 			<td>${stat.name}</td>
 			<td>${stat.played}</td>
 			<td>${stat.wins}</td>

@@ -1399,6 +1399,13 @@ span.sort-active .sort-icon {
 .gen-stats-table tr:hover td {
 	background: var(--paper);
 }
+.gen-stats-table .playoff-spot {
+	font-weight: 700;
+	color: var(--accent);
+}
+.gen-stats-table .playoff-line {
+	border-bottom: 2px solid var(--ink-soft);
+}
 
 .help-icon {
 	display: inline-flex;
