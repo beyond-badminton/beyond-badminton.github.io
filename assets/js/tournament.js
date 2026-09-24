@@ -1238,6 +1238,9 @@ genQualificationOut.addEventListener("change", (e) => {
 
 	saveTournamentPlayers();
 	saveQualificationScores();
+
+	updateScoreUI(qualificationScores[matchId], inp);
+
 	renderQualificationStats();
 });
 
