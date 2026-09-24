@@ -102,6 +102,10 @@ const sortState = {
 	qualificationP2PStats: [{ field: "name", dir: "asc" }],
 };
 
+function getSortState(listKey) {
+	return sortState[listKey][0] || [];
+}
+
 // biome-ignore lint/correctness/noUnusedVariables: function is used
 function getSorted(arr, listKey) {
 	const sortFunc = (a, b, field, dir) => {
