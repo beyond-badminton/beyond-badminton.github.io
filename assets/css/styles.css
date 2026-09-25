@@ -1423,7 +1423,7 @@ span.sort-active .sort-icon {
 	color: var(--accent);
 }
 .gen-stats-table .playoff-line {
-	border-bottom: 2px solid var(--ink-soft);
+	border-top: 2px solid var(--ink-soft);
 }
 
 .help-icon {

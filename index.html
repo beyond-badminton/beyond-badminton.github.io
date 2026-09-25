@@ -512,6 +512,13 @@ Pikachu,3,x</pre>
 									<input type="search" id="qualification-p2p-filter-search" placeholder="Search player…">
 									<button type="button" id="qualification-p2p-filter-all-btn" class="select-btn">Select all</button>
 									<button type="button" id="qualification-p2p-filter-none-btn" class="clear-btn">Clear all</button>
+									<div class="checkbox-group">
+										<label class="gen-checkbox-label" for="qualification-p2p-filter-show-playoff">
+											<input type="checkbox" id="qualification-p2p-filter-show-playoff">
+											Show playoff players only
+										</label>
+										<span class="help-icon" title="When enabled, only matchups between playoff players are shown.">?</span>
+									</div>
 								</div>
 								<div id="qualification-p2p-player-filter" class="checkbox-list checkbox-filter-list"></div>
 							</div>
@@ -520,6 +527,7 @@ Pikachu,3,x</pre>
 								<table class="gen-stats-table">
 									<thead>
 										<tr>
+											<th><span class="sortable" data-list="qualificationP2PStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
 											<th><span class="sortable" data-list="qualificationP2PStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
 											<th><span class="sortable" data-list="qualificationP2PStats" data-field="opponent">Opponent <span class="sort-icon">↕</span></span></th>
 											<th><span class="sortable" data-list="qualificationP2PStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
