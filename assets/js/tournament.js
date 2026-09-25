@@ -871,8 +871,8 @@ function renderQualificationCheckboxFilter(filterListElement, excludeSet) {
 	});
 }
 
-function renderQualificationFilterLabel(filterLabel, countLabel, excludeSet) {
-	if (excludeSet.size) {
+function renderQualificationFilterLabel(filterLabel, countLabel, excludeSet, haveExtraExcludes = false) {
+	if (excludeSet.size > 0 || haveExtraExcludes) {
 		filterLabel.classList.add("gen-label-accent");
 	} else {
 		filterLabel.classList.remove("gen-label-accent");
@@ -1084,6 +1084,7 @@ const genQualificationP2PFilterCount = document.getElementById("qualification-p2
 const genQualificationP2PFilterSearch = document.getElementById("qualification-p2p-filter-search");
 const genQualificationP2PFilterAllBtn = document.getElementById("qualification-p2p-filter-all-btn");
 const genQualificationP2PFilterNoneBtn = document.getElementById("qualification-p2p-filter-none-btn");
+const genQualificationP2PFilterPlayoffCheckbox = document.getElementById("qualification-p2p-filter-show-playoff");
 const genQualificationConfirmBtn = document.getElementById("gen-qualification-confirm-btn");
 const genQualificationConfirmEmpty = document.getElementById("gen-qualification-confirm-empty");
 
@@ -1093,7 +1094,7 @@ const qualificationP2PExcluded = new Set();
 function renderQualificationPlayerStats() {
 	genQualificationStatsTableBody.innerHTML = getSorted(tournamentPlayers, "qualificationPlayerStats")
 		.map((stat) => {
-			const sortState = stat.rank === tournamentConfig.playoffPlayersCount ? getSortState("qualificationPlayerStats") : null;
+			const sortState = stat.rank === tournamentConfig.playoffPlayersCount + 1 ? getSortState("qualificationPlayerStats") : null;
 			const playoffLine = sortState && sortState.field === "rank" && sortState.dir === "asc" ? ' class="playoff-line"' : "";
 			const playoffSpot = stat.rank <= tournamentConfig.playoffPlayersCount ? ' class="playoff-spot"' : "";
 			return `<tr${playoffLine}>
@@ -1112,7 +1113,12 @@ function renderQualificationPlayerStats() {
 
 function renderQualificationP2PFilter() {
 	renderQualificationCheckboxFilter(genQualificationP2PFilterList, qualificationP2PExcluded);
-	renderQualificationFilterLabel(genQualificationP2PFilterLabel, genQualificationP2PFilterCount, qualificationP2PExcluded);
+	renderQualificationFilterLabel(
+		genQualificationP2PFilterLabel,
+		genQualificationP2PFilterCount,
+		qualificationP2PExcluded,
+		genQualificationP2PFilterPlayoffCheckbox.checked,
+	);
 	applyQualificationP2PFilterSearch();
 }
 
@@ -1139,6 +1145,16 @@ genQualificationP2PFilterNoneBtn.addEventListener("click", () => {
 	renderQualificationP2PStats();
 });
 
+genQualificationP2PFilterPlayoffCheckbox.addEventListener("change", () => {
+	renderQualificationFilterLabel(
+		genQualificationP2PFilterLabel,
+		genQualificationP2PFilterCount,
+		qualificationP2PExcluded,
+		genQualificationP2PFilterPlayoffCheckbox.checked,
+	);
+	renderQualificationP2PStats();
+});
+
 genQualificationP2PFilterList.addEventListener("change", (e) => {
 	const input = e.target.closest("input[type=checkbox]");
 	if (!input) return;
@@ -1155,27 +1171,53 @@ genQualificationP2PFilterList.addEventListener("change", (e) => {
 	}
 
 	renderQualificationP2PStats();
-	renderQualificationFilterLabel(genQualificationP2PFilterLabel, genQualificationP2PFilterCount, qualificationP2PExcluded);
+	renderQualificationFilterLabel(
+		genQualificationP2PFilterLabel,
+		genQualificationP2PFilterCount,
+		qualificationP2PExcluded,
+		genQualificationP2PFilterPlayoffCheckbox.checked,
+	);
 });
 
 function renderQualificationP2PStats() {
 	const rows = tournamentPlayers
-		.filter((p) => !qualificationP2PExcluded.has(Number(p.id)))
+		.filter(
+			(p) =>
+				!qualificationP2PExcluded.has(Number(p.id)) &&
+				(!genQualificationP2PFilterPlayoffCheckbox.checked || p.rank <= tournamentConfig.playoffPlayersCount),
+		)
 		.flatMap((p) => {
-			return Object.entries(p.opponents || {}).map(([, opponentRecord]) => {
-				return {
-					name: p.name,
-					opponent: opponentRecord.name,
-					played: opponentRecord.played,
-					wins: opponentRecord.wins,
-					losses: opponentRecord.losses,
-					diff: opponentRecord.diff,
-				};
-			});
+			return Object.entries(p.opponents || {})
+				.filter(
+					([opponentId, _]) =>
+						!genQualificationP2PFilterPlayoffCheckbox.checked ||
+						(tournamentPlayersMap.get(Number(opponentId)).rank || 0) <= tournamentConfig.playoffPlayersCount,
+				)
+				.map(([, opponentRecord]) => {
+					return {
+						rank: p.rank,
+						name: p.name,
+						opponent: opponentRecord.name,
+						played: opponentRecord.played,
+						wins: opponentRecord.wins,
+						losses: opponentRecord.losses,
+						diff: opponentRecord.diff,
+					};
+				});
 		});
+
+	let playoffLineDrawn = false;
 	genQualificationP2PStatsTableBody.innerHTML = getSorted(rows, "qualificationP2PStats")
 		.map((row) => {
-			return `<tr>
+			const drawPlayoffLine = !playoffLineDrawn && row.rank === tournamentConfig.playoffPlayersCount + 1;
+			if (drawPlayoffLine) {
+				playoffLineDrawn = true;
+			}
+			const sortState = drawPlayoffLine && row.rank === tournamentConfig.playoffPlayersCount + 1 ? getSortState("qualificationP2PStats") : null;
+			const playoffLine = sortState && sortState.field === "rank" && sortState.dir === "asc" ? ' class="playoff-line"' : "";
+			const playoffSpot = row.rank <= tournamentConfig.playoffPlayersCount ? ' class="playoff-spot"' : "";
+			return `<tr${playoffLine}>
+					<td${playoffSpot}>${row.rank}</td>
 					<td>${row.name}</td>
 					<td>${row.opponent}</td>
 					<td>${row.played}</td>
