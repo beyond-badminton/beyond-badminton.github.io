@@ -457,12 +457,19 @@ Pikachu,3,x</pre>
 						<div class="gen-collapsible gen-collapsed" id="qualification-match-filter-wrap">
 							<p class="gen-table-label gen-card-toggle" id="qualification-match-filter-label">
 								<span class="gen-collapse-arrow">▾</span>
-								Filter players (<span id="qualification-match-filter-count"></span>)
+								Filter matches (<span id="qualification-match-filter-count"></span>)
 							</p>
 							<div class="checkbox-filter-controls">
 								<input type="search" id="qualification-match-filter-search" placeholder="Search player…">
 								<button type="button" id="qualification-match-filter-all-btn" class="select-btn">Select all</button>
 								<button type="button" id="qualification-match-filter-none-btn" class="clear-btn">Clear all</button>
+								<div class="checkbox-group">
+									<label class="gen-checkbox-label" for="qualification-match-filter-active-window">
+										<input type="checkbox" id="qualification-match-filter-active-window">
+										Show active 4-round window
+									</label>
+									<span class="help-icon" title="Shows the last finished, current, and next 2 rounds. Active window is shifted 5 seconds after all score inputs lose focus.">?</span>
+								</div>
 							</div>
 							<div id="qualification-match-player-filter" class="checkbox-list checkbox-filter-list"></div>
 						</div>

@@ -855,6 +855,7 @@ const genQualificationMatchFilterCount = document.getElementById("qualification-
 const genQualificationMatchFilterSearch = document.getElementById("qualification-match-filter-search");
 const genQualificationMatchFilterAllBtn = document.getElementById("qualification-match-filter-all-btn");
 const genQualificationMatchFilterNoneBtn = document.getElementById("qualification-match-filter-none-btn");
+const genQualificationMatchFilterActiveWindow = document.getElementById("qualification-match-filter-active-window");
 
 // Player ids hidden from the P2P stats table (session-only, not persisted).
 const qualificationMatchPlayerExcluded = new Set();
@@ -883,7 +884,7 @@ function renderQualificationFilterLabel(filterLabel, countLabel, excludeSet, hav
 
 function renderQualificationMatchFilter() {
 	renderQualificationCheckboxFilter(genQualificationMatchFilterList, qualificationMatchPlayerExcluded);
-	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded);
+	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded, genQualificationMatchFilterActiveWindow.checked);
 	applyQualificationMatchFilterSearch();
 }
 
@@ -930,9 +931,64 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 		label.classList.remove("checked");
 	}
 
-	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded);
+	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded, genQualificationMatchFilterActiveWindow.checked);
 
 	if (tournamentConfig.qualificationStarted) {
+		renderQualificationRounds();
+	}
+});
+
+let roundWindowFilterStartId = null;
+let roundWindowFilterEndId = null;
+
+function updateQualificationRoundWindowChanged() {
+	let tmpRroundWindowFilterStartId = null;
+	let tmpRoundWindowFilterEndId = null;
+
+	let windowChanged = false;
+
+	if (genQualificationMatchFilterActiveWindow.checked) {
+		// note that roud id matches rounds array index, so we can use it directly
+		const firstUnfinishedRound = qualificationRounds.find((round) => {
+			console.log("Checking round for all empty scores:", round.roundId, round.matches);
+			return round.matches.some((match) => {
+				const scores = qualificationScores[match.matchId] || { a: null, b: null };
+				return (scores.a || 0) === 0 && (scores.b || 0) === 0;
+			});
+		});
+
+		if (firstUnfinishedRound) {
+			console.log("Found first unfinished round:", firstUnfinishedRound);
+			if (firstUnfinishedRound.roundId == 0) {
+				tmpRroundWindowFilterStartId = 0;
+			}
+			else {
+				tmpRroundWindowFilterStartId = firstUnfinishedRound.roundId - 1;
+			}
+			tmpRoundWindowFilterEndId = Math.min(qualificationRounds.length - 1, tmpRroundWindowFilterStartId + 3);
+		}
+		else {
+			// if all matches are played, show the last 4 rounds
+			tmpRroundWindowFilterStartId = qualificationRounds.length - Math.min(qualificationRounds.length, 4);
+			tmpRoundWindowFilterEndId = qualificationRounds.length - 1;
+		}
+	}
+
+	if (tmpRroundWindowFilterStartId !== roundWindowFilterStartId || tmpRoundWindowFilterEndId !== roundWindowFilterEndId) {
+		roundWindowFilterStartId = tmpRroundWindowFilterStartId;
+		roundWindowFilterEndId = tmpRoundWindowFilterEndId;
+		windowChanged = true;
+	}
+
+	return windowChanged;
+}
+
+
+genQualificationMatchFilterActiveWindow.addEventListener("change", () => {
+
+	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded, genQualificationMatchFilterActiveWindow.checked);
+
+	if (updateQualificationRoundWindowChanged()) {
 		renderQualificationRounds();
 	}
 });
@@ -1007,6 +1063,11 @@ function renderQualificationRounds() {
 
 	//console.log("Rendering qualification rounds:", tournamentConfig);
 	qualificationRounds.forEach((round) => {
+		if (roundWindowFilterStartId !== null && roundWindowFilterEndId !== null) {
+			if (round.roundId < roundWindowFilterStartId || round.roundId > roundWindowFilterEndId) {
+				return;
+			}
+		}
 		const matchesRow = document.createElement("div");
 		matchesRow.className = "gen-matches-row";
 		//console.log("Rendering round:", round.roundId, "with matches:", round.matches, "and qualificationScores:", qualificationScores);
@@ -1299,6 +1360,23 @@ genQualificationOut.addEventListener("change", (e) => {
 	renderQualificationStats();
 });
 
+let timeoutId = null;
+
+genQualificationOut.addEventListener("focusout", (e) => {
+	timeoutId = setTimeout(() => {
+		if (updateQualificationRoundWindowChanged()) {
+			renderQualificationRounds();
+		}
+		timeoutId = null;
+	}, 5000);
+});
+
+genQualificationOut.addEventListener("focusin", (e) => {
+	if (timeoutId !== null) {
+		clearTimeout(timeoutId);
+		timeoutId = null;
+	}
+});
 //------------------------------------------------------------
 // Initialization
 //------------------------------------------------------------
