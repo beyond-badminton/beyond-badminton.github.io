@@ -1124,6 +1124,7 @@ span.sort-active .sort-icon {
 	align-items: center;
 	gap: 8px;
 	user-select: none;
+	width: fit-content;
 }
 .gen-card-toggle:hover {
 	color: var(--accent);
@@ -1193,6 +1194,36 @@ span.sort-active .sort-icon {
 	margin-bottom: 10px;
 }
 
+.gen-round-header {
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	height: 1.5rem;
+	margin-bottom: 10px;
+}
+
+.gen-round-header .gen-round-label {
+	margin: 0;
+	width: fit-content;
+	font-size: 0.78rem;
+}
+
+.gen-round-header .discard-btn {
+	width: fit-content;
+	height: fit-content;
+	padding: 0.15rem 12px;
+	font-size: 0.85rem;
+}
+
+.gen-round-header .middle {
+	display: flex;
+	justify-content: flex-end; /* Pushes all items to the right */
+	flex: 1 1 auto;
+	height: fit-content;
+}
+
 .gen-round-label {
 	font-size: 0.78rem;
 	font-weight: 700;
@@ -1200,6 +1231,25 @@ span.sort-active .sort-icon {
 	letter-spacing: 0.04em;
 	color: var(--ink-soft);
 	margin: 0 0 10px;
+}
+
+.gen-round-window-timer {
+	height: 3px;
+	background-color: var(--accent);
+	border-radius: var(--radius);
+	width: auto;
+	flex: 1 1 auto;
+	transform-origin: right;
+}
+
+.gen-round-window-timer.running {
+	transform: scaleX(0);
+	transition: transform 5s linear;
+}
+
+.gen-round-window-timer.hidden {
+	transform: scaleX(1);
+	opacity: 0;
 }
 
 .gen-table-label {

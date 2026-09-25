@@ -855,6 +855,7 @@ const genQualificationMatchFilterCount = document.getElementById("qualification-
 const genQualificationMatchFilterSearch = document.getElementById("qualification-match-filter-search");
 const genQualificationMatchFilterAllBtn = document.getElementById("qualification-match-filter-all-btn");
 const genQualificationMatchFilterNoneBtn = document.getElementById("qualification-match-filter-none-btn");
+const genQualificationMatchFilterActiveWindow = document.getElementById("qualification-match-filter-active-window");
 
 // Player ids hidden from the P2P stats table (session-only, not persisted).
 const qualificationMatchPlayerExcluded = new Set();
@@ -883,7 +884,12 @@ function renderQualificationFilterLabel(filterLabel, countLabel, excludeSet, hav
 
 function renderQualificationMatchFilter() {
 	renderQualificationCheckboxFilter(genQualificationMatchFilterList, qualificationMatchPlayerExcluded);
-	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded);
+	renderQualificationFilterLabel(
+		genQualificationMatchFilterLabel,
+		genQualificationMatchFilterCount,
+		qualificationMatchPlayerExcluded,
+		genQualificationMatchFilterActiveWindow.checked,
+	);
 	applyQualificationMatchFilterSearch();
 }
 
@@ -930,9 +936,83 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 		label.classList.remove("checked");
 	}
 
-	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded);
+	renderQualificationFilterLabel(
+		genQualificationMatchFilterLabel,
+		genQualificationMatchFilterCount,
+		qualificationMatchPlayerExcluded,
+		genQualificationMatchFilterActiveWindow.checked,
+	);
 
 	if (tournamentConfig.qualificationStarted) {
+		renderQualificationRounds();
+	}
+});
+
+let roundWindowFilterStartId = null; // this point of the first shown index (like begin iterator)
+let roundWindowFilterEndId = null; // this point past the last shown index (like end iterator)
+
+const ROUND_WINDOW_OFFSET = 2; // show M round before the first unfinished round
+const ROUND_WINDOW_SIZE = 4; // show N rounds in total
+
+function qualificationRoundWindowHasChanged() {
+	let tmpRoundWindowFilterStartId = null;
+	let tmpRoundWindowFilterEndId = null;
+
+	if (genQualificationMatchFilterActiveWindow.checked) {
+		// note that roud id matches rounds array index, so we can use it directly
+		const firstUnfinishedRound = qualificationRounds.find((round) => {
+			return round.matches.some((match) => {
+				const scores = qualificationScores[match.matchId] || { a: null, b: null };
+				return (scores.a || 0) === (scores.b || 0);
+			});
+		});
+
+		if (firstUnfinishedRound) {
+			if (firstUnfinishedRound.roundId === 0) {
+				tmpRoundWindowFilterStartId = 0;
+			} else {
+				tmpRoundWindowFilterStartId = firstUnfinishedRound.roundId - ROUND_WINDOW_OFFSET;
+			}
+			tmpRoundWindowFilterEndId = Math.min(qualificationRounds.length, tmpRoundWindowFilterStartId + ROUND_WINDOW_SIZE);
+		} else {
+			// if all matches are played, show the last 4 rounds
+			tmpRoundWindowFilterStartId = qualificationRounds.length - Math.min(qualificationRounds.length, ROUND_WINDOW_SIZE);
+			tmpRoundWindowFilterEndId = qualificationRounds.length;
+		}
+
+		if (tmpRoundWindowFilterEndId - tmpRoundWindowFilterStartId < ROUND_WINDOW_SIZE) {
+			tmpRoundWindowFilterStartId = Math.max(0, tmpRoundWindowFilterEndId - ROUND_WINDOW_SIZE);
+		}
+	}
+
+	if (tmpRoundWindowFilterStartId !== roundWindowFilterStartId || tmpRoundWindowFilterEndId !== roundWindowFilterEndId) {
+		return [tmpRoundWindowFilterStartId, tmpRoundWindowFilterEndId];
+	}
+
+	return null;
+}
+
+function updateQualificationRoundWindowChanged() {
+	const changed = qualificationRoundWindowHasChanged();
+	if (!changed) {
+		return false;
+	}
+
+	roundWindowFilterStartId = changed[0];
+	roundWindowFilterEndId = changed[1];
+
+	return true;
+}
+
+genQualificationMatchFilterActiveWindow.addEventListener("change", () => {
+	renderQualificationFilterLabel(
+		genQualificationMatchFilterLabel,
+		genQualificationMatchFilterCount,
+		qualificationMatchPlayerExcluded,
+		genQualificationMatchFilterActiveWindow.checked,
+	);
+
+	if (updateQualificationRoundWindowChanged()) {
 		renderQualificationRounds();
 	}
 });
@@ -1007,6 +1087,11 @@ function renderQualificationRounds() {
 
 	//console.log("Rendering qualification rounds:", tournamentConfig);
 	qualificationRounds.forEach((round) => {
+		if (roundWindowFilterStartId !== null && roundWindowFilterEndId !== null) {
+			if (round.roundId < roundWindowFilterStartId || round.roundId >= roundWindowFilterEndId) {
+				return;
+			}
+		}
 		const matchesRow = document.createElement("div");
 		matchesRow.className = "gen-matches-row";
 		//console.log("Rendering round:", round.roundId, "with matches:", round.matches, "and qualificationScores:", qualificationScores);
@@ -1050,10 +1135,32 @@ function renderQualificationRounds() {
 		roundEl.className = "gen-round";
 		roundEl.dataset.roundId = round.roundId;
 
+		const roundHeader = document.createElement("div");
+		roundHeader.className = "gen-round-header";
+		roundEl.appendChild(roundHeader);
+
 		const rLabel = document.createElement("p");
-		rLabel.className = "gen-round-label";
+		rLabel.className = "gen-round-label left";
 		rLabel.innerHTML = `Round ${round.roundId + 1}`;
-		roundEl.appendChild(rLabel);
+		roundHeader.appendChild(rLabel);
+
+		if (genQualificationMatchFilterActiveWindow.checked) {
+			const middle = document.createElement("div");
+			middle.className = "middle";
+			roundHeader.appendChild(middle);
+
+			const timer = document.createElement("div");
+			timer.className = "gen-round-window-timer hidden";
+			middle.appendChild(timer);
+
+			const cancel = document.createElement("button");
+			cancel.className = "discard-btn right";
+			cancel.innerText = "Cancel shifting";
+			cancel.hidden = true;
+			cancel.disabled = true;
+			cancel.addEventListener("click", cancelRoundWindowTimer);
+			roundHeader.appendChild(cancel);
+		}
 		roundEl.appendChild(matchesRow);
 
 		// Bench
@@ -1298,6 +1405,68 @@ genQualificationOut.addEventListener("change", (e) => {
 
 	renderQualificationStats();
 });
+
+let timeoutId = null;
+
+genQualificationOut.addEventListener("focusout", (e) => {
+	if (e.target.type !== "number") {
+		return;
+	}
+	console.log("Qualification round window timer started", e);
+	if (qualificationRoundWindowHasChanged() === null) {
+		return;
+	}
+
+	timeoutId = setTimeout(() => {
+		if (updateQualificationRoundWindowChanged()) {
+			renderQualificationRounds();
+		}
+		timeoutId = null;
+	}, 5000);
+
+	const roundHeader = e.target.closest(".gen-round").querySelector(".gen-round-header");
+	if (!roundHeader) return;
+
+	const bar = roundHeader.querySelector(".gen-round-window-timer");
+	if (!bar) return;
+
+	bar.classList.remove("hidden", "running");
+	// Trigger reflow to restart CSS transition
+	//void bar.offsetWidth;
+	bar.classList.add("running");
+	const cancelBtn = roundHeader.querySelector(".discard-btn[hidden]");
+	if (!cancelBtn) return;
+	cancelBtn.hidden = false;
+	cancelBtn.disabled = false;
+});
+
+function cancelRoundWindowTimer(e) {
+	console.log("Qualification round window timer canceled", e);
+	if (timeoutId !== null) {
+		clearTimeout(timeoutId);
+		timeoutId = null;
+		const broundsBlock = e.target.closest(".gen-block");
+		console.log("Canceling round window timer for round header:", broundsBlock);
+		if (!broundsBlock) return;
+
+		const bar = broundsBlock.querySelector(".gen-round-window-timer.running");
+		if (!bar) return;
+
+		bar.classList.remove("running");
+		// Trigger reflow to restart CSS transition
+		//void bar.offsetWidth;
+		bar.classList.add("hidden");
+		const cancelBtn = bar.closest(".gen-round-header").querySelector(".discard-btn");
+		cancelBtn.hidden = true;
+		cancelBtn.disabled = true;
+
+		// const bar = genQualificationOut.querySelector('.gen-round-window-timer');
+		// bar.classList.remove('running', 'hidden');
+		// bar.classList.add('hidden');
+	}
+}
+
+genQualificationOut.addEventListener("focusin", cancelRoundWindowTimer);
 
 //------------------------------------------------------------
 // Initialization
