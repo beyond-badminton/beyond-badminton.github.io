@@ -849,6 +849,7 @@ const genQualificationCardLabel = document.getElementById("gen-qualification-car
 const genQualificationEditFilterWrap = document.getElementById("qualification-edit-filter-wrap");
 const genQualificationEditFilterCheckbox = document.getElementById("qualification-edit-filter-editable");
 const genQualificationMatchFilterWrap = document.getElementById("qualification-match-filter-wrap");
+const genQualificationMatchFilterLabel = document.getElementById("qualification-match-filter-label");
 const genQualificationMatchFilterList = document.getElementById("qualification-match-player-filter");
 const genQualificationMatchFilterCount = document.getElementById("qualification-match-filter-count");
 const genQualificationMatchFilterSearch = document.getElementById("qualification-match-filter-search");
@@ -858,7 +859,7 @@ const genQualificationMatchFilterNoneBtn = document.getElementById("qualificatio
 // Player ids hidden from the P2P stats table (session-only, not persisted).
 const qualificationMatchPlayerExcluded = new Set();
 
-function renderPlayersCheckboxFilter(filterListElement, excludeSet) {
+function renderQualificationCheckboxFilter(filterListElement, excludeSet) {
 	filterListElement.innerHTML = "";
 	tournamentPlayers.forEach((p) => {
 		const isChecked = !excludeSet.has(Number(p.id));
@@ -869,10 +870,21 @@ function renderPlayersCheckboxFilter(filterListElement, excludeSet) {
 		filterListElement.appendChild(label);
 	});
 }
+
+function renderQualificationFilterLabel(filterLabel, countLabel, excludeSet) {
+	if (excludeSet.size) {
+		filterLabel.classList.add("gen-label-accent");
+	} else {
+		filterLabel.classList.remove("gen-label-accent");
+	}
+
+	countLabel.textContent = `${tournamentPlayers.length - excludeSet.size}/${tournamentPlayers.length}`;
+}
+
 function renderQualificationMatchFilter() {
-	renderPlayersCheckboxFilter(genQualificationMatchFilterList, qualificationMatchPlayerExcluded);
+	renderQualificationCheckboxFilter(genQualificationMatchFilterList, qualificationMatchPlayerExcluded);
+	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded);
 	applyQualificationMatchFilterSearch();
-	genQualificationMatchFilterCount.textContent = `${tournamentPlayers.length - qualificationMatchPlayerExcluded.size}/${tournamentPlayers.length}`;
 }
 
 function applyQualificationMatchFilterSearch() {
@@ -918,7 +930,7 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 		label.classList.remove("checked");
 	}
 
-	genQualificationMatchFilterCount.textContent = `${tournamentPlayers.length - qualificationMatchPlayerExcluded.size}/${tournamentPlayers.length}`;
+	renderQualificationFilterLabel(genQualificationMatchFilterLabel, genQualificationMatchFilterCount, qualificationMatchPlayerExcluded);
 
 	if (tournamentConfig.qualificationStarted) {
 		renderQualificationRounds();
@@ -1066,6 +1078,7 @@ function renderQualificationRounds() {
 const genQualificationStatsCard = document.getElementById("gen-qualification-stats-card");
 const genQualificationStatsTableBody = document.getElementById("qualification-stats-table-body");
 const genQualificationP2PStatsTableBody = document.getElementById("qualification-stats-p2p-table-body");
+const genQualificationP2PFilterLabel = document.getElementById("qualification-p2p-filter-label");
 const genQualificationP2PFilterList = document.getElementById("qualification-p2p-player-filter");
 const genQualificationP2PFilterCount = document.getElementById("qualification-p2p-filter-count");
 const genQualificationP2PFilterSearch = document.getElementById("qualification-p2p-filter-search");
@@ -1097,10 +1110,10 @@ function renderQualificationPlayerStats() {
 	updateSortUI("qualificationPlayerStats");
 }
 
-function renderQualificationP2PPlayerFilter() {
-	renderPlayersCheckboxFilter(genQualificationP2PFilterList, qualificationP2PExcluded);
+function renderQualificationP2PFilter() {
+	renderQualificationCheckboxFilter(genQualificationP2PFilterList, qualificationP2PExcluded);
+	renderQualificationFilterLabel(genQualificationP2PFilterLabel, genQualificationP2PFilterCount, qualificationP2PExcluded);
 	applyQualificationP2PFilterSearch();
-	genQualificationP2PFilterCount.textContent = `${tournamentPlayers.length - qualificationP2PExcluded.size}/${tournamentPlayers.length}`;
 }
 
 function applyQualificationP2PFilterSearch() {
@@ -1114,7 +1127,7 @@ genQualificationP2PFilterSearch.addEventListener("input", applyQualificationP2PF
 
 genQualificationP2PFilterAllBtn.addEventListener("click", () => {
 	qualificationP2PExcluded.clear();
-	renderQualificationP2PPlayerFilter();
+	renderQualificationP2PFilter();
 	renderQualificationP2PStats();
 });
 
@@ -1122,7 +1135,7 @@ genQualificationP2PFilterNoneBtn.addEventListener("click", () => {
 	tournamentPlayersMap.keys().forEach((playerId) => {
 		qualificationP2PExcluded.add(playerId);
 	});
-	renderQualificationP2PPlayerFilter();
+	renderQualificationP2PFilter();
 	renderQualificationP2PStats();
 });
 
@@ -1141,8 +1154,8 @@ genQualificationP2PFilterList.addEventListener("change", (e) => {
 		label.classList.remove("checked");
 	}
 
-	genQualificationP2PFilterCount.textContent = `${tournamentPlayers.length - qualificationP2PExcluded.size}/${tournamentPlayers.length}`;
 	renderQualificationP2PStats();
+	renderQualificationFilterLabel(genQualificationP2PFilterLabel, genQualificationP2PFilterCount, qualificationP2PExcluded);
 });
 
 function renderQualificationP2PStats() {
@@ -1277,7 +1290,7 @@ function renderTournament() {
 
 	renderQualificationRounds();
 
-	renderQualificationP2PPlayerFilter();
+	renderQualificationP2PFilter();
 
 	renderQualificationStats();
 }

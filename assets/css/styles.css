@@ -9,7 +9,7 @@
 	--accent-soft: #e6f2ec;
 	--card-accent: #ffaeae;
 	--accent-red: #c8503a;
-	--accent-red-soft: #ffaeae;
+	--accent-red-dark: #802727;
 	--radius: 10px;
 	font-family: "Segoe UI", Helvetica, Arial, sans-serif;
 }
@@ -1209,6 +1209,15 @@ span.sort-active .sort-icon {
 	letter-spacing: 0.04em;
 	color: var(--ink-soft);
 }
+
+.gen-label-accent {
+	color: var(--accent-red);
+}
+
+.gen-label-accent:hover {
+	color: var(--accent-red-dark);
+}
+
 .gen-matches-row {
 	display: flex;
 	flex-direction: column;
