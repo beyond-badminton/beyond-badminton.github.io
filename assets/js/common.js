@@ -99,7 +99,7 @@ const sortState = {
 	stats: [{ field: "name", dir: "asc" }],
 	qualificationDraw: [{ field: "name", dir: "asc" }],
 	qualificationPlayerStats: [{ field: "rank", dir: "asc" }],
-	qualificationP2PStats: [{ field: "name", dir: "asc" }],
+	qualificationP2PStats: [{ field: "rank", dir: "asc" }],
 };
 
 function getSortState(listKey) {
