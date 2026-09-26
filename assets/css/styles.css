@@ -491,7 +491,7 @@ input[type="file"] {
 	background: transparent;
 	color: var(--ink-soft);
 	font-family: inherit;
-	font-size: 0.78rem;
+	font-size: 0.8rem;
 	font-weight: 600;
 	cursor: pointer;
 	padding: 4px 8px;
@@ -573,13 +573,13 @@ input[type="file"] {
 .player-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: 0.85rem;
+	font-size: 1rem;
 	display: none;
 }
 
 .player-table th {
 	text-align: left;
-	font-size: 0.72rem;
+	font-size: 0.85rem;
 	letter-spacing: 0.03em;
 	text-transform: uppercase;
 	color: var(--ink-soft);
@@ -1445,11 +1445,11 @@ span.sort-active .sort-icon {
 .gen-stats-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: 0.83rem;
+	font-size: 1rem;
 }
 .gen-stats-table th {
 	text-align: left;
-	font-size: 0.72rem;
+	font-size: 0.85rem;
 	letter-spacing: 0.03em;
 	text-transform: uppercase;
 	color: var(--ink-soft);
@@ -1474,6 +1474,15 @@ span.sort-active .sort-icon {
 }
 .gen-stats-table .playoff-line {
 	border-top: 2px solid var(--ink-soft);
+}
+
+.gen-stats-table tr.player-out td {
+	background: var(--paper);
+	border-bottom: 1px solid var(--accent-line);
+}
+
+.gen-stats-table tr.player-out:hover td {
+	background: var(--card);
 }
 
 .help-icon {
