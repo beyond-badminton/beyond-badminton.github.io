@@ -856,6 +856,7 @@ const genQualificationMatchFilterSearch = document.getElementById("qualification
 const genQualificationMatchFilterAllBtn = document.getElementById("qualification-match-filter-all-btn");
 const genQualificationMatchFilterNoneBtn = document.getElementById("qualification-match-filter-none-btn");
 const genQualificationMatchFilterActiveWindow = document.getElementById("qualification-match-filter-active-window");
+const genQualificationMatchFilterDrawnNumbers = document.getElementById("qualification-match-filter-drawn-numbers");
 
 // Player ids hidden from the P2P stats table (session-only, not persisted).
 const qualificationMatchPlayerExcluded = new Set();
@@ -888,7 +889,8 @@ function renderQualificationMatchFilter() {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked,
+		genQualificationMatchFilterActiveWindow.checked &&
+		genQualificationMatchFilterDrawnNumbers.checked,
 	);
 	applyQualificationMatchFilterSearch();
 }
@@ -940,7 +942,8 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked,
+		genQualificationMatchFilterActiveWindow.checked &&
+		genQualificationMatchFilterDrawnNumbers.checked,
 	);
 
 	if (tournamentConfig.qualificationStarted) {
@@ -1009,12 +1012,25 @@ genQualificationMatchFilterActiveWindow.addEventListener("change", () => {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked,
+		genQualificationMatchFilterActiveWindow.checked &&
+		genQualificationMatchFilterDrawnNumbers.checked,
 	);
 
 	if (updateQualificationRoundWindowChanged()) {
 		renderQualificationRounds();
 	}
+});
+
+genQualificationMatchFilterDrawnNumbers.addEventListener("change", () => {
+	renderQualificationFilterLabel(
+		genQualificationMatchFilterLabel,
+		genQualificationMatchFilterCount,
+		qualificationMatchPlayerExcluded,
+		genQualificationMatchFilterActiveWindow.checked &&
+		genQualificationMatchFilterDrawnNumbers.checked,
+	);
+
+	renderQualificationRounds();
 });
 
 genQualificationStartBtn.addEventListener("click", async () => {
@@ -1030,6 +1046,9 @@ function tournamentPlayerName(playerId) {
 		const player = tournamentPlayersMap.get(Number(playerId));
 		if (player?.withdrawn || false) {
 			return `(Withdrawn) ${player?.name || ""}`;
+		}
+		else if (genQualificationMatchFilterDrawnNumbers.checked) {
+			return `(${player?.pick || 0}) ${player?.name || ""}`;
 		}
 		return player?.name || "";
 	}
