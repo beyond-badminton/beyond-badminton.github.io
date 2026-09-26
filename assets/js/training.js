@@ -1326,7 +1326,7 @@ function renderStatsTable() {
 					<td>${r.playtime}h</td>
 					<td>${r.matches}</td>
 					<td>${r.bench}</td>
-					<td>${Math.floor((r.matches / (r.matches + r.bench)) * 100)}%</td>
+					<td>${Math.floor((r.matches / (r.matches + r.bench)) * 100) || ""}${r.matches ? "%" : "-"}</td>
 					<td>${r.partners.size}</td>
 					<td>${r.opponents.size}</td>
 				</tr>`,
