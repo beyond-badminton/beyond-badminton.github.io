@@ -889,8 +889,7 @@ function renderQualificationMatchFilter() {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked &&
-		genQualificationMatchFilterDrawnNumbers.checked,
+		genQualificationMatchFilterActiveWindow.checked && genQualificationMatchFilterDrawnNumbers.checked,
 	);
 	applyQualificationMatchFilterSearch();
 }
@@ -942,8 +941,7 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked &&
-		genQualificationMatchFilterDrawnNumbers.checked,
+		genQualificationMatchFilterActiveWindow.checked && genQualificationMatchFilterDrawnNumbers.checked,
 	);
 
 	if (tournamentConfig.qualificationStarted) {
@@ -1012,8 +1010,7 @@ genQualificationMatchFilterActiveWindow.addEventListener("change", () => {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked &&
-		genQualificationMatchFilterDrawnNumbers.checked,
+		genQualificationMatchFilterActiveWindow.checked && genQualificationMatchFilterDrawnNumbers.checked,
 	);
 
 	if (updateQualificationRoundWindowChanged()) {
@@ -1026,8 +1023,7 @@ genQualificationMatchFilterDrawnNumbers.addEventListener("change", () => {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked &&
-		genQualificationMatchFilterDrawnNumbers.checked,
+		genQualificationMatchFilterActiveWindow.checked && genQualificationMatchFilterDrawnNumbers.checked,
 	);
 
 	renderQualificationRounds();
@@ -1046,8 +1042,7 @@ function tournamentPlayerName(playerId) {
 		const player = tournamentPlayersMap.get(Number(playerId));
 		if (player?.withdrawn || false) {
 			return `(Withdrawn) ${player?.name || ""}`;
-		}
-		else if (genQualificationMatchFilterDrawnNumbers.checked) {
+		} else if (genQualificationMatchFilterDrawnNumbers.checked) {
 			return `(${player?.pick || 0}) ${player?.name || ""}`;
 		}
 		return player?.name || "";
@@ -1221,7 +1216,13 @@ function renderQualificationPlayerStats() {
 	genQualificationStatsTableBody.innerHTML = getSorted(tournamentPlayers, "qualificationPlayerStats")
 		.map((stat) => {
 			const sortState = stat.rank === tournamentConfig.playoffPlayersCount + 1 ? getSortState("qualificationPlayerStats") : null;
-			const playoffLine = sortState && sortState.field === "rank" && sortState.dir === "asc" ? ' class="playoff-line"' : "";
+			const playoffLine =
+				sortState && sortState.field === "rank" && sortState.dir === "asc"
+					? ' class="playoff-line player-out"'
+					: stat.rank > tournamentConfig.playoffPlayersCount
+						? ' class="player-out"'
+						: "";
+
 			const playoffSpot = stat.rank <= tournamentConfig.playoffPlayersCount ? ' class="playoff-spot"' : "";
 			return `<tr${playoffLine}>
 			<td${playoffSpot}>${stat.rank}</td>
@@ -1340,7 +1341,13 @@ function renderQualificationP2PStats() {
 				playoffLineDrawn = true;
 			}
 			const sortState = drawPlayoffLine && row.rank === tournamentConfig.playoffPlayersCount + 1 ? getSortState("qualificationP2PStats") : null;
-			const playoffLine = sortState && sortState.field === "rank" && sortState.dir === "asc" ? ' class="playoff-line"' : "";
+			const playoffLine =
+				sortState && sortState.field === "rank" && sortState.dir === "asc"
+					? ' class="playoff-line player-out"'
+					: row.rank > tournamentConfig.playoffPlayersCount
+						? ' class="player-out"'
+						: "";
+
 			const playoffSpot = row.rank <= tournamentConfig.playoffPlayersCount ? ' class="playoff-spot"' : "";
 			return `<tr${playoffLine}>
 					<td${playoffSpot}>${row.rank}</td>
