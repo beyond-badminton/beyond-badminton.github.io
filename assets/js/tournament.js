@@ -758,6 +758,7 @@ qualificationDrawSubmitButton.addEventListener("click", async () => {
 				tournamentConfig.qualificationStarted = true;
 				saveTournamentConfig();
 			} else {
+				saveQualificationRounds();
 				alertDialog("Entering edit mode", "A '2 Men vs 2 Women' match was found. Check the matches before starting the qualification.");
 			}
 		}
