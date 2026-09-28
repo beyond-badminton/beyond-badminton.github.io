@@ -1159,6 +1159,14 @@ span.sort-active .sort-icon {
 	margin-bottom: 10px;
 }
 
+.checkbox-filter-controls .align-top {
+	align-self: flex-start;
+}
+
+.checkbox-filter-controls .checkbox-group {
+	margin-left: 12px;
+}
+
 .checkbox-filter-controls input[type="search"] {
 	flex: 1 1 auto;
 	max-width: 240px;
