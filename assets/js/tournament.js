@@ -1622,3 +1622,29 @@ document.getElementById("tournament-section").addEventListener("keydown", (event
 		focusedControl.blur();
 	}
 });
+
+document.addEventListener("keydown", (event) => {
+	const focusedElement = document.activeElement;
+	if (
+		!document.getElementById("tournament-section").classList.contains("active") ||
+		(focusedElement instanceof HTMLElement && focusedElement.matches("input, select, textarea, [contenteditable]")) ||
+		!event.altKey ||
+		event.ctrlKey ||
+		event.metaKey ||
+		event.shiftKey
+	) {
+		return;
+	}
+
+	const shortcuts = {
+		p: genQualificationP2PFilterPlayoffCheckbox,
+		b: genQualificationMatchFilterNoBench,
+		n: genQualificationMatchFilterDrawnNumbers,
+		a: genQualificationMatchFilterActiveWindow,
+	};
+	const checkbox = shortcuts[event.key.toLowerCase()];
+	if (!checkbox) return;
+
+	event.preventDefault();
+	checkbox.click();
+});
