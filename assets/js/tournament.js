@@ -954,7 +954,7 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 let roundWindowFilterStartId = null; // this point of the first shown index (like begin iterator)
 let roundWindowFilterEndId = null; // this point past the last shown index (like end iterator)
 
-const ROUND_WINDOW_OFFSET = 2; // show M round before the first unfinished round
+const ROUND_WINDOW_OFFSET = 1; // show M round before the first unfinished round
 const ROUND_WINDOW_SIZE = 4; // show N rounds in total
 
 function qualificationRoundWindowHasChanged() {
