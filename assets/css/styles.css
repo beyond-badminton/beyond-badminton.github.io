@@ -4,6 +4,7 @@
 	--line: #dde3df;
 	--accent-line: #d4d4d4;
 	--paper: #f7f8f6;
+	--accent-paper: #eeefed;
 	--card: #ffffff;
 	--accent: #1f7a5c;
 	--accent-soft: #e6f2ec;
@@ -1465,24 +1466,33 @@ span.sort-active .sort-icon {
 .gen-stats-table tr:last-child td {
 	border-bottom: none;
 }
-.gen-stats-table tr:hover td {
-	background: var(--paper);
+.gen-stats-table tr.playoff-line-desc:not(:first-child) {
+	border-top: 2px solid var(--ink-soft);
 }
-.gen-stats-table .playoff-spot {
+.gen-stats-table tr.playoff-line-asc:not(:last-child) {
+	border-bottom: 2px solid var(--ink-soft);
+}
+.gen-stats-table tr.quartet-line-desc:not(:first-child) {
+	border-top: 2px solid var(--accent-line);
+}
+.gen-stats-table tr.quartet-line-asc:not(:last-child) {
+	border-bottom: 2px solid var(--accent-line);
+}
+
+.gen-stats-table tr.playoff-in td:first-child {
 	font-weight: 700;
 	color: var(--accent);
 }
-.gen-stats-table .playoff-line {
-	border-top: 2px solid var(--ink-soft);
-}
-
-.gen-stats-table tr.player-out td {
+.gen-stats-table tr.playoff-out {
 	background: var(--paper);
 	border-bottom: 1px solid var(--accent-line);
 }
 
-.gen-stats-table tr.player-out:hover td {
-	background: var(--card);
+.gen-stats-table tr:hover {
+	background: var(--paper);
+}
+.gen-stats-table tr.playoff-out:hover {
+	background: var(--accent-paper);
 }
 
 .help-icon {

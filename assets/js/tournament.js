@@ -1215,17 +1215,25 @@ const qualificationP2PExcluded = new Set();
 function renderQualificationPlayerStats() {
 	genQualificationStatsTableBody.innerHTML = getSorted(tournamentPlayers, "qualificationPlayerStats")
 		.map((stat) => {
-			const sortState = stat.rank === tournamentConfig.playoffPlayersCount + 1 ? getSortState("qualificationPlayerStats") : null;
-			const playoffLine =
-				sortState && sortState.field === "rank" && sortState.dir === "asc"
-					? ' class="playoff-line player-out"'
-					: stat.rank > tournamentConfig.playoffPlayersCount
-						? ' class="player-out"'
-						: "";
+			const trClasses = [];
+			const sortState = getSortState("qualificationPlayerStats");
+			const rankOrder = sortState && sortState.field === "rank" ? sortState.dir : null;
+			if (rankOrder) {
+				if (stat.rank === tournamentConfig.playoffPlayersCount) {
+					trClasses.push(`playoff-line-${rankOrder}`);
+				} else if (stat.rank < tournamentConfig.playoffPlayersCount && stat.rank % 4 === 0) {
+					trClasses.push(`quartet-line-${rankOrder}`);
+				}
+			}
 
-			const playoffSpot = stat.rank <= tournamentConfig.playoffPlayersCount ? ' class="playoff-spot"' : "";
-			return `<tr${playoffLine}>
-			<td${playoffSpot}>${stat.rank}</td>
+			if (stat.rank <= tournamentConfig.playoffPlayersCount) {
+				trClasses.push("playoff-in");
+			} else if (rankOrder) {
+				trClasses.push("playoff-out");
+			}
+
+			return `<tr class="${trClasses.join(" ")}">
+			<td>${stat.rank}</td>
 			<td>${stat.name}</td>
 			<td>${stat.played}</td>
 			<td>${stat.wins}</td>
@@ -1314,43 +1322,42 @@ function renderQualificationP2PStats() {
 				(!genQualificationP2PFilterPlayoffCheckbox.checked || p.rank <= tournamentConfig.playoffPlayersCount),
 		)
 		.flatMap((p) => {
-			return Object.entries(p.opponents || {})
-				.filter(
-					([opponentId, _]) =>
-						!genQualificationP2PFilterPlayoffCheckbox.checked ||
-						(tournamentPlayersMap.get(Number(opponentId)).rank || 0) <= tournamentConfig.playoffPlayersCount,
-				)
-				.map(([, opponentRecord]) => {
-					return {
-						rank: p.rank,
-						name: p.name,
-						opponent: opponentRecord.name,
-						played: opponentRecord.played,
-						wins: opponentRecord.wins,
-						losses: opponentRecord.losses,
-						diff: opponentRecord.diff,
-					};
-				});
+			const opponentsList = Object.entries(p.opponents || {}).filter(
+				([opponentId, _]) =>
+					!genQualificationP2PFilterPlayoffCheckbox.checked ||
+					(tournamentPlayersMap.get(Number(opponentId)).rank || 0) <= tournamentConfig.playoffPlayersCount,
+			);
+			return opponentsList.map(([, opponentRecord], i) => {
+				return {
+					rank: p.rank,
+					name: p.name,
+					opponent: opponentRecord.name,
+					lastOpponent: i === opponentsList.length - 1,
+					played: opponentRecord.played,
+					wins: opponentRecord.wins,
+					losses: opponentRecord.losses,
+					diff: opponentRecord.diff,
+				};
+			});
 		});
 
-	let playoffLineDrawn = false;
 	genQualificationP2PStatsTableBody.innerHTML = getSorted(rows, "qualificationP2PStats")
 		.map((row) => {
-			const drawPlayoffLine = !playoffLineDrawn && row.rank === tournamentConfig.playoffPlayersCount + 1;
-			if (drawPlayoffLine) {
-				playoffLineDrawn = true;
+			const trClasses = [];
+			const sortState = getSortState("qualificationPlayerStats");
+			const rankOrder = sortState && sortState.field === "rank" ? sortState.dir : null;
+			if (rankOrder && row.rank === tournamentConfig.playoffPlayersCount && row.lastOpponent) {
+				trClasses.push(`playoff-line-${rankOrder}`);
 			}
-			const sortState = drawPlayoffLine && row.rank === tournamentConfig.playoffPlayersCount + 1 ? getSortState("qualificationP2PStats") : null;
-			const playoffLine =
-				sortState && sortState.field === "rank" && sortState.dir === "asc"
-					? ' class="playoff-line player-out"'
-					: row.rank > tournamentConfig.playoffPlayersCount
-						? ' class="player-out"'
-						: "";
 
-			const playoffSpot = row.rank <= tournamentConfig.playoffPlayersCount ? ' class="playoff-spot"' : "";
-			return `<tr${playoffLine}>
-					<td${playoffSpot}>${row.rank}</td>
+			if (row.rank <= tournamentConfig.playoffPlayersCount) {
+				trClasses.push("playoff-in");
+			} else if (rankOrder) {
+				trClasses.push("playoff-out");
+			}
+
+			return `<tr class="${trClasses.join(" ")}">
+					<td>${row.rank}</td>
 					<td>${row.name}</td>
 					<td>${row.opponent}</td>
 					<td>${row.played}</td>
