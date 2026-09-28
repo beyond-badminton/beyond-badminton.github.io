@@ -856,6 +856,7 @@ const genQualificationMatchFilterSearch = document.getElementById("qualification
 const genQualificationMatchFilterAllBtn = document.getElementById("qualification-match-filter-all-btn");
 const genQualificationMatchFilterNoneBtn = document.getElementById("qualification-match-filter-none-btn");
 const genQualificationMatchFilterActiveWindow = document.getElementById("qualification-match-filter-active-window");
+const genQualificationMatchFilterNoBench = document.getElementById("qualification-match-filter-no-bench");
 const genQualificationMatchFilterDrawnNumbers = document.getElementById("qualification-match-filter-drawn-numbers");
 
 // Player ids hidden from the P2P stats table (session-only, not persisted).
@@ -1029,6 +1030,10 @@ genQualificationMatchFilterDrawnNumbers.addEventListener("change", () => {
 	renderQualificationRounds();
 });
 
+genQualificationMatchFilterNoBench.addEventListener("change", () => {
+	renderQualificationRounds();
+});
+
 genQualificationStartBtn.addEventListener("click", async () => {
 	if (await confirmDialog("Start qualification with these matchups?", "This action cannot be undone.")) {
 		tournamentConfig.qualificationStarted = true;
@@ -1177,9 +1182,15 @@ function renderQualificationRounds() {
 		}
 		roundEl.appendChild(matchesRow);
 
-		// Bench
-		// display bench only if not in exclusion filter mode and not in manual edit mode with filtering
-		if ((!manualEdit || qualificationMatchPlayerExcluded.size === 0) && !filterEditableMatches && round.bench && round.bench.length > 0) {
+		let showBench = true;
+
+		if (!manualEdit) {
+			showBench = !genQualificationMatchFilterNoBench.checked;
+		} else {
+			showBench = !filterEditableMatches;
+		}
+
+		if (showBench && round.bench && round.bench.length > 0) {
 			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, tournamentPlayerName));
 		}
 
