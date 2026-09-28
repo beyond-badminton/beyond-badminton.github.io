@@ -1601,3 +1601,12 @@ window.StorageEvents.on(StorageEvents.Type.HAS_EVENT_DATA, tournamentDataDesc, (
 window.PlayerEvents.on(PlayerEvents.Type.MUST, tournamentDataDesc, (id) => {
 	return tournamentPlayersMap.has(id);
 });
+
+document.getElementById("tournament-section").addEventListener("keydown", (event) => {
+	if (event.key !== "Escape") return;
+
+	const focusedControl = document.activeElement;
+	if (focusedControl instanceof HTMLElement && focusedControl.matches("input, select, textarea")) {
+		focusedControl.blur();
+	}
+});
