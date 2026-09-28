@@ -8,8 +8,8 @@
 	--card: #ffffff;
 	--accent: #1f7a5c;
 	--accent-soft: #e6f2ec;
-	--card-accent: #ffaeae;
 	--accent-red: #c8503a;
+	--accent-soft-red: #ffeeee;
 	--accent-red-dark: #802727;
 	--radius: 10px;
 	font-family: "Segoe UI", Helvetica, Arial, sans-serif;
@@ -1164,6 +1164,14 @@ span.sort-active .sort-icon {
 	max-width: 240px;
 }
 
+.checkbox-filter-controls input[type="checkbox"] {
+	accent-color: var(--accent-red);
+}
+
+.checkbox-filter-controls input[type="checkbox"]:focus {
+	box-shadow: 0 0 0 3px var(--accent-soft-red);
+}
+
 .checkbox-filter-list {
 	max-height: 220px;
 	overflow-y: auto;
@@ -1174,6 +1182,15 @@ span.sort-active .sort-icon {
 
 .checkbox-pill.filter-hidden {
 	display: none;
+}
+
+.checkbox-filter-list .checkbox-pill:not(.checked) {
+	border-color: var(--accent-red);
+}
+
+.checkbox-filter-list .checkbox-pill:not(.checked) input[type="checkbox"]:focus {
+	border-color: var(--accent-red);
+	box-shadow: 0 0 0 3px var(--accent-soft-red);
 }
 
 .gen-block-header {
