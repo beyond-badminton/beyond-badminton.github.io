@@ -1048,7 +1048,10 @@ function tournamentPlayerName(playerId) {
 		const player = tournamentPlayersMap.get(Number(playerId));
 		if (player?.withdrawn || false) {
 			return `(Withdrawn) ${player?.name || ""}`;
-		} else if (genQualificationMatchFilterDrawnNumbers.checked) {
+		} else if (
+			genQualificationMatchFilterDrawnNumbers.checked ||
+			(tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted)
+		) {
 			return `(${player?.pick || 0}) ${player?.name || ""}`;
 		}
 		return player?.name || "";
