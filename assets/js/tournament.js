@@ -1354,6 +1354,7 @@ function renderQualificationP2PStats() {
 					rank: p.rank,
 					name: p.name,
 					opponent: opponentRecord.name,
+					firstOpponent: i === 0,
 					lastOpponent: i === opponentsList.length - 1,
 					played: opponentRecord.played,
 					wins: opponentRecord.wins,
@@ -1363,12 +1364,14 @@ function renderQualificationP2PStats() {
 			});
 		});
 
+	const lastPlayoffRank = rows.reduce((rank, item) => (item.rank > rank && item.rank <= tournamentConfig.playoffPlayersCount ? item.rank : rank), 0);
+	console.log(lastPlayoffRank);
 	genQualificationP2PStatsTableBody.innerHTML = getSorted(rows, "qualificationP2PStats")
 		.map((row) => {
 			const trClasses = [];
-			const sortState = getSortState("qualificationPlayerStats");
+			const sortState = getSortState("qualificationP2PStats");
 			const rankOrder = sortState && sortState.field === "rank" ? sortState.dir : null;
-			if (rankOrder && row.rank === tournamentConfig.playoffPlayersCount && row.lastOpponent) {
+			if (((rankOrder === "asc" && row.lastOpponent) || (rankOrder === "desc" && row.firstOpponent)) && row.rank === lastPlayoffRank) {
 				trClasses.push(`playoff-line-${rankOrder}`);
 			}
 
