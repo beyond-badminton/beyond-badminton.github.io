@@ -848,7 +848,8 @@ const genQualificationOut = document.getElementById("gen-qualification-output");
 const genQualificationStartBtn = document.getElementById("gen-qualification-start-btn");
 const genQualificationCardLabel = document.getElementById("gen-qualification-card-label");
 const genQualificationEditFilterWrap = document.getElementById("qualification-edit-filter-wrap");
-const genQualificationEditFilterCheckbox = document.getElementById("qualification-edit-filter-editable");
+const genQualificationEditFilterEditable = document.getElementById("qualification-edit-filter-editable");
+const genQualificationEditFilterDrawNumbers = document.getElementById("qualification-edit-filter-draw-numbers");
 const genQualificationMatchFilterWrap = document.getElementById("qualification-match-filter-wrap");
 const genQualificationMatchFilterLabel = document.getElementById("qualification-match-filter-label");
 const genQualificationMatchFilterList = document.getElementById("qualification-match-player-filter");
@@ -902,7 +903,9 @@ function applyQualificationMatchFilterSearch() {
 		label.classList.toggle("filter-hidden", term !== "" && !label.dataset.name.includes(term));
 	});
 }
-genQualificationEditFilterCheckbox.addEventListener("change", renderQualificationRounds);
+
+genQualificationEditFilterEditable.addEventListener("change", renderQualificationRounds);
+genQualificationEditFilterDrawNumbers.addEventListener("change", renderQualificationRounds);
 
 genQualificationMatchFilterSearch.addEventListener("input", applyQualificationMatchFilterSearch);
 
@@ -1056,8 +1059,8 @@ function tournamentPlayerName(playerId) {
 		if (player?.withdrawn || false) {
 			return `(Withdrawn) ${player?.name || ""}`;
 		} else if (
-			genQualificationMatchFilterDrawnNumbers.checked ||
-			(tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted)
+			(tournamentConfig.qualificationStarted && genQualificationMatchFilterDrawnNumbers.checked) ||
+			(tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && genQualificationEditFilterDrawNumbers.checked)
 		) {
 			return `(${player?.pick || 0}) ${player?.name || ""}`;
 		}
@@ -1113,7 +1116,7 @@ function renderQualificationRounds() {
 	genQualificationStartBtn.hidden = !manualEdit;
 	genQualificationStartBtn.disabled = !manualEdit;
 
-	const filterEditableMatches = manualEdit && genQualificationEditFilterCheckbox.checked;
+	const filterEditableMatches = manualEdit && genQualificationEditFilterEditable.checked;
 
 	//console.log("Rendering qualification rounds:", tournamentConfig);
 	qualificationRounds.forEach((round) => {
