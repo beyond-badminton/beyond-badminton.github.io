@@ -503,7 +503,6 @@ function playerName(allPlayerId) {
 	return p ? p.name : "?";
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function playerSkill(allPlayerId) {
 	const p = allPlayers.find((p) => p.id === allPlayerId);
 	return p ? p.skill : "?";
@@ -514,7 +513,6 @@ function playerGender(allPlayerId) {
 	return p?.gender || "x";
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function playerIsWoman(allPlayerId) {
 	return playerGender(allPlayerId) === "w";
 }

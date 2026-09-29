@@ -5,7 +5,6 @@
 let dragSrc = null; // { playerId, team, pos, matchId, roundId }
 
 // onSwap func is called before actual swap occurs, it should return true if swap is allowed, false otherwise
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function attachDragHandlers(scheduleElement, onSwapFunc) {
 	scheduleElement.querySelectorAll(".gen-player-slot-draggable").forEach((el) => {
 		el.addEventListener("dragstart", onDragStart);
