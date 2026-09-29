@@ -891,7 +891,7 @@ function renderQualificationMatchFilter() {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked && genQualificationMatchFilterDrawnNumbers.checked,
+		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
 	);
 	applyQualificationMatchFilterSearch();
 }
@@ -943,7 +943,7 @@ genQualificationMatchFilterList.addEventListener("change", (e) => {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked && genQualificationMatchFilterDrawnNumbers.checked,
+		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
 	);
 
 	if (tournamentConfig.qualificationStarted) {
@@ -1012,7 +1012,7 @@ genQualificationMatchFilterActiveWindow.addEventListener("change", () => {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked && genQualificationMatchFilterDrawnNumbers.checked,
+		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
 	);
 
 	if (updateQualificationRoundWindowChanged()) {
@@ -1025,13 +1025,20 @@ genQualificationMatchFilterDrawnNumbers.addEventListener("change", () => {
 		genQualificationMatchFilterLabel,
 		genQualificationMatchFilterCount,
 		qualificationMatchPlayerExcluded,
-		genQualificationMatchFilterActiveWindow.checked && genQualificationMatchFilterDrawnNumbers.checked,
+		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
 	);
 
 	renderQualificationRounds();
 });
 
 genQualificationMatchFilterNoBench.addEventListener("change", () => {
+	renderQualificationFilterLabel(
+		genQualificationMatchFilterLabel,
+		genQualificationMatchFilterCount,
+		qualificationMatchPlayerExcluded,
+		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
+	);
+
 	renderQualificationRounds();
 });
 
