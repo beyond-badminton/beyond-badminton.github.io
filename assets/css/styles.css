@@ -1,18 +1,130 @@
 :root {
+	color-scheme: light dark;
 	--ink: #1a2420;
 	--ink-soft: #5c6b64;
 	--line: #dde3df;
 	--accent-line: #d4d4d4;
+	--modal-border: var(--accent-line);
 	--paper: #f7f8f6;
 	--accent-paper: #eeefed;
 	--card: #ffffff;
 	--accent: #1f7a5c;
 	--accent-soft: #e6f2ec;
 	--accent-red: #c8503a;
+	--accent-yellow: #96760a;
+	--accent-soft-yellow: #fdf1c8;
+	--accent-blue: #0f7f9b;
+	--accent-soft-blue: hsl(194, 100%, 92%);
+	--on-accent: #ffffff;
+	--transparent: transparent;
+	--accent-red-ring: rgba(200, 80, 58, 0.15);
+	--accent-hover: rgba(31, 122, 92, 0.18);
+	--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.06);
+	--shadow-modal: 0 4px 15px rgba(0, 0, 0, 0.3);
+	--backdrop: rgba(0, 0, 0, 0.6);
 	--accent-soft-red: #ffeeee;
 	--accent-red-dark: #802727;
 	--radius: 10px;
 	font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+:root[data-theme="light"] {
+	color-scheme: light;
+}
+:root[data-theme="dark"] {
+	color-scheme: dark;
+}
+
+/* Auto: follow the system unless the user forced light */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--ink: #e4ebe7;
+		--ink-soft: #97a69e;
+		--line: #2a3530;
+		--accent-line: #3a4540;
+		--paper: #111614;
+		--accent-paper: #272d2a;
+		--card: #1a221f;
+		--accent: #3fb58a;
+		--accent-soft: #1a3329;
+		--accent-red: #ef7a63;
+		--accent-yellow: #e0b93c;
+		--accent-soft-yellow: #3a3010;
+		--accent-blue: #4ab8d4;
+		--accent-soft-blue: hsl(194, 50%, 16%);
+		--on-accent: #06140e;
+		--accent-red-ring: rgba(239, 122, 99, 0.25);
+		--accent-hover: rgba(63, 181, 138, 0.22);
+		--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
+		--shadow-modal: 0 4px 20px rgba(0, 0, 0, 0.6);
+		--backdrop: rgba(0, 0, 0, 0.75);
+		--accent-soft-red: #3a1d1a;
+		--accent-red-dark: #f4a8a0;
+	}
+}
+
+/* Forced dark: exactly the same variables as above */
+:root[data-theme="dark"] {
+	--ink: #e4ebe7;
+	--ink-soft: #97a69e;
+	--line: #2a3530;
+	--accent-line: #3a4540;
+	--paper: #111614;
+	--accent-paper: #272d2a;
+	--card: #1a221f;
+	--accent: #3fb58a;
+	--accent-soft: #1a3329;
+	--accent-red: #ef7a63;
+	--accent-yellow: #e0b93c;
+	--accent-soft-yellow: #3a3010;
+	--accent-blue: #4ab8d4;
+	--accent-soft-blue: hsl(194, 50%, 16%);
+	--on-accent: #06140e;
+	--accent-red-ring: rgba(239, 122, 99, 0.25);
+	--accent-hover: rgba(63, 181, 138, 0.22);
+	--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
+	--shadow-modal: 0 4px 20px rgba(0, 0, 0, 0.6);
+	--backdrop: rgba(0, 0, 0, 0.75);
+	--accent-soft-red: #3a1d1a;
+	--accent-red-dark: #f4a8a0;
+}
+
+.header-controls {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+	flex-wrap: wrap;
+}
+/* Theme switch UI */
+.theme-switch {
+	display: inline-flex;
+	padding: 3px;
+	gap: 2px;
+	background: var(--accent-paper);
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+}
+.theme-switch button {
+	font: inherit;
+	font-size: 0.85rem;
+	padding: 4px 10px;
+	color: var(--ink-soft);
+	background: var(--transparent);
+	border: 0;
+	border-radius: calc(var(--radius) - 3px);
+	cursor: pointer;
+}
+.theme-switch button:hover {
+	color: var(--ink);
+}
+.theme-switch button[aria-pressed="true"] {
+	background: var(--card);
+	color: var(--ink);
+	box-shadow: var(--shadow-subtle);
+}
+.theme-switch button:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
 }
 
 * {
@@ -71,12 +183,14 @@ header h1 {
 	white-space: nowrap;
 	transition:
 		border-color 0.15s ease,
+		background 0.15s ease,
 		color 0.15s ease;
 }
 
 .discard-btn:hover {
-	border-color: #c8503a;
-	color: #c8503a;
+	border-color: var(--accent-red);
+	background: var(--accent-soft-red);
+	color: var(--accent-red);
 }
 
 .imp-exp-button {
@@ -114,7 +228,7 @@ header h1 {
 .tab {
 	flex: 1;
 	border: none;
-	background: transparent;
+	background: var(--transparent);
 	padding: 8px 10px;
 	font-size: 0.85rem;
 	font-weight: 600;
@@ -129,7 +243,7 @@ header h1 {
 .tab.active {
 	background: var(--card);
 	color: var(--ink);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+	box-shadow: var(--shadow-subtle);
 }
 
 .tab:not(.active):hover {
@@ -223,19 +337,19 @@ select:focus input[type="date"]:focus {
 
 .field.invalid input,
 .field.invalid select {
-	border-color: #c8503a;
-	background: #fdf2ef;
+	border-color: var(--accent-red);
+	background: var(--accent-soft-red);
 }
 
 .field.invalid input:focus,
 .field.invalid select:focus {
-	box-shadow: 0 0 0 3px rgba(200, 80, 58, 0.15);
+	box-shadow: 0 0 0 3px var(--accent-red-ring);
 }
 
 .error-text {
 	display: none;
 	font-size: 0.75rem;
-	color: #c8503a;
+	color: var(--accent-red);
 }
 
 .field.invalid .error-text {
@@ -248,7 +362,7 @@ button[type="submit"] {
 	font-size: 0.88rem;
 	font-weight: 600;
 	font-family: inherit;
-	color: #fff;
+	color: var(--on-accent);
 	background: var(--accent);
 	border: none;
 	border-radius: 7px;
@@ -315,13 +429,13 @@ input[type="file"] {
 }
 
 .import-result.error .summary {
-	color: #c8503a;
+	color: var(--accent-red);
 }
 
 .import-errors {
 	margin: 6px 0 0;
 	padding-left: 18px;
-	color: #c8503a;
+	color: var(--accent-red);
 }
 
 .import-errors li {
@@ -369,7 +483,7 @@ input[type="file"] {
 	height: 18px;
 	border: none;
 	border-radius: 50%;
-	background: transparent;
+	background: var(--transparent);
 	color: var(--accent);
 	font-size: 0.85rem;
 	line-height: 1;
@@ -378,7 +492,7 @@ input[type="file"] {
 }
 
 .chip-remove:hover {
-	background: rgba(31, 122, 92, 0.18);
+	background: var(--accent-hover);
 }
 
 .checkbox-list {
@@ -451,18 +565,20 @@ input[type="file"] {
 	cursor: pointer;
 	transition:
 		border-color 0.15s ease,
+		background 0.15s ease,
 		color 0.15s ease;
 }
 
 .select-btn:hover {
 	border-color: var(--accent);
+	background: var(--accent-soft);
 	color: var(--accent);
 }
 
 .tiebreak-desc {
 	display: block;
 	font-size: 1em;
-	color: #666;
+	color: var(--ink-soft);
 	margin-top: 0.1em;
 	margin-bottom: 0.5em;
 }
@@ -479,17 +595,24 @@ input[type="file"] {
 	cursor: pointer;
 	transition:
 		border-color 0.15s ease,
+		background 0.15s ease,
 		color 0.15s ease;
 }
 
 .clear-btn:hover {
-	border-color: #c8503a;
-	color: #c8503a;
+	border-color: var(--accent-red);
+	background: var(--accent-soft-red);
+	color: var(--accent-red);
+}
+
+.clear-btn:focus-visible {
+	outline: none;
+	border-color: var(--accent-red);
 }
 
 .remove-btn {
 	border: none;
-	background: transparent;
+	background: var(--transparent);
 	color: var(--ink-soft);
 	font-family: inherit;
 	font-size: 0.8rem;
@@ -508,8 +631,8 @@ input[type="file"] {
 	accent-color: var(--accent);
 }
 .remove-btn:hover {
-	background: #fdf2ef;
-	color: #c8503a;
+	background: var(--accent-soft-red);
+	color: var(--accent-red);
 }
 
 .player-list li .remove-btn {
@@ -630,39 +753,39 @@ input[type="file"] {
 }
 
 .skill-pill.skill-1 {
-	background: #fbe3d3;
-	color: #c05a1d;
+	background: var(--accent-soft-red);
+	color: var(--accent-red);
 }
 
 .skill-pick.skill-1:hover {
-	box-shadow: 0 0 0 1px #c05a1d;
+	box-shadow: 0 0 0 1px var(--accent-red);
 }
 
 .skill-pill.skill-2 {
-	background: #fdf1c8;
-	color: #96760a;
+	background: var(--accent-soft-yellow);
+	color: var(--accent-yellow);
 }
 
 .skill-pick.skill-2:hover {
-	box-shadow: 0 0 0 1px #96760a;
+	box-shadow: 0 0 0 1px var(--accent-yellow);
 }
 
 .skill-pill.skill-3 {
-	background: #e3f3e1;
-	color: #2f7a35;
+	background: var(--accent-soft);
+	color: var(--accent);
 }
 
 .skill-pick.skill-3:hover {
-	box-shadow: 0 0 0 1px #2f7a35;
+	box-shadow: 0 0 0 1px var(--accent);
 }
 
 .skill-pill.skill-4 {
-	background: hsl(194, 100%, 92%);
-	color: #0f7f9b;
+	background: var(--accent-soft-blue);
+	color: var(--accent-blue);
 }
 
 .skill-pick.skill-4:hover {
-	box-shadow: 0 0 0 1px #0f7f9b;
+	box-shadow: 0 0 0 1px var(--accent-blue);
 }
 
 .gender-pill {
@@ -681,21 +804,21 @@ input[type="file"] {
 }
 
 .gender-pill.gender-m {
-	background: hsl(194, 100%, 92%);
-	color: #0f7f9b;
+	background: var(--accent-soft-blue);
+	color: var(--accent-blue);
 }
 
 .gender-pick.gender-m:hover {
-	box-shadow: 0 0 0 1px #0f7f9b;
+	box-shadow: 0 0 0 1px var(--accent-blue);
 }
 
 .gender-pill.gender-w {
-	background: #fbe3d3;
-	color: #c05a1d;
+	background: var(--accent-soft-red);
+	color: var(--accent-red);
 }
 
 .gender-pick.gender-w:hover {
-	box-shadow: 0 0 0 1px #c05a1d;
+	box-shadow: 0 0 0 1px var(--accent-red);
 }
 
 .gender-pill.gender-x {
@@ -837,7 +960,7 @@ input[type="file"] {
 .sub-tab {
 	flex: 1;
 	border: none;
-	background: transparent;
+	background: var(--transparent);
 	padding: 7px 10px;
 	font-size: 0.82rem;
 	font-weight: 600;
@@ -853,7 +976,7 @@ input[type="file"] {
 .sub-tab.active {
 	background: var(--card);
 	color: var(--ink);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+	box-shadow: var(--shadow-subtle);
 }
 
 .sub-tab:not(.active):hover {
@@ -991,7 +1114,7 @@ span.sort-active .sort-icon {
 	font-size: 0.88rem;
 	font-weight: 600;
 	font-family: inherit;
-	color: #fff;
+	color: var(--on-accent);
 	background: var(--accent);
 	border: none;
 	border-radius: 7px;
@@ -1025,7 +1148,7 @@ span.sort-active .sort-icon {
 	border-radius: 999px;
 	font-size: 0.72rem;
 	font-weight: 700;
-	color: #fff;
+	color: var(--on-accent);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1110,13 +1233,13 @@ span.sort-active .sort-icon {
 }
 
 .pen-green {
-	color: #2f7a35;
+	color: var(--accent);
 }
 .pen-yellow {
-	color: #96760a;
+	color: var(--accent-yellow);
 }
 .pen-red {
-	color: #c8503a;
+	color: var(--accent-red);
 }
 
 .gen-card-toggle {
@@ -1541,7 +1664,7 @@ span.sort-active .sort-icon {
 
 .help-icon:hover {
 	background-color: var(--accent); /* Pops to blue when they mouse over */
-	color: white;
+	color: var(--on-accent);
 }
 
 /* button.help-icon {
@@ -1554,9 +1677,11 @@ span.sort-active .sort-icon {
 
 .confirm-modal {
 	padding: 20px;
-	border: none;
+	border: 1px solid var(--modal-border);
 	border-radius: 8px;
-	box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+	background: var(--card);
+	color: var(--ink);
+	box-shadow: var(--shadow-modal);
 	font-family: sans-serif;
 	font-size: 16px;
 	max-width: 400px;
@@ -1564,7 +1689,7 @@ span.sort-active .sort-icon {
 }
 
 .confirm-modal::backdrop {
-	background: rgba(0, 0, 0, 0.6); /* Darkens the background */
+	background: var(--backdrop); /* Darkens the background */
 }
 
 .confirm-modal input {
@@ -1572,7 +1697,7 @@ span.sort-active .sort-icon {
 	padding: 10px;
 	margin: 15px 0;
 	box-sizing: border-box;
-	border: 1px solid #ccc;
+	border: 1px solid var(--accent-line);
 	border-radius: 4px;
 }
 
