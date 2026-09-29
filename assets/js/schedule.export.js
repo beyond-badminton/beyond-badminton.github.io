@@ -88,7 +88,6 @@ function buildScheduleRoundViewModels(schedule, scores, printExtraMatch = true, 
  * 
  * @returns {void}
  */
-// biome-ignore lint/correctness/noUnusedVariables: function is used in training.js and tournament.js
 async function downloadScheduleSpreadsheet(
 	eventName,
 	schedule,
@@ -299,7 +298,6 @@ async function downloadScheduleSpreadsheet(
  *
  * @returns {void}
  */
-// biome-ignore lint/correctness/noUnusedVariables: function is used in training.js and tournament.js
 function printSchedule(
 	eventName,
 	schedule,

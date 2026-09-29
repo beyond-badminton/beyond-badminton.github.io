@@ -255,7 +255,6 @@ function applyMatchScore(playersMap, match, score, sign = 1) {
  * @param {Object} score { a, b } the score originally applied for this match
  * @return {void}
  */
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function revertMatchScore(playersMap, match, score) {
 	applyMatchScore(playersMap, match, score, -1);
 }

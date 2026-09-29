@@ -49,12 +49,10 @@ function minsToTime(total) {
 	return `${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function addMinsToTime(time, minsToAdd) {
 	return minsToTime(timeToMins(time) + minsToAdd);
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function formatDuration(mins) {
 	const h = Math.floor(mins / 60),
 		m = mins % 60;
@@ -68,7 +66,6 @@ function formatDuration(mins) {
 // ============================================================
 
 // Populate time dropdown (07:00 – 20:00 in 30-min steps)
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function populateTimeSelect(selectEl) {
 	for (let mins = 7 * 60; mins <= 20 * 60; mins += 30) {
 		const h = String(Math.floor(mins / 60)).padStart(2, "0");
@@ -83,7 +80,6 @@ function populateTimeSelect(selectEl) {
 // SORT UTILITIES
 // ============================================================
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function shuffle(array) {
 	for (let i = array.length - 1; i > 0; i--) {
 		const j = Math.floor(Math.random() * (i + 1));
@@ -97,17 +93,24 @@ const sortState = {
 	all: [{ field: "name", dir: "asc" }],
 	active: [{ field: "name", dir: "asc" }],
 	stats: [{ field: "name", dir: "asc" }],
-	qualificationDraw: [{ field: "name", dir: "asc" }],
-	qualificationPlayerStats: [{ field: "rank", dir: "asc" }],
-	qualificationP2PStats: [{ field: "rank", dir: "asc" }],
 };
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
+const sortRenderers = new Map();
+const sortComparators = new Map();
+
+function registerSortList(listKey, initialState, comparator) {
+	sortState[listKey] = initialState.map((sort) => ({ ...sort }));
+	if (comparator) sortComparators.set(listKey, comparator);
+}
+
+function registerSortRenderer(listKey, renderer) {
+	sortRenderers.set(listKey, renderer);
+}
+
 function getSortState(listKey) {
 	return sortState[listKey][0] || [];
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function getSorted(arr, listKey) {
 	const sortFunc = (a, b, field, dir) => {
 		if (field === "arrival") {
@@ -117,19 +120,7 @@ function getSorted(arr, listKey) {
 			if (va > vb) return dir === "asc" ? 1 : -1;
 			return 0;
 		}
-		if (
-			field === "playtime" ||
-			field === "matches" ||
-			field === "bench" ||
-			field === "sit1stRound" ||
-			field === "pick" ||
-			field === "played" ||
-			field === "wins" ||
-			field === "losses" ||
-			field === "winrate" ||
-			field === "diff" ||
-			field === "rank"
-		) {
+		if (field === "playtime" || field === "matches" || field === "bench" || field === "sit1stRound" || field === "winrate") {
 			const va = a[field] || false;
 			const vb = b[field] || false;
 			if (va < vb) return dir === "asc" ? -1 : 1;
@@ -174,14 +165,13 @@ function getSorted(arr, listKey) {
 
 	return [...arr].sort((a, b) => {
 		for (const { field, dir } of sortState[listKey]) {
-			const result = sortFunc(a, b, field, dir);
+			const result = sortComparators.get(listKey)?.(a, b, field, dir) ?? sortFunc(a, b, field, dir);
 			if (result !== 0) return result;
 		}
 		return 0; // If all criteria are equal, maintain original order
 	});
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function updateSortUI(listKey) {
 	const { field, dir } = sortState[listKey][0];
 	const arrow = dir === "asc" ? "↑" : "↓";
@@ -194,7 +184,6 @@ function updateSortUI(listKey) {
 	});
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function cancelSortUI(listKey) {
 	document.querySelectorAll(`span.sortable[data-list="${listKey}"]`).forEach((span) => {
 		span.classList.remove("sort-active");
@@ -221,14 +210,16 @@ function handleSort(listKey, field) {
 	if (listKey === "all") renderAllPlayers();
 	else if (listKey === "active") renderActivePlayers();
 	else if (listKey === "stats") renderStatsTable();
-	else if (listKey === "qualificationDraw") renderQualificationDrawPlayers();
-	else if (listKey === "qualificationPlayerStats") renderQualificationStats();
-	else if (listKey === "qualificationP2PStats") renderQualificationP2PStats();
+	else sortRenderers.get(listKey)?.();
 }
 
-document.querySelectorAll("span.sortable").forEach((el) => {
-	el.addEventListener("click", () => handleSort(el.dataset.list, el.dataset.field));
-});
+function registerSortableTable(element) {
+	element.querySelectorAll("span.sortable").forEach((el) => {
+		el.addEventListener("click", () => handleSort(el.dataset.list, el.dataset.field));
+	});
+}
+
+registerSortableTable(document);
 
 document.querySelectorAll(".gen-card-toggle").forEach((header) => {
 	header.addEventListener("click", () => {
@@ -242,7 +233,6 @@ document.querySelectorAll(".gen-card-toggle").forEach((header) => {
 // ADDITIONAL UTILITIES
 // ============================================================
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function valueWithSign(val) {
 	if (val > 0) return `+${val}`;
 	return val;
@@ -335,12 +325,10 @@ function openDialog(title, note = null, confirmation = false, confirmationMatch 
 }
 
 // Helper Wrappers (Can simply return the Promise directly)
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function alertDialog(title, note = null) {
 	return openDialog(title, note, false, null);
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function confirmDialog(title, note = null) {
 	return openDialog(title, note, true, null);
 }

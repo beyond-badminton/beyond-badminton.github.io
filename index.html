@@ -456,10 +456,10 @@ Pikachu,3,x</pre>
 						</div>
 					</div>
 
-					<div class="card gen-collapsible" id="gen-qualification-card" hidden>
+					<div class="card gen-collapsible" id="gen-qualification-rounds-card" hidden>
 						<h2 class="gen-card-toggle">
 							<span class="gen-collapse-arrow">▾</span>
-							<span id="gen-qualification-card-label">Qualification rounds</span>
+							<span id="gen-qualification-rounds-card-label">Qualification rounds</span>
 						</h2>
 						
 						<div id="qualification-edit-filter-wrap">
@@ -490,7 +490,7 @@ Pikachu,3,x</pre>
 									<div class="checkbox-group">
 										<label class="gen-checkbox-label" for="qualification-match-filter-active-window">
 											<input type="checkbox" id="qualification-match-filter-active-window">
-											Show active 4-round window
+											<span id="qualification-match-filter-active-window-label">Show active 4-round window</span>
 										</label>
 										<span class="help-icon" title="Shows the last finished, current, and next 2 rounds. Active window is shifted 5 seconds after all score inputs lose focus. Keyboard shortcut: Alt + A.">?</span>
 									</div>
@@ -530,18 +530,8 @@ Pikachu,3,x</pre>
 							<p class="gen-table-label">Standings</p>
 							
 							<div class="gen-stats-table-wrap">
-								<table class="gen-stats-table">
-									<thead>
-										<tr>
-											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationPlayerStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
-											<th>Decided By<span class="help-icon" title="The rule that set the player's final position, whether decisive on its own or used to break a tie.">?</span></th>
-										</tr>
-									</thead>
+								<table class="gen-stats-table" id="qualification-stats-table">
+									<thead></thead>
 									<tbody id="qualification-stats-table-body">
 									</tbody>
 								</table>
@@ -572,18 +562,8 @@ Pikachu,3,x</pre>
 							</div>
 
 							<div class="gen-stats-table-wrap">
-								<table class="gen-stats-table">
-									<thead>
-										<tr>
-											<th><span class="sortable" data-list="qualificationP2PStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationP2PStats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationP2PStats" data-field="opponent">Opponent <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationP2PStats" data-field="played">Played <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationP2PStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationP2PStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
-											<th><span class="sortable" data-list="qualificationP2PStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
-										</tr>
-									</thead>
+								<table class="gen-stats-table" id="qualification-p2p-stats-table">
+									<thead></thead>
 									<tbody id="qualification-stats-p2p-table-body">
 									</tbody>
 								</table>
@@ -714,8 +694,15 @@ Pikachu,3,x</pre>
 		<script src="assets/js/schedule.export.js"></script>
 		<script src="assets/js/training.js"></script>
 		<script src="assets/js/tournament.ranking.js"></script>
-		<script src="assets/js/tournament.js"></script>
+		<script src="assets/js/tournament.base.js"></script>
+		<script src="assets/js/tournament.common.js"></script>
+		<script src="assets/js/tournament.generate.js"></script>
+		<script src="assets/js/tournament.draw.js"></script>
+		<script src="assets/js/tournament.rounds.js"></script>
+		<script src="assets/js/tournament.playerstats.js"></script>
+		<script src="assets/js/tournament.p2pstats.js"></script>
 		<script src="assets/js/exceljs.min.js"></script>
+		<script src="assets/js/tournament.init.js"></script>
 		<script src="assets/js/init.js"></script>
 	</body>
 </html>

@@ -226,17 +226,14 @@ function activePlayerName(activeId) {
 	return playerName(activePlayerAllId(activeId) ?? null);
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function activePlayerSkill(activeId) {
 	return playerSkill(activePlayerAllId(activeId) ?? null);
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function activePlayerGender(activeId) {
 	return playerGender(activePlayerAllId(activeId) ?? null);
 }
 
-// biome-ignore lint/correctness/noUnusedVariables: function is used
 function activePlayerIsWoman(activeId) {
 	return playerIsWoman(activePlayerAllId(activeId) ?? null);
 }

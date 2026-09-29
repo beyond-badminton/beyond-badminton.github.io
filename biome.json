@@ -5,6 +5,11 @@
 		"lineWidth": 150
 	},
 	"linter": {
-		"enabled": true
+		"enabled": true,
+		"rules": {
+			"correctness": {
+				"noUnusedVariables": "off"
+			}
+		}
 	}
 }
