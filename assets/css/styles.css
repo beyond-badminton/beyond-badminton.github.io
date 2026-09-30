@@ -1578,7 +1578,6 @@ span.sort-active .sort-icon {
 
 .gen-stats-table-wrap {
 	min-height: 150px;
-	max-height: 1000px;
 	height: 300px;
 	overflow-y: auto;
 	resize: vertical;
