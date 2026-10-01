@@ -9,117 +9,80 @@ const genQualificationRoundsCardLabel = document.getElementById("gen-qualificati
 const genQualificationEditFilterWrap = document.getElementById("qualification-edit-filter-wrap");
 const genQualificationEditFilterEditable = document.getElementById("qualification-edit-filter-editable");
 const genQualificationEditFilterDrawNumbers = document.getElementById("qualification-edit-filter-draw-numbers");
-const genQualificationMatchFilterWrap = document.getElementById("qualification-match-filter-wrap");
-const genQualificationMatchFilterLabel = document.getElementById("qualification-match-filter-label");
-const genQualificationMatchFilterList = document.getElementById("qualification-match-player-filter");
-const genQualificationMatchFilterCount = document.getElementById("qualification-match-filter-count");
-const genQualificationMatchFilterSearch = document.getElementById("qualification-match-filter-search");
-const genQualificationMatchFilterAllBtn = document.getElementById("qualification-match-filter-all-btn");
-const genQualificationMatchFilterNoneBtn = document.getElementById("qualification-match-filter-none-btn");
-const genQualificationMatchFilterActiveWindow = document.getElementById("qualification-match-filter-active-window");
-const genQualificationMatchFilterActiveWindowLabel = document.getElementById("qualification-match-filter-active-window-label");
-const genQualificationMatchFilterActiveWindowHint = genQualificationMatchFilterActiveWindow.closest(".checkbox-group").querySelector(".help-icon");
-const genQualificationMatchFilterNoBench = document.getElementById("qualification-match-filter-no-bench");
-const genQualificationMatchFilterDrawnNumbers = document.getElementById("qualification-match-filter-drawn-numbers");
 
-// Player ids hidden from the P2P stats table (session-only, not persisted).
-const qualificationMatchPlayerExcluded = new Set();
-
-function renderQualificationMatchFilter() {
-	renderQualificationCheckboxFilter(genQualificationMatchFilterList, qualificationMatchPlayerExcluded, tournamentPlayers);
-	renderQualificationFilterLabel(
-		genQualificationMatchFilterLabel,
-		genQualificationMatchFilterCount,
-		qualificationMatchPlayerExcluded,
-		tournamentPlayers,
-		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
-	);
-	applyQualificationMatchFilterSearch();
+function onQualificationMatchFilterChange(changeType) {
+	if (changeType === "activeWindow") {
+		if (updateQualificationRoundWindowChanged()) renderQualificationRounds();
+		return;
+	}
+	if (changeType === "roundDisplay") {
+		renderUpdateQualificationRounds();
+		return;
+	}
+	if (tournamentConfig.qualificationStarted) renderQualificationRounds();
 }
 
-function applyQualificationMatchFilterSearch() {
-	const term = genQualificationMatchFilterSearch.value.trim().toLowerCase();
-	genQualificationMatchFilterList.querySelectorAll(".checkbox-pill").forEach((label) => {
-		label.classList.toggle("filter-hidden", term !== "" && !label.dataset.name.includes(term));
-	});
-}
+const qualificationMatchFilterElements = registerQualificationMatchFilter(
+	genQualificationOut,
+	"qualification-match-filter",
+	onQualificationMatchFilterChange,
+);
+const qualificationMatchPlayerExcluded = qualificationMatchFilterElements.excluded;
 
-genQualificationEditFilterEditable.addEventListener("change", renderQualificationRounds);
-genQualificationEditFilterDrawNumbers.addEventListener("change", renderQualificationRounds);
+document.addEventListener("keydown", (event) => {
+	if (!event.altKey || event.ctrlKey || event.metaKey || (event.shiftKey && event.key.toLowerCase() !== "b")) return;
 
-genQualificationMatchFilterSearch.addEventListener("input", applyQualificationMatchFilterSearch);
+	const isLivePage = document.body.classList.contains("tournament-live-page");
+	const tournamentSection = document.getElementById("tournament-section");
+	if (!isLivePage && !tournamentSection?.classList.contains("active")) return;
 
-genQualificationMatchFilterAllBtn.addEventListener("click", () => {
-	qualificationMatchPlayerExcluded.clear();
-	renderQualificationMatchFilter();
-	if (tournamentConfig.qualificationStarted) {
-		renderQualificationRounds();
-	}
+	const shortcut = event.shiftKey ? `shift+${event.key.toLowerCase()}` : event.key.toLowerCase();
+	const shortcuts = {
+		a: qualificationMatchFilterElements.activeWindow,
+		n: qualificationMatchFilterElements.drawnNumbers,
+		b: qualificationMatchFilterElements.hideBenchFinished,
+		"shift+b": qualificationMatchFilterElements.noBench,
+	};
+	const checkbox = shortcuts[shortcut];
+	if (!checkbox) return;
+
+	event.preventDefault();
+	checkbox.click();
 });
 
-genQualificationMatchFilterNoneBtn.addEventListener("click", () => {
-	tournamentPlayersMap.keys().forEach((playerId) => {
-		qualificationMatchPlayerExcluded.add(Number(playerId));
-	});
-	renderQualificationMatchFilter();
-	if (tournamentConfig.qualificationStarted) {
-		renderQualificationRounds();
-	}
-});
-
-genQualificationMatchFilterList.addEventListener("change", (e) => {
-	const input = e.target.closest("input[type=checkbox]");
-	if (!input) return;
-
-	const playerId = Number(input.value);
-	const label = input.closest(".checkbox-pill");
-
-	if (input.checked) {
-		qualificationMatchPlayerExcluded.delete(playerId);
-		label.classList.add("checked");
-	} else {
-		qualificationMatchPlayerExcluded.add(playerId);
-		label.classList.remove("checked");
-	}
-
-	renderQualificationFilterLabel(
-		genQualificationMatchFilterLabel,
-		genQualificationMatchFilterCount,
-		qualificationMatchPlayerExcluded,
-		tournamentPlayers,
-		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
-	);
-
-	if (tournamentConfig.qualificationStarted) {
-		renderQualificationRounds();
-	}
-});
+genQualificationEditFilterEditable?.addEventListener("change", renderQualificationRounds);
+genQualificationEditFilterDrawNumbers?.addEventListener("change", renderQualificationRounds);
 
 let roundWindowFilterStartId = null; // this point of the first shown index (like begin iterator)
 let roundWindowFilterEndId = null; // this point past the last shown index (like end iterator)
+let firstUnfinishedRoundId = null; // this point of the first unfinished round
 
 let roundWindowOffset = 1;
 let roundWindowSize = 4;
 
+function getFirstUnfinishedQualificationRound() {
+	return qualificationRounds.find((round) => round.matches.some((match) => !matchIsComplete(match)));
+}
+
+function refreshQualificationActiveRoundHighlight() {
+	const activeRoundId = tournamentConfig.qualificationStarted ? getFirstUnfinishedQualificationRound()?.roundId : null;
+	genQualificationOut.querySelectorAll(".gen-round").forEach((roundElement) => {
+		roundElement.classList.toggle("gen-round-active", Number(roundElement.dataset.roundId) === activeRoundId);
+	});
+}
+
 function qualificationRoundWindowHasChanged() {
 	let tmpRoundWindowFilterStartId = null;
 	let tmpRoundWindowFilterEndId = null;
+	let tmpFirstUnfinishedRoundId = null;
 
-	if (genQualificationMatchFilterActiveWindow.checked) {
+	if (tournamentConfig.qualificationStarted && qualificationMatchFilterElements.activeWindow.checked) {
 		// note that roud id matches rounds array index, so we can use it directly
-		const firstUnfinishedRound = qualificationRounds.find((round) => {
-			return round.matches.some((match) => {
-				const scores = qualificationScores[match.matchId] || { a: null, b: null };
-				return (scores.a || 0) === (scores.b || 0);
-			});
-		});
+		const firstUnfinishedRound = getFirstUnfinishedQualificationRound();
+		tmpFirstUnfinishedRoundId = firstUnfinishedRound?.roundId ?? null;
 
 		if (firstUnfinishedRound) {
-			if (firstUnfinishedRound.roundId === 0) {
-				tmpRoundWindowFilterStartId = 0;
-			} else {
-				tmpRoundWindowFilterStartId = firstUnfinishedRound.roundId - roundWindowOffset;
-			}
+			tmpRoundWindowFilterStartId = Math.max(0, firstUnfinishedRound.roundId - roundWindowOffset);
 			tmpRoundWindowFilterEndId = Math.min(qualificationRounds.length, tmpRoundWindowFilterStartId + roundWindowSize);
 		} else {
 			// if all matches are played, show the last 4 rounds
@@ -132,8 +95,12 @@ function qualificationRoundWindowHasChanged() {
 		}
 	}
 
-	if (tmpRoundWindowFilterStartId !== roundWindowFilterStartId || tmpRoundWindowFilterEndId !== roundWindowFilterEndId) {
-		return [tmpRoundWindowFilterStartId, tmpRoundWindowFilterEndId];
+	if (
+		tmpRoundWindowFilterStartId !== roundWindowFilterStartId ||
+		tmpRoundWindowFilterEndId !== roundWindowFilterEndId ||
+		tmpFirstUnfinishedRoundId !== firstUnfinishedRoundId
+	) {
+		return [tmpRoundWindowFilterStartId, tmpRoundWindowFilterEndId, tmpFirstUnfinishedRoundId];
 	}
 
 	return null;
@@ -147,63 +114,32 @@ function updateQualificationRoundWindowChanged() {
 
 	roundWindowFilterStartId = changed[0];
 	roundWindowFilterEndId = changed[1];
-
+	firstUnfinishedRoundId = changed[2];
 	return true;
 }
-
-genQualificationMatchFilterActiveWindow.addEventListener("change", () => {
-	renderQualificationFilterLabel(
-		genQualificationMatchFilterLabel,
-		genQualificationMatchFilterCount,
-		qualificationMatchPlayerExcluded,
-		tournamentPlayers,
-		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
-	);
-
-	if (updateQualificationRoundWindowChanged()) {
-		renderQualificationRounds();
-	}
-});
-
-genQualificationMatchFilterDrawnNumbers.addEventListener("change", () => {
-	renderQualificationFilterLabel(
-		genQualificationMatchFilterLabel,
-		genQualificationMatchFilterCount,
-		qualificationMatchPlayerExcluded,
-		tournamentPlayers,
-		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
-	);
-
-	renderQualificationRounds();
-});
-
-genQualificationMatchFilterNoBench.addEventListener("change", () => {
-	renderQualificationFilterLabel(
-		genQualificationMatchFilterLabel,
-		genQualificationMatchFilterCount,
-		qualificationMatchPlayerExcluded,
-		tournamentPlayers,
-		genQualificationMatchFilterActiveWindow.checked || genQualificationMatchFilterDrawnNumbers.checked || genQualificationMatchFilterNoBench.checked,
-	);
-
-	renderQualificationRounds();
-});
 
 function tournamentPlayerName(playerId) {
 	if (tournamentConfig.qualificationDrawConfirmed) {
 		const player = tournamentPlayersMap.get(Number(playerId));
-		if (player?.withdrawn || false) {
-			return `(Withdrawn) ${player?.name || ""}`;
-		} else if (
-			(tournamentConfig.qualificationStarted && genQualificationMatchFilterDrawnNumbers.checked) ||
-			(tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && genQualificationEditFilterDrawNumbers.checked)
-		) {
-			return `(${player?.pick || 0}) ${player?.name || ""}`;
-		}
 		return player?.name || "";
 	}
 
 	return String(playerId);
+}
+
+function getTournamentPlayerData(playerId, slotType, accent = false) {
+	const showDrawnNumber =
+		(tournamentConfig.qualificationStarted && qualificationMatchFilterElements.drawnNumbers.checked) ||
+		(!tournamentConfig.qualificationStarted && genQualificationEditFilterDrawNumbers?.checked);
+	const player = tournamentPlayersMap.get(Number(playerId));
+
+	return {
+		name: tournamentPlayerName(playerId),
+		slotType,
+		accent,
+		drawnNumber: tournamentConfig.qualificationDrawConfirmed && showDrawnNumber ? String(player?.pick || 0) : null,
+		isWithdrawn: tournamentConfig.qualificationDrawConfirmed && (player?.withdrawn ?? false),
+	};
 }
 
 function qualificationRoundPlayersSwap(dragSrc, dragDst) {
@@ -234,27 +170,32 @@ function renderQualificationRounds() {
 	const manualEdit =
 		tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && tournamentConfig.twoMenVsTwoWomen === "manual";
 
-	genQualificationRoundsCardLabel.textContent = `Qualification rounds ${manualEdit ? " (Edit Mode)" : ""}`;
-	genQualificationMatchFilterWrap.style.display = tournamentConfig.qualificationStarted ? "block" : "none";
-	genQualificationEditFilterWrap.style.display = manualEdit ? "block" : "none";
+	if (genQualificationRoundsCardLabel) {
+		genQualificationRoundsCardLabel.textContent = `Qualification rounds ${manualEdit ? " (Edit Mode)" : ""}`;
+	}
 
-	const filterEditableMatches = manualEdit && genQualificationEditFilterEditable.checked;
+	qualificationMatchFilterElements.wrap.hidden = !tournamentConfig.qualificationStarted;
+	if (genQualificationEditFilterWrap) {
+		genQualificationEditFilterWrap.hidden = !manualEdit;
+	}
+
+	const filterEditableMatches = manualEdit && genQualificationEditFilterEditable?.checked;
 
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
 
-	//console.log("Rendering qualification rounds:", tournamentConfig);
+	const firstRoundIdToShowBench =
+		tournamentConfig.qualificationStarted && qualificationMatchFilterElements.hideBenchFinished.checked
+			? getFirstUnfinishedQualificationRound()?.roundId
+			: 0;
+
 	qualificationRounds.forEach((round) => {
-		if (roundWindowFilterStartId !== null && roundWindowFilterEndId !== null) {
+		if (tournamentConfig.qualificationStarted && roundWindowFilterStartId !== null && roundWindowFilterEndId !== null) {
 			if (round.roundId < roundWindowFilterStartId || round.roundId >= roundWindowFilterEndId) {
 				return;
 			}
 		}
-		const matchesRow = document.createElement("div");
-		matchesRow.className = "gen-matches-row";
-		//console.log("Rendering round:", round.roundId, "with matches:", round.matches, "and qualificationScores:", qualificationScores);
-
-		round.matches.forEach((match) => {
+		const visibleMatches = round.matches.filter((match) => {
 			// check if all players are excluded
 			if (
 				!manualEdit && // only apply exclusion filter when not in manual edit mode
@@ -263,46 +204,42 @@ function renderQualificationRounds() {
 				qualificationMatchPlayerExcluded.has(match.teamB[0]) &&
 				qualificationMatchPlayerExcluded.has(match.teamB[1])
 			) {
-				return;
+				return false;
 			}
 
 			if (filterEditableMatches && !match.editable) {
 				// in manual edit, display only '2 Men vs 2 Women' matches that are object of manual editing
-				return;
+				return false;
 			}
-
-			matchesRow.appendChild(
-				buildMatchCard(
-					match,
-					qualificationScores[match.matchId] || { a: null, b: null },
-					round.roundId,
-					manualEdit && match.editable ? PLAYER_SLOT.DRAGGABLE : PLAYER_SLOT.CSV,
-					!tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished,
-					tournamentPlayerName,
-					manualEdit && match.editable,
-				),
-			);
+			return true;
 		});
 
-		if (matchesRow.children.length === 0) {
+		if (visibleMatches.length === 0) {
 			// filter applied
 			return;
 		}
 
-		const roundEl = document.createElement("div");
-		roundEl.className = "gen-round";
-		roundEl.dataset.roundId = round.roundId;
+		const showBench =
+			!qualificationMatchFilterElements.noBench.checked && round.roundId >= firstRoundIdToShowBench && !(manualEdit && filterEditableMatches);
+		const roundBuilder = createRoundBuilder({
+			roundId: round.roundId,
+			disabledScore: !tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished,
+			scoreCap: tournamentConfig.scoreCap,
+			getPlayerData: (playerId) => getTournamentPlayerData(playerId, PLAYER_SLOT.CSV),
+			courtNames: visibleMatches.map((match) => match.court),
+			bench: showBench ? round.bench : [],
+		});
 
-		const roundHeader = document.createElement("div");
-		roundHeader.className = "gen-round-header";
-		roundEl.appendChild(roundHeader);
+		visibleMatches.forEach((match) => {
+			roundBuilder.addMatch(match, qualificationScores[match.matchId] || { a: null, b: null }, (playerId) =>
+				getTournamentPlayerData(playerId, manualEdit && match.editable ? PLAYER_SLOT.DRAGGABLE : PLAYER_SLOT.CSV, manualEdit && match.editable),
+			);
+		});
 
-		const rLabel = document.createElement("p");
-		rLabel.className = "gen-round-label left";
-		rLabel.innerHTML = `Round ${round.roundId + 1}`;
-		roundHeader.appendChild(rLabel);
+		const roundEl = roundBuilder.build();
+		const roundHeader = roundEl.querySelector(".gen-round-header");
 
-		if (genQualificationMatchFilterActiveWindow.checked) {
+		if (tournamentConfig.qualificationStarted && qualificationMatchFilterElements.activeWindow.checked) {
 			const middle = document.createElement("div");
 			middle.className = "middle";
 			roundHeader.appendChild(middle);
@@ -313,40 +250,93 @@ function renderQualificationRounds() {
 
 			const cancel = document.createElement("button");
 			cancel.className = "discard-btn right";
-			cancel.innerText = "Cancel shifting";
+			cancel.innerText = "Cancel shifting (Esc)";
 			cancel.hidden = true;
 			cancel.disabled = true;
 			cancel.addEventListener("click", cancelRoundWindowTimer);
 			roundHeader.appendChild(cancel);
+
+			const shiftNow = document.createElement("button");
+			shiftNow.className = "discard-btn right gen-round-window-shift";
+			shiftNow.innerText = "Shift now";
+			shiftNow.hidden = true;
+			shiftNow.disabled = true;
+			shiftNow.addEventListener("click", commitRoundWindowShiftNow);
+			roundHeader.appendChild(shiftNow);
 		}
-		roundEl.appendChild(matchesRow);
-
-		let showBench = true;
-
-		if (!tournamentConfig.qualificationDrawConfirmed) {
-			if (!manualEdit) {
-				showBench = !genQualificationMatchFilterNoBench.checked;
-			} else {
-				showBench = !filterEditableMatches;
-			}
-		}
-
-		if (showBench && round.bench && round.bench.length > 0) {
-			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, tournamentPlayerName));
-		}
-
 		blockEl.appendChild(roundEl);
 	});
 
 	genQualificationOut.innerHTML = "";
 	genQualificationOut.appendChild(blockEl);
+	refreshQualificationActiveRoundHighlight();
 
 	attachDragHandlers(genQualificationOut, qualificationRoundPlayersSwap);
 }
 
+function renderUpdateQualificationRounds() {
+	const manualEdit =
+		tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && tournamentConfig.twoMenVsTwoWomen === "manual";
+	const filterEditableMatches = manualEdit && genQualificationEditFilterEditable?.checked;
+	const firstRoundIdToShowBench =
+		tournamentConfig.qualificationStarted && qualificationMatchFilterElements.hideBenchFinished.checked
+			? getFirstUnfinishedQualificationRound()?.roundId
+			: 0;
+
+	qualificationRounds.forEach((round) => {
+		const roundEl = genQualificationOut.querySelector(`.gen-round[data-round-id="${round.roundId}"]`);
+		if (!roundEl) {
+			return;
+		}
+
+		const showBench =
+			!qualificationMatchFilterElements.noBench.checked && round.roundId >= firstRoundIdToShowBench && !(manualEdit && filterEditableMatches);
+		const visibleMatches = round.matches.filter((match) => !(filterEditableMatches && !match.editable));
+
+		updateRoundBuilder(roundEl, {
+			disabledScore: !tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished,
+			getPlayerData: (playerId) => {
+				const match = visibleMatches.find((m) => m.teamA.includes(playerId) || m.teamB.includes(playerId));
+				return getTournamentPlayerData(
+					playerId,
+					manualEdit && match?.editable ? PLAYER_SLOT.DRAGGABLE : PLAYER_SLOT.CSV,
+					manualEdit && match?.editable,
+				);
+			},
+			courtNames: visibleMatches.map((match) => match.court),
+			bench: showBench ? round.bench : [],
+		});
+	});
+}
 //------------------------------------------------------------
 
 let timeoutId = null;
+
+function commitRoundWindowShiftNow() {
+	if (timeoutId !== null) {
+		clearTimeout(timeoutId);
+		timeoutId = null;
+	}
+	updateQualificationRoundWindowChanged();
+	renderQualificationRounds();
+}
+
+function cancelRoundWindowTimer(full = false) {
+	if (timeoutId !== null) {
+		clearTimeout(timeoutId);
+		timeoutId = null;
+	}
+
+	genQualificationOut.querySelectorAll(".gen-round-window-timer").forEach((bar) => {
+		bar.classList.remove("running");
+		bar.classList.add("hidden");
+	});
+
+	genQualificationOut.querySelectorAll(`.gen-round-header .discard-btn${full ? "" : ":not(.gen-round-window-shift)"}`).forEach((button) => {
+		button.hidden = true;
+		button.disabled = true;
+	});
+}
 
 genQualificationOut.addEventListener("focusout", (e) => {
 	if (e.target.type !== "number") {
@@ -357,84 +347,62 @@ genQualificationOut.addEventListener("focusout", (e) => {
 		return;
 	}
 
-	timeoutId = setTimeout(() => {
-		if (updateQualificationRoundWindowChanged()) {
-			renderQualificationRounds();
-		}
-		timeoutId = null;
-	}, 5000);
-
-	const roundHeader = e.target.closest(".gen-round").querySelector(".gen-round-header");
+	const round = e.target.closest(".gen-round");
+	const roundHeader = round.querySelector(".gen-round-header");
 	if (!roundHeader) return;
 
 	const bar = roundHeader.querySelector(".gen-round-window-timer");
-	if (!bar) return;
+	bar?.classList.remove("hidden");
+	bar?.classList.add("running");
 
-	bar.classList.remove("hidden", "running");
-	// Trigger reflow to restart CSS transition
-	//void bar.offsetWidth;
-	bar.classList.add("running");
-	const cancelBtn = roundHeader.querySelector(".discard-btn[hidden]");
-	if (!cancelBtn) return;
-	cancelBtn.hidden = false;
-	cancelBtn.disabled = false;
+	roundHeader.querySelectorAll(".discard-btn").forEach((button) => {
+		button.hidden = false;
+		button.disabled = false;
+	});
+
+	clearTimeout(timeoutId);
+
+	timeoutId = setTimeout(commitRoundWindowShiftNow, 5000);
 });
 
-function cancelRoundWindowTimer(e) {
-	if (timeoutId !== null) {
-		clearTimeout(timeoutId);
-		timeoutId = null;
-		const broundsBlock = e.target.closest(".gen-block");
-		if (!broundsBlock) return;
+genQualificationOut.addEventListener("focusin", (event) => {
+	if (event.target.type !== "number") {
+		return;
+	}
 
-		const bar = broundsBlock.querySelector(".gen-round-window-timer.running");
-		if (!bar) return;
+	cancelRoundWindowTimer(true);
+});
 
-		bar.classList.remove("running");
-		// Trigger reflow to restart CSS transition
-		//void bar.offsetWidth;
-		bar.classList.add("hidden");
-		const cancelBtn = bar.closest(".gen-round-header").querySelector(".discard-btn");
-		cancelBtn.hidden = true;
-		cancelBtn.disabled = true;
+//genQualificationOut.addEventListener("input", (event) => {
+function roundRendererOnScoreChanged() {
+	// const input = event.target.closest(".gen-score-input");
+	// if (!input) return;
 
-		// const bar = genQualificationOut.querySelector('.gen-round-window-timer');
-		// bar.classList.remove('running', 'hidden');
-		// bar.classList.add('hidden');
+	if (!qualificationMatchFilterElements.activeWindow.checked) {
+		if (qualificationMatchFilterElements.hideBenchFinished.checked) {
+			renderUpdateQualificationRounds();
+		}
+		refreshQualificationActiveRoundHighlight();
 	}
 }
+//});
 
-genQualificationOut.addEventListener("focusin", cancelRoundWindowTimer);
-
-function initQualificationRoundsRenderer(activeWindow = {}) {
-	const offset = activeWindow.offset ?? 1;
-	const size = activeWindow.size ?? 4;
-	if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(size) || size < 1 || offset >= size) {
-		throw new RangeError("The active round window requires an offset >= 0 and a size greater than the offset.");
-	}
-
+function initQualificationRoundsRenderer({ offset = 1, size = 4, matchFilters = {} } = {}) {
+	qualificationMatchFilterElements.initialize({ offset, size, matchFilters });
 	roundWindowOffset = offset;
 	roundWindowSize = size;
-	genQualificationMatchFilterActiveWindowLabel.textContent = `Show active ${size}-round window`;
-
-	const previousRounds = offset === 1 ? "the last finished round" : `the last ${offset} finished rounds`;
-	const nextRoundCount = size - offset - 1;
-	const nextRounds = nextRoundCount === 1 ? "the next round" : `the next ${nextRoundCount} rounds`;
-	const windowDescription = [offset > 0 ? previousRounds : null, "the current round", nextRoundCount > 0 ? nextRounds : null]
-		.filter(Boolean)
-		.join(", ");
-
-	genQualificationMatchFilterActiveWindowHint.title = `Shows ${windowDescription}. Active window is shifted 5 seconds after all score inputs lose focus. Keyboard shortcut: Alt + A.`;
 }
 
 function resetQualificationRoundsRenderer() {
 	resetRegisteredTableFitControls();
-	genQualificationEditFilterEditable.checked = true;
-	genQualificationEditFilterDrawNumbers.checked = false;
-	genQualificationMatchFilterActiveWindow.checked = false;
-	genQualificationMatchFilterDrawnNumbers.checked = false;
-	genQualificationMatchFilterNoBench.checked = false;
-	qualificationMatchPlayerExcluded.clear();
+	qualificationMatchFilterElements.reset();
+	if (genQualificationEditFilterEditable) {
+		genQualificationEditFilterEditable.checked = false;
+	}
+	if (genQualificationEditFilterDrawNumbers) {
+		genQualificationEditFilterDrawNumbers.checked = false;
+	}
+
 	roundWindowFilterStartId = null;
 	roundWindowFilterEndId = null;
 }

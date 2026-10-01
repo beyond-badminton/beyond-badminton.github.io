@@ -48,11 +48,10 @@ function renderQualificationPlayerStats() {
 	updateRegisteredTableFit("qualification-stats-table");
 }
 
-function initQualificationPlayerStatsRenderer() {
-	registerTableFitControl(document.getElementById("qualification-stats-table"), document.getElementById("qualification-stats-fit"));
-	registerSortList("qualificationPlayerStats", [{ field: "rank", dir: "asc" }], compareTournamentSortValues);
-	registerSortRenderer("qualificationPlayerStats", renderQualificationPlayerStats);
-	const tableHead = document.querySelector("#qualification-stats-table thead");
+function initQualificationPlayerStatsRenderer(autoResize = false) {
+	const table = document.getElementById("qualification-stats-table");
+	registerTableFitControl(table, autoResize);
+	const tableHead = table.querySelector("thead");
 	tableHead.innerHTML = `
 		<tr>
 			<th><span class="sortable" data-list="qualificationPlayerStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
@@ -61,7 +60,12 @@ function initQualificationPlayerStatsRenderer() {
 			<th><span class="sortable" data-list="qualificationPlayerStats" data-field="wins">Wins <span class="sort-icon">↕</span></span></th>
 			<th><span class="sortable" data-list="qualificationPlayerStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
 			<th><span class="sortable" data-list="qualificationPlayerStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
-			<th>Decided By<span class="help-icon" title="The rule that set the player's final position, whether decisive on its own or used to break a tie.">?</span></th>
+			<th>Rule<span class="help-icon" title="The rule that set the player's final position, whether decisive on its own or used to break a tie.">?</span></th>
 		</tr>`;
-	registerSortableTable(tableHead);
+	registerSortableTable(table, {
+		listKey: "qualificationPlayerStats",
+		initialState: [{ field: "rank", dir: "asc" }],
+		comparator: compareTournamentSortValues,
+		renderer: renderQualificationPlayerStats,
+	});
 }

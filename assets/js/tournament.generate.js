@@ -15,11 +15,17 @@ const genExportTournamentBtn = document.getElementById("gen-export-tournament-bt
 const genTournamentEmpty = document.getElementById("gen-tournament-empty");
 const genqualificationRoundsNum = document.getElementById("qualification-matches");
 const genDTwoMenVsTwoWomenSelect = document.getElementById("two-men-vs-two-women");
+const genPointsToWin = document.getElementById("tournament-points-to-win");
+const genScoreCapInput = document.getElementById("tournament-score-cap");
 
 genTournamentDatePicker.addEventListener("change", () => {
 	if (!hasTournament()) return;
+	if (!genTournamentDatePicker.valueAsDate) {
+		genTournamentDatePicker.valueAsDate = tournamentConfig.tournamentDate ? new Date(tournamentConfig.tournamentDate) : new Date();
+	}
 	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate.toISOString();
 	saveTournamentConfig();
+	renderTournamentConfigSummary();
 });
 
 /**
@@ -213,6 +219,8 @@ function generateTournament(activePlayers, courtBlocks) {
 	clearGeneratedTournamentFromStorage();
 
 	tournamentConfig.twoMenVsTwoWomen = genDTwoMenVsTwoWomenSelect.value;
+	tournamentConfig.pointsToWin = Number(genPointsToWin.value);
+	tournamentConfig.scoreCap = Number(genScoreCapInput.value);
 	tournamentConfig.matchesPerPlayer = Number(genqualificationRoundsNum.value);
 	tournamentConfig.tournamentDate = genTournamentDatePicker.valueAsDate
 		? genTournamentDatePicker.valueAsDate.toISOString()

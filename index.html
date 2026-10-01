@@ -20,7 +20,7 @@
 				<div>
 					<img src="assets/beyond-badminton.svg" alt="Beyond Badminton" class="logo" />
 				</div>
-				<div class="header-controls">
+				<div class="main-controls">
 					<div>
 						<button type="button" class="imp-exp-button" id="export-storage-btn">Export Storage</button>
 						<button type="button" class="imp-exp-button" id="import-storage-btn">Import Storage </button>
@@ -389,8 +389,12 @@ Pikachu,3,x</pre>
 								<input type="number" id="qualification-matches" min="1" value="8">
 							</div>
 							<div class="field gen-field-inline">
-								<label for="gen-tournament-date-picker">Date of the tournament</label>
-								<input type="date" id="gen-tournament-date-picker" />
+								<label for="tournament-points-to-win">Points to win <span class="help-icon" title="Number of points required to win a match.">?</span></label>
+								<input type="number" id="tournament-points-to-win" min="1" step="1" value="15">
+							</div>
+							<div class="field gen-field-inline">
+								<label for="tournament-score-cap">Score cap <span class="help-icon" title="Maximum allowed score. Game ends when a team reaches this score, even without a 2-point lead.">?</span></label>
+								<input type="number" id="tournament-score-cap" min="1" step="1" value="15">
 							</div>
 							<div class="field gen-field-inline">
 								<label for="two-men-vs-two-women">Two Men vs Two Women Matches<span class="help-icon" title="Choose how to handle matches between all-male and all-female teams.">?</span></label>
@@ -402,11 +406,34 @@ Pikachu,3,x</pre>
 							</div>
 						</div>
 						<p class="section-hint">Time-based scheduling is not supported. All active players and courts are assumed to be available at all times.</p>
-						<div class="gen-btn-row">
+						<div class="main-controls">
 							<button type="button" id="gen-generate-tournament-btn" class="gen-primary-btn">Generate</button>
+						</div>
+					</div>
+
+					<div class="card gen-collapsible" id="gen-tournament-management-card" hidden>
+						<h2 class="gen-card-toggle">
+							<span class="gen-collapse-arrow">▾</span>
+							Tournament summary
+						</h2>
+						<dl id="gen-tournament-summary" class="tournament-config-summary">
+							<dt class="tournament-config-label">Tournament date</dt>
+							<dd class="tournament-date-value"><input type="date" id="gen-tournament-date-picker" aria-label="Tournament date" /></dd>
+						</dl>
+						<div class="main-controls">
 							<button type="button" id="gen-clear-tournament-btn" class="clear-btn" hidden>Discard</button>
-							<button type="button" id="gen-print-tournament-btn" class="secondary-btn" hidden>Print</button>
-							<button type="button" id="gen-export-tournament-btn" class="secondary-btn" hidden>Export</button>
+							<div>
+								<button type="button" id="gen-print-tournament-btn" class="secondary-btn" hidden>Print</button>
+								<button type="button" id="gen-export-tournament-btn" class="secondary-btn" hidden>Export</button>
+							</div>
+							<div>
+								<a class="secondary-btn" href="tournament-live.html" target="_blank" rel="noopener noreferrer">Live view</a>
+								<fieldset class="live-theme-switch" aria-label="Live Color theme">
+									<button type="button" data-theme-choice="inherit">Inherit</button>
+									<button type="button" data-theme-choice="light">Light</button>
+									<button type="button" data-theme-choice="dark">Dark</button>
+								</fieldset>
+							</div>
 						</div>
 					</div>
 
@@ -433,6 +460,7 @@ Pikachu,3,x</pre>
 										<select id="qualification-draw-pick" name="qualificationDrawPick" disabled>
 										</select>
 									</div>
+									<button type="button" class="secondary-btn" id="auto-assign-qualification-draw-btn">Auto-assign remaining</button>
 									<button type="button" class="gen-primary-btn" id="submit-qualification-draw-btn" hidden>Confirm draw</button>
 								</form>
 							</div>
@@ -441,13 +469,7 @@ Pikachu,3,x</pre>
 								<div class="players-panel-header-btns" id="qualification-draw-panel-header">
 									<button type="button" class="clear-btn" id="clear-qualification-draw-btn">Clear all</button>
 								</div>
-								<div class="checkbox-group table-fit-control">
-									<label class="gen-checkbox-label" for="qualification-draw-fit">
-										<input type="checkbox" id="qualification-draw-fit">
-										Auto-resize table to fit all rows
-									</label>
-								</div>
-								<div class="gen-stats-table-wrap">
+								<div class="gen-table-wrap">
 									<table class="gen-stats-table compact-table" id="qualification-draw-table">
 										<thead>
 											<tr>
@@ -485,43 +507,6 @@ Pikachu,3,x</pre>
 							</div>
 						</div>
 
-						<div class="gen-collapsible gen-collapsed" id="qualification-match-filter-wrap">
-							<div class="gen-table-label gen-card-toggle" id="qualification-match-filter-label">
-								<span class="gen-collapse-arrow">▾</span>
-								Filter players & matches (<span id="qualification-match-filter-count"></span>)
-							</div>
-							<div class="checkbox-filter-controls">
-								<input type="search" id="qualification-match-filter-search" placeholder="Search player…">
-								<button type="button" id="qualification-match-filter-all-btn" class="select-btn">Select all</button>
-								<button type="button" id="qualification-match-filter-none-btn" class="clear-btn">Clear all</button>
-								<div class="align-top">
-									<div class="checkbox-group">
-										<label class="gen-checkbox-label" for="qualification-match-filter-active-window">
-											<input type="checkbox" id="qualification-match-filter-active-window">
-											<span id="qualification-match-filter-active-window-label">Show active 4-round window</span>
-										</label>
-										<span class="help-icon" title="Shows the last finished, current, and next 2 rounds. Active window is shifted 5 seconds after all score inputs lose focus. Keyboard shortcut: Alt + A.">?</span>
-									</div>
-									<div class="checkbox-group">
-										<label class="gen-checkbox-label" for="qualification-match-filter-no-bench">
-											<input type="checkbox" id="qualification-match-filter-no-bench">
-											Show only matches and no bench
-										</label>
-										<span class="help-icon" title="Hides benched players. Keyboard shortcut: Alt + B.">?</span>
-									</div>
-								</div>
-								<div class="align-top">
-									<div class="checkbox-group">
-										<label class="gen-checkbox-label" for="qualification-match-filter-drawn-numbers">
-											<input type="checkbox" id="qualification-match-filter-drawn-numbers">
-											Show drawn numbers
-										</label>
-										<span class="help-icon" title="Shows each player's draw number before their name. Keyboard shortcut: Alt + N.">?</span>
-									</div>
-								</div>
-							</div>
-							<div id="qualification-match-player-filter" class="checkbox-list checkbox-filter-list"></div>
-						</div>
 						<div id="gen-qualification-output"></div>
 						
 						<div>
@@ -537,14 +522,7 @@ Pikachu,3,x</pre>
 						</h2>
 						<div class="card">
 							<div class="gen-table-label">Standings</div>
-							<div class="checkbox-group table-fit-control">
-								<label class="gen-checkbox-label" for="qualification-stats-fit">
-									<input type="checkbox" id="qualification-stats-fit">
-									Auto-resize table to fit all rows
-								</label>
-							</div>
-							
-							<div class="gen-stats-table-wrap">
+							<div class="gen-table-wrap">
 								<table class="gen-stats-table" id="qualification-stats-table">
 									<thead></thead>
 									<tbody id="qualification-stats-table-body">
@@ -555,34 +533,7 @@ Pikachu,3,x</pre>
 
 						<div class="card">
 							<div class="gen-table-label">Player vs Player <span class="help-icon" title="Keyboard shortcut: Alt + Shift + S.">?</span></div>
-							<div class="checkbox-group table-fit-control">
-								<label class="gen-checkbox-label" for="qualification-p2p-stats-fit">
-									<input type="checkbox" id="qualification-p2p-stats-fit">
-									Auto-resize table to fit all rows
-								</label>
-							</div>
-
-							<div class="gen-collapsible gen-collapsed" id="qualification-p2p-filter-wrap">
-								<div class="gen-table-label gen-card-toggle" id="qualification-p2p-filter-label">
-									<span class="gen-collapse-arrow">▾</span>
-									Filter players (<span id="qualification-p2p-filter-count"></span>)
-								</div>
-								<div class="checkbox-filter-controls">
-									<input type="search" id="qualification-p2p-filter-search" placeholder="Search player…">
-									<button type="button" id="qualification-p2p-filter-all-btn" class="select-btn">Select all</button>
-									<button type="button" id="qualification-p2p-filter-none-btn" class="clear-btn">Clear all</button>
-									<div class="checkbox-group">
-										<label class="gen-checkbox-label" for="qualification-p2p-filter-show-playoff">
-											<input type="checkbox" id="qualification-p2p-filter-show-playoff">
-											Show playoff players only
-										</label>
-										<span class="help-icon" title="When enabled, only matchups between playoff players are shown. Keyboard shortcut: Alt + P.">?</span>
-									</div>
-								</div>
-								<div id="qualification-p2p-player-filter" class="checkbox-list checkbox-filter-list"></div>
-							</div>
-
-							<div class="gen-stats-table-wrap">
+							<div class="gen-table-wrap">
 								<table class="gen-stats-table" id="qualification-p2p-stats-table">
 									<thead></thead>
 									<tbody id="qualification-stats-p2p-table-body">
@@ -712,17 +663,19 @@ Pikachu,3,x</pre>
 		<script src="assets/js/all-players.js"></script>
 		<script src="assets/js/active-players.js"></script>
 		<script src="assets/js/courts.js"></script>
+		<script src="assets/js/exceljs.min.js"></script>
 		<script src="assets/js/schedule.export.js"></script>
+		<script src="assets/js/schedule.common.js"></script>
 		<script src="assets/js/training.js"></script>
 		<script src="assets/js/tournament.ranking.js"></script>
 		<script src="assets/js/tournament.base.js"></script>
 		<script src="assets/js/tournament.common.js"></script>
 		<script src="assets/js/tournament.generate.js"></script>
 		<script src="assets/js/tournament.draw.js"></script>
+		<script src="assets/js/schedule.filter.js"></script>
 		<script src="assets/js/tournament.rounds.js"></script>
 		<script src="assets/js/tournament.playerstats.js"></script>
 		<script src="assets/js/tournament.p2pstats.js"></script>
-		<script src="assets/js/exceljs.min.js"></script>
 		<script src="assets/js/tournament.init.js"></script>
 		<script src="assets/js/init.js"></script>
 	</body>

@@ -2,86 +2,19 @@
 "use strict";
 
 const genQualificationP2PStatsTableBody = document.getElementById("qualification-stats-p2p-table-body");
-const genQualificationP2PFilterLabel = document.getElementById("qualification-p2p-filter-label");
-const genQualificationP2PFilterList = document.getElementById("qualification-p2p-player-filter");
-const genQualificationP2PFilterCount = document.getElementById("qualification-p2p-filter-count");
-const genQualificationP2PFilterSearch = document.getElementById("qualification-p2p-filter-search");
-const genQualificationP2PFilterAllBtn = document.getElementById("qualification-p2p-filter-all-btn");
-const genQualificationP2PFilterNoneBtn = document.getElementById("qualification-p2p-filter-none-btn");
-const genQualificationP2PFilterPlayoffCheckbox = document.getElementById("qualification-p2p-filter-show-playoff");
+const qualificationP2PFilterElements = registerQualificationP2PFilter(
+	document.getElementById("qualification-p2p-stats-table"),
+	"qualification-p2p-filter",
+	renderQualificationP2PStats,
+);
+const qualificationP2PExcluded = qualificationP2PFilterElements.excluded;
 
-// Player ids hidden from the P2P stats table (session-only, not persisted).
-const qualificationP2PExcluded = new Set();
+document.addEventListener("keydown", (event) => {
+	if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.key.toLowerCase() !== "p") return;
+	if (!document.getElementById("tournament-section")?.classList.contains("active")) return;
 
-function renderQualificationP2PFilter() {
-	renderQualificationCheckboxFilter(genQualificationP2PFilterList, qualificationP2PExcluded, tournamentPlayers);
-	renderQualificationFilterLabel(
-		genQualificationP2PFilterLabel,
-		genQualificationP2PFilterCount,
-		qualificationP2PExcluded,
-		tournamentPlayers,
-		genQualificationP2PFilterPlayoffCheckbox.checked,
-	);
-	applyQualificationP2PFilterSearch();
-}
-
-function applyQualificationP2PFilterSearch() {
-	const term = genQualificationP2PFilterSearch.value.trim().toLowerCase();
-	genQualificationP2PFilterList.querySelectorAll(".checkbox-pill").forEach((label) => {
-		label.classList.toggle("filter-hidden", term !== "" && !label.dataset.name.includes(term));
-	});
-}
-
-genQualificationP2PFilterSearch.addEventListener("input", applyQualificationP2PFilterSearch);
-
-genQualificationP2PFilterAllBtn.addEventListener("click", () => {
-	qualificationP2PExcluded.clear();
-	renderQualificationP2PFilter();
-	renderQualificationP2PStats();
-});
-
-genQualificationP2PFilterNoneBtn.addEventListener("click", () => {
-	tournamentPlayersMap.keys().forEach((playerId) => {
-		qualificationP2PExcluded.add(playerId);
-	});
-	renderQualificationP2PFilter();
-	renderQualificationP2PStats();
-});
-
-genQualificationP2PFilterPlayoffCheckbox.addEventListener("change", () => {
-	renderQualificationFilterLabel(
-		genQualificationP2PFilterLabel,
-		genQualificationP2PFilterCount,
-		qualificationP2PExcluded,
-		tournamentPlayers,
-		genQualificationP2PFilterPlayoffCheckbox.checked,
-	);
-	renderQualificationP2PStats();
-});
-
-genQualificationP2PFilterList.addEventListener("change", (e) => {
-	const input = e.target.closest("input[type=checkbox]");
-	if (!input) return;
-
-	const playerId = Number(input.value);
-	const label = input.closest(".checkbox-pill");
-
-	if (input.checked) {
-		qualificationP2PExcluded.delete(playerId);
-		label.classList.add("checked");
-	} else {
-		qualificationP2PExcluded.add(playerId);
-		label.classList.remove("checked");
-	}
-
-	renderQualificationP2PStats();
-	renderQualificationFilterLabel(
-		genQualificationP2PFilterLabel,
-		genQualificationP2PFilterCount,
-		qualificationP2PExcluded,
-		tournamentPlayers,
-		genQualificationP2PFilterPlayoffCheckbox.checked,
-	);
+	event.preventDefault();
+	qualificationP2PFilterElements.playoffCheckbox.click();
 });
 
 function renderQualificationP2PStats() {
@@ -89,12 +22,12 @@ function renderQualificationP2PStats() {
 		.filter(
 			(p) =>
 				!qualificationP2PExcluded.has(Number(p.id)) &&
-				(!genQualificationP2PFilterPlayoffCheckbox.checked || p.rank <= tournamentConfig.playoffPlayersCount),
+				(!qualificationP2PFilterElements.playoffCheckbox.checked || p.rank <= tournamentConfig.playoffPlayersCount),
 		)
 		.flatMap((p) => {
 			const opponentsList = Object.entries(p.opponents || {}).filter(
 				([opponentId, _]) =>
-					!genQualificationP2PFilterPlayoffCheckbox.checked ||
+					!qualificationP2PFilterElements.playoffCheckbox.checked ||
 					(tournamentPlayersMap.get(Number(opponentId)).rank || 0) <= tournamentConfig.playoffPlayersCount,
 			);
 			return opponentsList.map(([, opponentRecord], i) => {
@@ -145,10 +78,10 @@ function renderQualificationP2PStats() {
 }
 
 function initQualificationP2PStatsRenderer() {
-	registerTableFitControl(document.getElementById("qualification-p2p-stats-table"), document.getElementById("qualification-p2p-stats-fit"));
-	registerSortList("qualificationP2PStats", [{ field: "rank", dir: "asc" }], compareTournamentSortValues);
-	registerSortRenderer("qualificationP2PStats", renderQualificationP2PStats);
-	const tableHead = document.querySelector("#qualification-p2p-stats-table thead");
+	qualificationP2PFilterElements.initialize();
+	const table = document.getElementById("qualification-p2p-stats-table");
+	registerTableFitControl(table);
+	const tableHead = table.querySelector("thead");
 	tableHead.innerHTML = `
 		<tr>
 			<th><span class="sortable" data-list="qualificationP2PStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
@@ -159,11 +92,15 @@ function initQualificationP2PStatsRenderer() {
 			<th><span class="sortable" data-list="qualificationP2PStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
 			<th><span class="sortable" data-list="qualificationP2PStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
 		</tr>`;
-	registerSortableTable(tableHead);
+	registerSortableTable(table, {
+		listKey: "qualificationP2PStats",
+		initialState: [{ field: "rank", dir: "asc" }],
+		comparator: compareTournamentSortValues,
+		renderer: renderQualificationP2PStats,
+	});
 }
 
 function resetQualificationP2PStatsRenderer() {
 	resetRegisteredTableFitControls();
-	genQualificationP2PFilterPlayoffCheckbox.checked = false;
-	qualificationP2PExcluded.clear();
+	qualificationP2PFilterElements.reset();
 }

@@ -17,6 +17,8 @@ function newTournamentConfig() {
 		tournamentDate: null,
 		matchesPerPlayer: 0,
 		twoMenVsTwoWomen: "enabled",
+		pointsToWin: 15,
+		scoreCap: 15,
 		qualificationDrawConfirmed: false,
 		qualificationStarted: false,
 		qualificationFinished: false,
@@ -72,6 +74,20 @@ function findQualificationMatch(matchId) {
 		if (match) return match;
 	}
 	return null;
+}
+
+function matchIsComplete(match) {
+	const score = qualificationScores[match.matchId];
+	if (!score) return false;
+	const scoreA = Number(score.a) || 0;
+	const scoreB = Number(score.b) || 0;
+	const winningScore = Math.max(scoreA, scoreB);
+	const scoreDifference = Math.abs(scoreA - scoreB);
+	return scoreA !== scoreB && winningScore >= tournamentConfig.pointsToWin && (scoreDifference >= 2 || winningScore === tournamentConfig.scoreCap);
+}
+
+function allMatchesComplete() {
+	return qualificationRounds.every((round) => round.matches.every((match) => matchIsComplete(match)));
 }
 
 function reassignQualificationMatches() {
@@ -237,10 +253,17 @@ function loadTournamentFromStorage() {
 
 		//console.log("Loading savedQualificationScores from storage:", savedQualificationScores);
 		if (savedTournamentConfig) {
-			tournamentConfig = JSON.parse(savedTournamentConfig);
+			tournamentConfig = { ...newTournamentConfig(), ...JSON.parse(savedTournamentConfig) };
 		} else {
 			tournamentConfig = newTournamentConfig();
 		}
+		if (!Number.isSafeInteger(tournamentConfig.pointsToWin) || tournamentConfig.pointsToWin < 1) {
+			tournamentConfig.pointsToWin = 15;
+		}
+		if (!Number.isSafeInteger(tournamentConfig.scoreCap) || tournamentConfig.scoreCap < tournamentConfig.pointsToWin) {
+			tournamentConfig.scoreCap = tournamentConfig.winByTwo ? tournamentConfig.pointsToWin + 2 : tournamentConfig.pointsToWin;
+		}
+		delete tournamentConfig.winByTwo;
 		if (savedQualificationRounds) qualificationRounds = JSON.parse(savedQualificationRounds);
 		if (savedQualificationScores) qualificationScores = JSON.parse(savedQualificationScores);
 		//console.log("Loading qualificationScores from storage:", qualificationScores);
