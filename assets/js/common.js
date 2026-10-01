@@ -98,15 +98,6 @@ const sortState = {
 const sortRenderers = new Map();
 const sortComparators = new Map();
 
-function registerSortList(listKey, initialState, comparator) {
-	sortState[listKey] = initialState.map((sort) => ({ ...sort }));
-	if (comparator) sortComparators.set(listKey, comparator);
-}
-
-function registerSortRenderer(listKey, renderer) {
-	sortRenderers.set(listKey, renderer);
-}
-
 function getSortState(listKey) {
 	return sortState[listKey][0] || [];
 }
@@ -213,11 +204,27 @@ function handleSort(listKey, field) {
 	else sortRenderers.get(listKey)?.();
 }
 
-function registerSortableTable(element) {
-	element.querySelectorAll("span.sortable").forEach((el) => {
-		el.addEventListener("click", () => handleSort(el.dataset.list, el.dataset.field));
+const registeredSortableElements = new WeakSet();
+
+function registerSortableTable(element, { listKey, initialState, comparator, renderer } = {}) {
+	if (listKey) {
+		sortState[listKey] = initialState.map((sort) => ({ ...sort }));
+		if (comparator) sortComparators.set(listKey, comparator);
+		if (renderer) sortRenderers.set(listKey, renderer);
+	}
+
+	element.querySelectorAll("span.sortable").forEach((sortable) => {
+		if (registeredSortableElements.has(sortable)) return;
+		registeredSortableElements.add(sortable);
+		sortable.addEventListener("click", () => handleSort(sortable.dataset.list, sortable.dataset.field));
 	});
 }
+
+registerSortableTable(document);
+
+// ============================================================
+// TABLE RESIZE UTILITIES
+// ============================================================
 
 const registeredTableFitControls = new Map();
 
@@ -263,7 +270,9 @@ function resetRegisteredTableFitControls() {
 	});
 }
 
-registerSortableTable(document);
+// ============================================================
+// CARD COLLAPSE UTILITIES
+// ============================================================
 
 document.querySelectorAll(".gen-card-toggle").forEach((header) => {
 	header.addEventListener("click", (event) => {
@@ -276,13 +285,8 @@ document.querySelectorAll(".gen-card-toggle").forEach((header) => {
 });
 
 // ============================================================
-// ADDITIONAL UTILITIES
+// DIALOG UTILITIES
 // ============================================================
-
-function valueWithSign(val) {
-	if (val > 0) return `+${val}`;
-	return val;
-}
 
 /**
  * Opens a confirmation dialog with optional input verification.
@@ -377,4 +381,13 @@ function alertDialog(title, note = null) {
 
 function confirmDialog(title, note = null) {
 	return openDialog(title, note, true, null);
+}
+
+// ============================================================
+// ADDITIONAL UTILITIES
+// ============================================================
+
+function valueWithSign(val) {
+	if (val > 0) return `+${val}`;
+	return val;
 }

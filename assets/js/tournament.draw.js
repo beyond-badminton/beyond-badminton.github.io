@@ -182,7 +182,12 @@ function renderQualificationDraw() {
 }
 
 function initQualificationDrawRenderer() {
-	registerTableFitControl(document.getElementById("qualification-draw-table"), document.getElementById("qualification-draw-fit"));
-	registerSortList("qualificationDraw", [{ field: "name", dir: "asc" }], compareTournamentSortValues);
-	registerSortRenderer("qualificationDraw", renderQualificationDrawPlayers);
+	const table = document.getElementById("qualification-draw-table");
+	registerTableFitControl(table, document.getElementById("qualification-draw-fit"));
+	registerSortableTable(table, {
+		listKey: "qualificationDraw",
+		initialState: [{ field: "name", dir: "asc" }],
+		comparator: compareTournamentSortValues,
+		renderer: renderQualificationDrawPlayers,
+	});
 }

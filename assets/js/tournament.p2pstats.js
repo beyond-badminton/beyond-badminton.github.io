@@ -145,10 +145,9 @@ function renderQualificationP2PStats() {
 }
 
 function initQualificationP2PStatsRenderer() {
-	registerTableFitControl(document.getElementById("qualification-p2p-stats-table"), document.getElementById("qualification-p2p-stats-fit"));
-	registerSortList("qualificationP2PStats", [{ field: "rank", dir: "asc" }], compareTournamentSortValues);
-	registerSortRenderer("qualificationP2PStats", renderQualificationP2PStats);
-	const tableHead = document.querySelector("#qualification-p2p-stats-table thead");
+	const table = document.getElementById("qualification-p2p-stats-table");
+	registerTableFitControl(table, document.getElementById("qualification-p2p-stats-fit"));
+	const tableHead = table.querySelector("thead");
 	tableHead.innerHTML = `
 		<tr>
 			<th><span class="sortable" data-list="qualificationP2PStats" data-field="rank">Rank <span class="sort-icon">↕</span></span></th>
@@ -159,7 +158,12 @@ function initQualificationP2PStatsRenderer() {
 			<th><span class="sortable" data-list="qualificationP2PStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
 			<th><span class="sortable" data-list="qualificationP2PStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
 		</tr>`;
-	registerSortableTable(tableHead);
+	registerSortableTable(table, {
+		listKey: "qualificationP2PStats",
+		initialState: [{ field: "rank", dir: "asc" }],
+		comparator: compareTournamentSortValues,
+		renderer: renderQualificationP2PStats,
+	});
 }
 
 function resetQualificationP2PStatsRenderer() {
