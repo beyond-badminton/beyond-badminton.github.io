@@ -15,6 +15,7 @@ const genGenerateTournamentBtn = document.getElementById("gen-generate-tournamen
 const genQualificationDrawCard = document.getElementById("gen-qualification-draw-card");
 const genQualificationRoundsCard = document.getElementById("gen-qualification-rounds-card");
 const genQualificationStatsCard = document.getElementById("gen-qualification-stats-card");
+const genQualificationP2PStatsCard = document.getElementById("qualification-p2p-stats-table").closest(".card");
 
 function allMatchesComplete() {
 	const scores = Object.values(qualificationScores);
@@ -333,7 +334,7 @@ function initTournament() {
 			!event.altKey ||
 			event.ctrlKey ||
 			event.metaKey ||
-			event.shiftKey
+			(event.shiftKey && event.key.toLowerCase() !== "s")
 		) {
 			return;
 		}
@@ -344,6 +345,20 @@ function initTournament() {
 			n: genQualificationMatchFilterDrawnNumbers,
 			a: genQualificationMatchFilterActiveWindow,
 		};
+		const destinations = {
+			d: genQualificationDrawCard,
+			r: genQualificationRoundsCard,
+			s: genQualificationStatsCard,
+			"shift+s": genQualificationP2PStatsCard,
+		};
+		const shortcut = event.shiftKey ? `shift+${event.key.toLowerCase()}` : event.key.toLowerCase();
+		const destination = destinations[shortcut];
+		if (destination) {
+			event.preventDefault();
+			destination.scrollIntoView({ behavior: "smooth", block: "start" });
+			return;
+		}
+
 		const checkbox = shortcuts[event.key.toLowerCase()];
 		if (!checkbox) return;
 
