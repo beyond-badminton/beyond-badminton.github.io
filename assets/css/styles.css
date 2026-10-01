@@ -1738,7 +1738,7 @@ span.sort-active .sort-icon {
 	white-space: nowrap;
 }
 
-.tournament-live-matches {
+.tournament-live-page .gen-block {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 12px;
@@ -1870,7 +1870,6 @@ span.sort-active .sort-icon {
 	.tournament-live-layout {
 		grid-template-columns: minmax(0, 1fr);
 	}
-
 }
 
 @media (max-width: 640px) {
@@ -1894,7 +1893,7 @@ span.sort-active .sort-icon {
 		padding: 12px;
 	}
 
-	.tournament-live-matches {
+	.tournament-live-page .gen-block {
 		grid-template-columns: minmax(0, 1fr);
 	}
 }
