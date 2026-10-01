@@ -1,7 +1,7 @@
-# Tournament Generator — Project Context
+# Tournament Manager — Project Context
 
 ## Overview
-A client-side (vanilla JS + HTML + CSS) badminton tournament generator.
+A client-side (vanilla JS + HTML + CSS) badminton tournament manager.
 Generates **2 vs 2** doubles matches for a group of players on available courts.
 No build step, no framework — plain files opened directly in the browser.
 State is persisted via `localStorage`.
