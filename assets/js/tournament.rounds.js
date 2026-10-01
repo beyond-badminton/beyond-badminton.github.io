@@ -428,6 +428,7 @@ function initQualificationRoundsRenderer(activeWindow = {}) {
 }
 
 function resetQualificationRoundsRenderer() {
+	resetRegisteredTableFitControls();
 	genQualificationEditFilterEditable.checked = true;
 	genQualificationEditFilterDrawNumbers.checked = false;
 	genQualificationMatchFilterActiveWindow.checked = false;

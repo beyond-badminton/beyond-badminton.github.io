@@ -153,6 +153,7 @@ function renderQualificationDrawPlayers() {
 	});
 
 	updateSortUI("qualificationDraw");
+	updateRegisteredTableFit("qualification-draw-table");
 }
 
 function renderQualificationDraw() {
@@ -181,6 +182,7 @@ function renderQualificationDraw() {
 }
 
 function initQualificationDrawRenderer() {
+	registerTableFitControl(document.getElementById("qualification-draw-table"), document.getElementById("qualification-draw-fit"));
 	registerSortList("qualificationDraw", [{ field: "name", dir: "asc" }], compareTournamentSortValues);
 	registerSortRenderer("qualificationDraw", renderQualificationDrawPlayers);
 }

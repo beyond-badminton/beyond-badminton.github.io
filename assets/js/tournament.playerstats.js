@@ -10,6 +10,7 @@ function renderQualificationPlayerStats() {
 	if (!tournamentConfig.qualificationStarted) {
 		genQualificationStatsTableBody.innerHTML = "";
 		updateSortUI("qualificationPlayerStats");
+		updateRegisteredTableFit("qualification-stats-table");
 		return;
 	}
 
@@ -44,9 +45,11 @@ function renderQualificationPlayerStats() {
 		})
 		.join("");
 	updateSortUI("qualificationPlayerStats");
+	updateRegisteredTableFit("qualification-stats-table");
 }
 
 function initQualificationPlayerStatsRenderer() {
+	registerTableFitControl(document.getElementById("qualification-stats-table"), document.getElementById("qualification-stats-fit"));
 	registerSortList("qualificationPlayerStats", [{ field: "rank", dir: "asc" }], compareTournamentSortValues);
 	registerSortRenderer("qualificationPlayerStats", renderQualificationPlayerStats);
 	const tableHead = document.querySelector("#qualification-stats-table thead");
