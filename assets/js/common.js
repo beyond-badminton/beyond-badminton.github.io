@@ -219,6 +219,50 @@ function registerSortableTable(element) {
 	});
 }
 
+const registeredTableFitControls = new Map();
+
+function registerTableFitControl(table, checkbox) {
+	const wrapper = table.closest(".gen-stats-table-wrap");
+	const state = { table, checkbox, wrapper, originalHeight: "", originalOverflowY: "" };
+	registeredTableFitControls.set(table.id, state);
+
+	checkbox.addEventListener("change", () => {
+		if (checkbox.checked) {
+			state.originalHeight = getComputedStyle(wrapper).height;
+			state.originalOverflowY = getComputedStyle(wrapper).overflowY;
+			updateRegisteredTableFit(table.id);
+		} else {
+			restoreRegisteredTableFit(state);
+		}
+	});
+}
+
+function updateRegisteredTableFit(tableId) {
+	const state = registeredTableFitControls.get(tableId);
+	if (!state?.checkbox.checked) return;
+
+	const contentHeight = state.table.scrollHeight;
+	if (contentHeight === 0) return;
+
+	state.wrapper.style.height = `${contentHeight}px`;
+	state.wrapper.style.overflowY = "hidden";
+}
+
+function restoreRegisteredTableFit(state) {
+	if (!state.originalHeight) return;
+	state.wrapper.style.height = state.originalHeight;
+	state.wrapper.style.overflowY = state.originalOverflowY;
+	state.originalHeight = "";
+	state.originalOverflowY = "";
+}
+
+function resetRegisteredTableFitControls() {
+	registeredTableFitControls.forEach((state) => {
+		state.checkbox.checked = false;
+		restoreRegisteredTableFit(state);
+	});
+}
+
 registerSortableTable(document);
 
 document.querySelectorAll(".gen-card-toggle").forEach((header) => {

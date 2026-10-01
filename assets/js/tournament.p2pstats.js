@@ -141,9 +141,11 @@ function renderQualificationP2PStats() {
 		})
 		.join("");
 	updateSortUI("qualificationP2PStats");
+	updateRegisteredTableFit("qualification-p2p-stats-table");
 }
 
 function initQualificationP2PStatsRenderer() {
+	registerTableFitControl(document.getElementById("qualification-p2p-stats-table"), document.getElementById("qualification-p2p-stats-fit"));
 	registerSortList("qualificationP2PStats", [{ field: "rank", dir: "asc" }], compareTournamentSortValues);
 	registerSortRenderer("qualificationP2PStats", renderQualificationP2PStats);
 	const tableHead = document.querySelector("#qualification-p2p-stats-table thead");
@@ -161,6 +163,7 @@ function initQualificationP2PStatsRenderer() {
 }
 
 function resetQualificationP2PStatsRenderer() {
+	resetRegisteredTableFitControls();
 	genQualificationP2PFilterPlayoffCheckbox.checked = false;
 	qualificationP2PExcluded.clear();
 }
