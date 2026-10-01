@@ -234,7 +234,10 @@ function renderQualificationRounds() {
 	const manualEdit =
 		tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && tournamentConfig.twoMenVsTwoWomen === "manual";
 
-	genQualificationRoundsCardLabel.textContent = `Qualification rounds ${manualEdit ? " (Edit Mode)" : ""}`;
+	if (genQualificationRoundsCardLabel) {
+		genQualificationRoundsCardLabel.textContent = `Qualification rounds ${manualEdit ? " (Edit Mode)" : ""}`;
+	}
+	
 	genQualificationMatchFilterWrap.style.display = tournamentConfig.qualificationStarted ? "block" : "none";
 	genQualificationEditFilterWrap.style.display = manualEdit ? "block" : "none";
 

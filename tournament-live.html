@@ -10,56 +10,96 @@
 	</head>
 	<body class="tournament-live-page">
 		<main class="tournament-live-app">
-			<header class="tournament-live-header">
-				<a href="index.html" aria-label="Back to Tournament Manager">
-					<img src="assets/beyond-badminton.svg" alt="Beyond Badminton" class="logo">
-				</a>
-				<div class="tournament-live-heading">
-					<p class="tournament-live-eyebrow">Tournament Manager</p>
-					<h1>Live tournament</h1>
-					<p id="live-updated" class="tournament-live-updated" aria-live="polite"></p>
-				</div>
-				<a class="tournament-live-back" href="index.html">Open manager</a>
-			</header>
-
 			<div class="tournament-live-layout">
-				<section class="card tournament-live-panel" aria-labelledby="live-matches-title">
+				<section class="card tournament-live-panel" aria-label="Qualification matches">
 					<div class="tournament-live-panel-heading">
 						<div>
 							<p class="gen-table-label">On court</p>
-							<h2 id="live-matches-title">Matches</h2>
 						</div>
-						<span id="live-match-count" class="tournament-live-count"></span>
 					</div>
-					<div id="live-matches" class="tournament-live-matches" aria-live="polite"></div>
+					<div id="qualification-edit-filter-wrap" hidden>
+						<div class="checkbox-group">
+							<label class="gen-checkbox-label" for="qualification-edit-filter-editable">
+								<input type="checkbox" id="qualification-edit-filter-editable" checked>
+								Show editable matches only
+							</label>
+						</div>
+						<div class="checkbox-group">
+							<label class="gen-checkbox-label" for="qualification-edit-filter-draw-numbers">
+								<input type="checkbox" id="qualification-edit-filter-draw-numbers">
+								Show drawn numbers
+							</label>
+						</div>
+					</div>
+					<div class="gen-collapsible gen-collapsed" id="qualification-match-filter-wrap">
+						<div class="gen-table-label gen-card-toggle" id="qualification-match-filter-label">
+							<span class="gen-collapse-arrow">▾</span>
+							Filter players &amp; matches (<span id="qualification-match-filter-count"></span>)
+						</div>
+						<div class="checkbox-filter-controls">
+							<input type="search" id="qualification-match-filter-search" placeholder="Search player…">
+							<button type="button" id="qualification-match-filter-all-btn" class="select-btn">Select all</button>
+							<button type="button" id="qualification-match-filter-none-btn" class="clear-btn">Clear all</button>
+							<div class="align-top">
+								<div class="checkbox-group">
+									<label class="gen-checkbox-label" for="qualification-match-filter-active-window">
+										<input type="checkbox" id="qualification-match-filter-active-window">
+										<span id="qualification-match-filter-active-window-label">Show active 4-round window</span>
+									</label>
+									<span class="help-icon" title="Shows the last finished round, current round, and next two rounds.">?</span>
+								</div>
+								<div class="checkbox-group">
+									<label class="gen-checkbox-label" for="qualification-match-filter-no-bench">
+										<input type="checkbox" id="qualification-match-filter-no-bench">
+										Show only matches and no bench
+									</label>
+									<span class="help-icon" title="Hides benched players.">?</span>
+								</div>
+							</div>
+							<div class="align-top">
+								<div class="checkbox-group">
+									<label class="gen-checkbox-label" for="qualification-match-filter-drawn-numbers">
+										<input type="checkbox" id="qualification-match-filter-drawn-numbers">
+										Show drawn numbers
+									</label>
+									<span class="help-icon" title="Shows each player's draw number before their name.">?</span>
+								</div>
+							</div>
+						</div>
+						<div id="qualification-match-player-filter" class="checkbox-list checkbox-filter-list"></div>
+					</div>
+					<div id="gen-qualification-output" aria-live="polite"></div>
 				</section>
 
-				<section class="card tournament-live-panel" aria-labelledby="live-players-title">
+				<section class="card tournament-live-panel" aria-label="Qualification standings" style="margin-top: 0">
 					<div class="tournament-live-panel-heading">
 						<div>
 							<p class="gen-table-label">Current standings</p>
-							<h2 id="live-players-title">Players</h2>
 						</div>
-						<span id="live-player-count" class="tournament-live-count"></span>
 					</div>
-					<div class="tournament-live-table-wrap">
-						<table class="gen-stats-table tournament-live-table">
-							<thead>
-								<tr>
-									<th scope="col">#</th>
-									<th scope="col">Player</th>
-									<th scope="col">P</th>
-									<th scope="col">W</th>
-									<th scope="col">L</th>
-									<th scope="col">Diff</th>
-								</tr>
-							</thead>
-							<tbody id="live-player-stats"></tbody>
+					<div class="checkbox-group table-fit-control">
+						<label class="gen-checkbox-label" for="qualification-stats-fit">
+							<input type="checkbox" id="qualification-stats-fit">
+							Auto-resize table to fit all rows
+						</label>
+					</div>
+					<div class="gen-stats-table-wrap tournament-live-table-wrap">
+						<table class="gen-stats-table" id="qualification-stats-table">
+							<thead></thead>
+							<tbody id="qualification-stats-table-body"></tbody>
 						</table>
 					</div>
 				</section>
 			</div>
 		</main>
+		<script src="assets/js/common.js"></script>
+		<script src="assets/js/schedule.common.js"></script>
+		<script src="assets/js/drag-and-drop.js"></script>
+		<script src="assets/js/tournament.common.js"></script>
+		<script src="assets/js/tournament.ranking.js"></script>
+		<script src="assets/js/tournament.base.js"></script>
+		<script src="assets/js/tournament.rounds.js"></script>
+		<script src="assets/js/tournament.playerstats.js"></script>
 		<script src="assets/js/tournament.live.js"></script>
 	</body>
 </html>
