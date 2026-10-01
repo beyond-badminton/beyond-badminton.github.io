@@ -1583,14 +1583,14 @@ span.sort-active .sort-icon {
 	overflow-x: auto;
 }
 
-.gen-stats-table-wrap {
+.gen-table-wrap {
 	min-height: 150px;
 	height: 300px;
 	overflow-y: auto;
 	resize: vertical;
 }
 
-.gen-stats-table-wrap thead th {
+.gen-table-wrap thead th {
 	position: sticky;
 	top: 0;
 	background: var(--card);
@@ -1656,7 +1656,6 @@ span.sort-active .sort-icon {
 
 .tournament-live-app {
 	width: 100%;
-	max-width: 1760px;
 }
 
 .tournament-live-header {
@@ -1829,34 +1828,6 @@ span.sort-active .sort-icon {
 	text-transform: uppercase;
 }
 
-.tournament-live-table-wrap {
-	max-height: calc(100vh - 190px);
-	min-height: 180px;
-	overflow: auto;
-}
-
-.tournament-live-table {
-	font-size: 0.9rem;
-}
-
-.tournament-live-table th {
-	position: sticky;
-	top: 0;
-	background: var(--card);
-	font-size: 0.72rem;
-	padding: 8px 7px;
-}
-
-.tournament-live-table td {
-	padding: 9px 7px;
-	font-variant-numeric: tabular-nums;
-}
-
-.tournament-live-table th:first-child,
-.tournament-live-table td:first-child {
-	width: 42px;
-}
-
 .live-rank {
 	color: var(--accent);
 	font-weight: 700;
@@ -1885,9 +1856,6 @@ span.sort-active .sort-icon {
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.tournament-live-table-wrap {
-		max-height: 60vh;
-	}
 }
 
 @media (max-width: 640px) {

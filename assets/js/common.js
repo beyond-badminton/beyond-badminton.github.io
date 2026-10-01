@@ -229,7 +229,7 @@ registerSortableTable(document);
 const registeredTableFitControls = new Map();
 
 function registerTableFitControl(table, checkbox) {
-	const wrapper = table.closest(".gen-stats-table-wrap");
+	const wrapper = table.closest(".gen-table-wrap");
 	const state = { table, checkbox, wrapper, originalHeight: "", originalOverflowY: "" };
 	registeredTableFitControls.set(table.id, state);
 

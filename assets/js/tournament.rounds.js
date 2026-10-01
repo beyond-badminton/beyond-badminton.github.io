@@ -324,15 +324,7 @@ function renderQualificationRounds() {
 		}
 		roundEl.appendChild(matchesRow);
 
-		let showBench = true;
-
-		if (!tournamentConfig.qualificationDrawConfirmed) {
-			if (!manualEdit) {
-				showBench = !genQualificationMatchFilterNoBench.checked;
-			} else {
-				showBench = !filterEditableMatches;
-			}
-		}
+		const showBench = !genQualificationMatchFilterNoBench.checked && !(manualEdit && filterEditableMatches);
 
 		if (showBench && round.bench && round.bench.length > 0) {
 			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, tournamentPlayerName));

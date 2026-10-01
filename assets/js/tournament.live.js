@@ -1,7 +1,36 @@
 // biome-ignore lint/suspicious/noRedundantUseStrict: required for global scripts loaded via <script> tags
 "use strict";
 
+const LIVE_TOURNAMENT_STORAGE_KEYS = [
+	TOURNAMENT_CONFIG_KEY,
+	TOURNAMENT_QUALIFICATION_ROUNDS_KEY,
+	TOURNAMENT_QUALIFICATION_SCORES_KEY,
+	TOURNAMENT_PLAYERS_KEY,
+];
+let lastLiveTournamentSnapshot = null;
+
+function applyLiveTheme(theme) {
+	if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+	else document.documentElement.removeAttribute("data-theme");
+}
+
+function loadLiveTheme() {
+	try {
+		applyLiveTheme(localStorage.getItem("theme"));
+	} catch {
+		applyLiveTheme("auto");
+	}
+}
+
+function getLiveTournamentSnapshot() {
+	return LIVE_TOURNAMENT_STORAGE_KEYS.map((key) => localStorage.getItem(key) || "").join("\n");
+}
+
 function renderLiveTournament() {
+	const snapshot = getLiveTournamentSnapshot();
+	if (snapshot === lastLiveTournamentSnapshot) return;
+	lastLiveTournamentSnapshot = snapshot;
+
 	tournamentConfig = newTournamentConfig();
 	qualificationRounds = [];
 	qualificationScores = {};
@@ -40,9 +69,15 @@ function initLiveTournament() {
 }
 
 window.addEventListener("storage", (event) => {
-	const tournamentKeys = [TOURNAMENT_CONFIG_KEY, TOURNAMENT_QUALIFICATION_ROUNDS_KEY, TOURNAMENT_QUALIFICATION_SCORES_KEY, TOURNAMENT_PLAYERS_KEY];
-	if (event.key === null || tournamentKeys.includes(event.key)) renderLiveTournament();
+	if (event.key === "theme") {
+		applyLiveTheme(event.newValue);
+		return;
+	}
+	if (event.key === null) applyLiveTheme("auto");
+	if (event.key === null || LIVE_TOURNAMENT_STORAGE_KEYS.includes(event.key)) renderLiveTournament();
 });
 
 window.addEventListener("focus", renderLiveTournament);
+loadLiveTheme();
 initLiveTournament();
+window.setInterval(renderLiveTournament, 1000);

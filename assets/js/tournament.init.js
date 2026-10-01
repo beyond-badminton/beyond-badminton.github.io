@@ -12,6 +12,7 @@ const qualificationDrawSubmitButton = document.getElementById("submit-qualificat
 const genClearTournamentBtn = document.getElementById("gen-clear-tournament-btn");
 const qualificationDrawClearButton = document.getElementById("clear-qualification-draw-btn");
 const genGenerateTournamentBtn = document.getElementById("gen-generate-tournament-btn");
+const genLiveTournamentLink = document.querySelector('a[href="tournament-live.html"]');
 const genQualificationDrawCard = document.getElementById("gen-qualification-draw-card");
 const genQualificationRoundsCard = document.getElementById("gen-qualification-rounds-card");
 const genQualificationStatsCard = document.getElementById("gen-qualification-stats-card");
@@ -76,6 +77,7 @@ function renderTournament() {
 
 	genClearTournamentBtn.hidden = !hasTournamentValue;
 	genPrintTournamentBtn.hidden = !hasTournamentValue;
+	genLiveTournamentLink.hidden = !hasTournamentValue;
 	genExportTournamentBtn.hidden = !hasTournamentValue;
 	genTournamentEmpty.hidden = hasTournamentValue;
 	genQualificationDrawCard.hidden = !hasTournamentValue;
