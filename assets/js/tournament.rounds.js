@@ -105,7 +105,7 @@ function qualificationRoundWindowHasChanged() {
 	let tmpRoundWindowFilterStartId = null;
 	let tmpRoundWindowFilterEndId = null;
 
-	if (genQualificationMatchFilterActiveWindow.checked) {
+	if (tournamentConfig.qualificationStarted && genQualificationMatchFilterActiveWindow.checked) {
 		// note that roud id matches rounds array index, so we can use it directly
 		const firstUnfinishedRound = qualificationRounds.find((round) => {
 			return round.matches.some((match) => {
@@ -237,7 +237,7 @@ function renderQualificationRounds() {
 	if (genQualificationRoundsCardLabel) {
 		genQualificationRoundsCardLabel.textContent = `Qualification rounds ${manualEdit ? " (Edit Mode)" : ""}`;
 	}
-	
+
 	genQualificationMatchFilterWrap.style.display = tournamentConfig.qualificationStarted ? "block" : "none";
 	genQualificationEditFilterWrap.style.display = manualEdit ? "block" : "none";
 
@@ -248,7 +248,7 @@ function renderQualificationRounds() {
 
 	//console.log("Rendering qualification rounds:", tournamentConfig);
 	qualificationRounds.forEach((round) => {
-		if (roundWindowFilterStartId !== null && roundWindowFilterEndId !== null) {
+		if (tournamentConfig.qualificationStarted && roundWindowFilterStartId !== null && roundWindowFilterEndId !== null) {
 			if (round.roundId < roundWindowFilterStartId || round.roundId >= roundWindowFilterEndId) {
 				return;
 			}
@@ -305,7 +305,7 @@ function renderQualificationRounds() {
 		rLabel.innerHTML = `Round ${round.roundId + 1}`;
 		roundHeader.appendChild(rLabel);
 
-		if (genQualificationMatchFilterActiveWindow.checked) {
+		if (tournamentConfig.qualificationStarted && genQualificationMatchFilterActiveWindow.checked) {
 			const middle = document.createElement("div");
 			middle.className = "middle";
 			roundHeader.appendChild(middle);
@@ -401,15 +401,16 @@ function cancelRoundWindowTimer(e) {
 
 genQualificationOut.addEventListener("focusin", cancelRoundWindowTimer);
 
-function initQualificationRoundsRenderer(activeWindow = {}) {
-	const offset = activeWindow.offset ?? 1;
-	const size = activeWindow.size ?? 4;
+function initQualificationRoundsRenderer({ offset = 1, size = 4, matchFilters = {} } = {}) {
 	if (!Number.isInteger(offset) || offset < 0 || !Number.isInteger(size) || size < 1 || offset >= size) {
 		throw new RangeError("The active round window requires an offset >= 0 and a size greater than the offset.");
 	}
 
 	roundWindowOffset = offset;
 	roundWindowSize = size;
+	genQualificationMatchFilterActiveWindow.checked = matchFilters.activeWindow ?? genQualificationMatchFilterActiveWindow.checked;
+	genQualificationMatchFilterDrawnNumbers.checked = matchFilters.drawnNumbers ?? genQualificationMatchFilterDrawnNumbers.checked;
+	genQualificationMatchFilterNoBench.checked = matchFilters.noBench ?? genQualificationMatchFilterNoBench.checked;
 	genQualificationMatchFilterActiveWindowLabel.textContent = `Show active ${size}-round window`;
 
 	const previousRounds = offset === 1 ? "the last finished round" : `the last ${offset} finished rounds`;

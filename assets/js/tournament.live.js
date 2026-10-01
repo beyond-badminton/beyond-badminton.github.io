@@ -65,7 +65,7 @@ function renderLiveTournament() {
 }
 
 function initLiveTournament() {
-	initQualificationRoundsRenderer({ offset: 1, size: 4 });
+	initQualificationRoundsRenderer({ offset: 1, size: 8, matchFilters: { activeWindow: true, noBench: true } });
 	initQualificationPlayerStatsRenderer();
 	renderLiveTournament();
 }

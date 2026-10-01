@@ -101,6 +101,7 @@ function renderTournament() {
 
 	renderQualificationMatchFilter();
 
+	updateQualificationRoundWindowChanged();
 	renderQualificationRounds();
 
 	renderQualificationP2PFilter();
