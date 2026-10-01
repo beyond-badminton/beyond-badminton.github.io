@@ -48,9 +48,11 @@ function renderQualificationPlayerStats() {
 	updateRegisteredTableFit("qualification-stats-table");
 }
 
-function initQualificationPlayerStatsRenderer() {
+function initQualificationPlayerStatsRenderer(autoResize = false) {
 	const table = document.getElementById("qualification-stats-table");
-	registerTableFitControl(table, document.getElementById("qualification-stats-fit"));
+	const fitCheckbox = document.getElementById("qualification-stats-fit");
+	registerTableFitControl(table, fitCheckbox);
+	fitCheckbox.checked = autoResize;
 	const tableHead = table.querySelector("thead");
 	tableHead.innerHTML = `
 		<tr>
