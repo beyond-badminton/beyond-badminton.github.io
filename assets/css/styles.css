@@ -102,7 +102,8 @@
 }
 
 /* Theme switch UI */
-.theme-switch {
+.theme-switch,
+.live-theme-switch {
 	display: inline-flex;
 	padding: 3px;
 	gap: 2px;
@@ -110,7 +111,8 @@
 	border: 1px solid var(--line);
 	border-radius: var(--radius);
 }
-.theme-switch button {
+.theme-switch button,
+.live-theme-switch button {
 	font: inherit;
 	font-size: 0.85rem;
 	padding: 4px 10px;
@@ -120,17 +122,24 @@
 	border-radius: calc(var(--radius) - 3px);
 	cursor: pointer;
 }
-.theme-switch button:hover {
+.theme-switch button:hover,
+.live-theme-switch button:hover {
 	color: var(--ink);
 }
-.theme-switch button[aria-pressed="true"] {
+.theme-switch button[aria-pressed="true"],
+.live-theme-switch button[aria-pressed="true"] {
 	background: var(--card);
 	color: var(--ink);
 	box-shadow: var(--shadow-subtle);
 }
-.theme-switch button:focus-visible {
+.theme-switch button:focus-visible,
+.live-theme-switch button:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: 1px;
+}
+
+.live-theme-switch {
+	border: 1px solid var(--accent);
 }
 
 * {
@@ -191,6 +200,12 @@ header h1 {
 		border-color 0.15s ease,
 		background 0.15s ease,
 		color 0.15s ease;
+}
+
+#gen-clear-tournament-btn {
+	padding: 8px 14px;
+	font-size: 0.85rem;
+	font-weight: 600;
 }
 
 .discard-btn:hover {

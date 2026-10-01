@@ -7,6 +7,7 @@ const LIVE_TOURNAMENT_STORAGE_KEYS = [
 	TOURNAMENT_QUALIFICATION_SCORES_KEY,
 	TOURNAMENT_PLAYERS_KEY,
 ];
+const LIVE_THEME_STORAGE_KEY = "tournament-generator:live-theme";
 let lastLiveTournamentSnapshot = null;
 
 function applyLiveTheme(theme) {
@@ -16,7 +17,8 @@ function applyLiveTheme(theme) {
 
 function loadLiveTheme() {
 	try {
-		applyLiveTheme(localStorage.getItem("theme"));
+		const liveTheme = localStorage.getItem(LIVE_THEME_STORAGE_KEY);
+		applyLiveTheme(liveTheme === "light" || liveTheme === "dark" ? liveTheme : localStorage.getItem("theme"));
 	} catch {
 		applyLiveTheme("auto");
 	}
@@ -69,11 +71,11 @@ function initLiveTournament() {
 }
 
 window.addEventListener("storage", (event) => {
-	if (event.key === "theme") {
-		applyLiveTheme(event.newValue);
+	if (event.key === "theme" || event.key === LIVE_THEME_STORAGE_KEY) {
+		loadLiveTheme();
 		return;
 	}
-	if (event.key === null) applyLiveTheme("auto");
+	if (event.key === null) loadLiveTheme();
 	if (event.key === null || LIVE_TOURNAMENT_STORAGE_KEYS.includes(event.key)) renderLiveTournament();
 });
 
