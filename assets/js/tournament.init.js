@@ -329,10 +329,8 @@ function initTournament() {
 	});
 
 	document.addEventListener("keydown", (event) => {
-		const focusedElement = document.activeElement;
 		if (
 			!document.getElementById("tournament-section").classList.contains("active") ||
-			(focusedElement instanceof HTMLElement && focusedElement.matches("input, select, textarea, [contenteditable]")) ||
 			!event.altKey ||
 			event.ctrlKey ||
 			event.metaKey ||
