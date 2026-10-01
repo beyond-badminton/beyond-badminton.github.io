@@ -222,7 +222,9 @@ function registerSortableTable(element) {
 registerSortableTable(document);
 
 document.querySelectorAll(".gen-card-toggle").forEach((header) => {
-	header.addEventListener("click", () => {
+	header.addEventListener("click", (event) => {
+		if (event.target.closest(".help-icon")) return;
+
 		const container = header.closest(".gen-collapsible");
 		if (!container) return;
 		container.classList.toggle("gen-collapsed");
