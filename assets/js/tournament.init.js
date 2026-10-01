@@ -12,14 +12,22 @@ const qualificationDrawSubmitButton = document.getElementById("submit-qualificat
 const genClearTournamentBtn = document.getElementById("gen-clear-tournament-btn");
 const qualificationDrawClearButton = document.getElementById("clear-qualification-draw-btn");
 const genGenerateTournamentBtn = document.getElementById("gen-generate-tournament-btn");
+const genLiveTournamentLink = document.querySelector('a[href="tournament-live.html"]');
+const genLiveThemeSwitch = document.querySelector(".live-theme-switch");
+const genTournamentManagementCard = document.getElementById("gen-tournament-management-card");
+const genTournamentSummary = document.getElementById("gen-tournament-summary");
 const genQualificationDrawCard = document.getElementById("gen-qualification-draw-card");
 const genQualificationRoundsCard = document.getElementById("gen-qualification-rounds-card");
 const genQualificationStatsCard = document.getElementById("gen-qualification-stats-card");
 const genQualificationP2PStatsCard = document.getElementById("qualification-p2p-stats-table").closest(".card");
 
-function allMatchesComplete() {
-	const scores = Object.values(qualificationScores);
-	return scores.length === (tournamentConfig.matchesPerPlayer * tournamentPlayers.length) / 4 && scores.every((score) => score.a !== score.b);
+function canConfirmQualification() {
+	return (
+		tournamentConfig.qualificationStarted &&
+		!tournamentConfig.qualificationFinished &&
+		(tournamentConfig?.matchesPerPlayer || 0) > 0 &&
+		allMatchesComplete()
+	);
 }
 
 function openWithdrawPlayerDialog(player) {
@@ -52,11 +60,7 @@ function renderQualificationStartButton() {
 }
 
 function renderQualificationConfirmation() {
-	const confirmButtonShow =
-		tournamentConfig.qualificationStarted &&
-		!tournamentConfig.qualificationFinished &&
-		(tournamentConfig?.matchesPerPlayer || 0) > 0 &&
-		allMatchesComplete();
+	const confirmButtonShow = canConfirmQualification();
 
 	genQualificationConfirmEmpty.hidden = confirmButtonShow;
 	genQualificationConfirmBtn.disabled = !confirmButtonShow;
@@ -69,15 +73,51 @@ function renderTournamentStats() {
 	renderQualificationP2PStats();
 }
 
+function renderTournamentConfigSummary() {
+	const genderPolicy = {
+		enabled: "Allowed",
+		disabled: "Blocked",
+		manual: "Flagged for organizer review",
+	};
+	const settings = [
+		["Qualification matches per player", tournamentConfig?.matchesPerPlayer ?? 0],
+		["Points to win", tournamentConfig?.pointsToWin ?? 0],
+		["Score cap", tournamentConfig?.scoreCap ?? 0],
+		["Two men vs two women", genderPolicy[tournamentConfig?.twoMenVsTwoWomen] ?? "Allowed"],
+		["Playoff spots", `${tournamentConfig?.playoffPlayersCount ?? 0} player${tournamentConfig?.playoffPlayersCount === 1 ? "" : "s"}`],
+		["Tournament date", genTournamentSummary.querySelector("#gen-tournament-date-picker")],
+	];
+
+	genTournamentSummary.replaceChildren(
+		...settings.flatMap(([label, value]) => {
+			const term = document.createElement("dt");
+			term.className = "tournament-config-label";
+			term.textContent = label;
+			const description = document.createElement("dd");
+			if (value instanceof HTMLElement) {
+				description.appendChild(value);
+			} else {
+				description.textContent = value;
+			}
+			return [term, description];
+		}),
+	);
+}
+
 function renderTournament() {
 	const hasTournamentValue = hasTournament();
+	genPointsToWin.value = tournamentConfig.pointsToWin;
+	genScoreCapInput.value = tournamentConfig.scoreCap;
 
 	//console.log("Rendering tournament, hasTournament:", hasTournamentValue);
 
 	genClearTournamentBtn.hidden = !hasTournamentValue;
 	genPrintTournamentBtn.hidden = !hasTournamentValue;
+	genLiveTournamentLink.hidden = !hasTournamentValue;
+	genLiveThemeSwitch.style.display = hasTournamentValue ? "inline-block" : "none";
 	genExportTournamentBtn.hidden = !hasTournamentValue;
 	genTournamentEmpty.hidden = hasTournamentValue;
+	genTournamentManagementCard.hidden = !hasTournamentValue;
 	genQualificationDrawCard.hidden = !hasTournamentValue;
 	genQualificationRoundsCard.hidden = !hasTournamentValue;
 	genQualificationStatsCard.hidden = !tournamentConfig?.qualificationStarted;
@@ -92,16 +132,18 @@ function renderTournament() {
 	}
 
 	genTournamentDatePicker.valueAsDate = tournamentConfig.tournamentDate ? new Date(tournamentConfig.tournamentDate) : null;
+	renderTournamentConfigSummary();
 
 	rankPlayers(tournamentPlayersMap);
 
 	renderQualificationDraw();
 
-	renderQualificationMatchFilter();
+	qualificationMatchFilterElements.render(tournamentPlayers);
 
+	updateQualificationRoundWindowChanged();
 	renderQualificationRounds();
 
-	renderQualificationP2PFilter();
+	qualificationP2PFilterElements.render(tournamentPlayers);
 
 	renderTournamentStats();
 }
@@ -118,6 +160,18 @@ function initTournament() {
 		if (hasTournament() && !(await confirmDialog("Replace the ongoing tournament with a new one?"))) return;
 		if (!genqualificationRoundsNum.value || Number.isNaN(genqualificationRoundsNum.value) || genqualificationRoundsNum.value <= 0) {
 			alertDialog(null, "Please enter the number of qualification rounds.");
+			return;
+		}
+		const pointsToWin = Number(genPointsToWin.value);
+		if (!Number.isSafeInteger(pointsToWin) || pointsToWin < 1) {
+			alertDialog(null, "Maximum winning score must be a whole number of at least 1.");
+			genPointsToWin.focus();
+			return;
+		}
+		const scoreCap = Number(genScoreCapInput.value);
+		if (!Number.isSafeInteger(scoreCap) || scoreCap < pointsToWin) {
+			alertDialog(null, "Score cap must be a whole number at least as high as the maximum winning score.");
+			genScoreCapInput.focus();
 			return;
 		}
 
@@ -259,24 +313,33 @@ function initTournament() {
 	});
 
 	genQualificationConfirmBtn.addEventListener("click", async () => {
-		if (await confirmDialog("Confirm qualification results and proceed to the playoffs?", "This action cannot be undone.")) {
-			tournamentConfig.qualificationFinished = true;
-			saveTournamentConfig();
-			renderTournament();
-		}
-	});
-
-	genQualificationOut.addEventListener("change", (event) => {
-		const input = event.target.closest(".gen-score-input");
-		if (!input) return;
-
-		const value = input.value === "" ? null : Number(input.value);
-		if (value !== null && value < 0) {
-			input.value = "";
+		if (!canConfirmQualification()) {
+			renderQualificationConfirmation();
 			return;
 		}
 
+		if (!(await confirmDialog("Confirm qualification results and proceed to the playoffs?", "This action cannot be undone."))) return;
+		if (!canConfirmQualification()) {
+			renderQualificationConfirmation();
+			return;
+		}
+
+		tournamentConfig.qualificationFinished = true;
+		saveTournamentConfig();
+		renderTournament();
+	});
+
+	genQualificationOut.addEventListener("input", (event) => {
+		const input = event.target.closest(".gen-score-input");
+		if (!input) return;
+
 		const { matchId, side } = input.dataset;
+		const value = input.value === "" ? null : Number(input.value);
+		if (value !== null && (!Number.isSafeInteger(value) || value < 0 || value > tournamentConfig.scoreCap)) {
+			input.value = qualificationScores[matchId]?.[side] ?? "";
+			return;
+		}
+
 		const match = findQualificationMatch(matchId);
 		const previousScore = qualificationScores[matchId] || { a: null, b: null };
 
@@ -289,6 +352,7 @@ function initTournament() {
 		saveTournamentPlayers();
 		saveQualificationScores();
 		updateScoreUI(qualificationScores[matchId], input);
+		roundRendererOnScoreChanged();
 		renderTournamentStats();
 	});
 
@@ -317,34 +381,23 @@ function initTournament() {
 		return tournamentPlayersMap.has(id);
 	});
 
-	document.getElementById("tournament-section").addEventListener("keydown", (event) => {
-		if (event.key !== "Escape") return;
+	document.addEventListener("keydown", (event) => {
+		const tournamentSection = document.getElementById("tournament-section");
+		if (event.key !== "Escape" || !tournamentSection.classList.contains("active")) return;
 
 		const focusedControl = document.activeElement;
-		if (focusedControl instanceof HTMLElement && focusedControl.matches("input, select, textarea")) {
+		if (focusedControl instanceof HTMLElement && tournamentSection.contains(focusedControl) && focusedControl.matches("input, select, textarea")) {
 			focusedControl.blur();
+		} else {
+			cancelRoundWindowTimer();
 		}
 	});
 
 	document.addEventListener("keydown", (event) => {
-		const focusedElement = document.activeElement;
-		if (
-			!document.getElementById("tournament-section").classList.contains("active") ||
-			(focusedElement instanceof HTMLElement && focusedElement.matches("input, select, textarea, [contenteditable]")) ||
-			!event.altKey ||
-			event.ctrlKey ||
-			event.metaKey ||
-			(event.shiftKey && event.key.toLowerCase() !== "s")
-		) {
+		if (!document.getElementById("tournament-section").classList.contains("active") || !event.altKey || event.ctrlKey || event.metaKey) {
 			return;
 		}
 
-		const shortcuts = {
-			p: genQualificationP2PFilterPlayoffCheckbox,
-			b: genQualificationMatchFilterNoBench,
-			n: genQualificationMatchFilterDrawnNumbers,
-			a: genQualificationMatchFilterActiveWindow,
-		};
 		const destinations = {
 			d: genQualificationDrawCard,
 			r: genQualificationRoundsCard,
@@ -356,14 +409,7 @@ function initTournament() {
 		if (destination) {
 			event.preventDefault();
 			destination.scrollIntoView({ behavior: "smooth", block: "start" });
-			return;
 		}
-
-		const checkbox = shortcuts[event.key.toLowerCase()];
-		if (!checkbox) return;
-
-		event.preventDefault();
-		checkbox.click();
 	});
 }
 

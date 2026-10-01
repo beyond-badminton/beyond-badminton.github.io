@@ -7,8 +7,8 @@
 			"command": "npx",
 			"args": ["@biomejs/biome", "check", "${workspaceFolder}", "--reporter=github", "--max-diagnostics=200"],
 			"group": {
-				"kind": "test",
-				"isDefault": false
+				"kind": "build",
+				"isDefault": true
 			},
 			"problemMatcher": {
 				"owner": "biome",

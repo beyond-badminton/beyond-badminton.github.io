@@ -6,21 +6,67 @@
 // ============================================================
 const tabs = document.querySelectorAll(".tab");
 const tabContents = document.querySelectorAll(".tab-content");
+
+const NAVIGATION_STORAGE_KEY = "tournament-generator:activeNavigation";
+let savedNavigation = {};
+try {
+	const parsedNavigation = JSON.parse(localStorage.getItem(NAVIGATION_STORAGE_KEY) || "{}");
+	if (parsedNavigation && typeof parsedNavigation === "object" && !Array.isArray(parsedNavigation)) {
+		savedNavigation = parsedNavigation;
+	}
+} catch {
+	savedNavigation = {};
+}
+
+function saveNavigation() {
+	try {
+		localStorage.setItem(NAVIGATION_STORAGE_KEY, JSON.stringify(savedNavigation));
+	} catch {
+		// Navigation still works when browser storage is unavailable.
+	}
+}
+
+function activateTab(tab) {
+	tabs.forEach((item) => {
+		item.classList.toggle("active", item === tab);
+	});
+	tabContents.forEach((content) => {
+		content.classList.toggle("active", content.id === tab.dataset.tab);
+	});
+	savedNavigation.tab = tab.dataset.tab;
+	saveNavigation();
+}
+
+const restoredTab = [...tabs].find((tab) => tab.dataset.tab === savedNavigation.tab);
+if (restoredTab && document.getElementById(restoredTab.dataset.tab)) {
+	tabs.forEach((tab) => {
+		tab.classList.toggle("active", tab === restoredTab);
+	});
+	tabContents.forEach((content) => {
+		content.classList.toggle("active", content.id === restoredTab.dataset.tab);
+	});
+}
+
 tabs.forEach((tab) => {
 	tab.addEventListener("click", () => {
-		tabs.forEach((t) => {
-			t.classList.remove("active");
-		});
-		tabContents.forEach((c) => {
-			c.classList.remove("active");
-		});
-		tab.classList.add("active");
-		document.getElementById(tab.dataset.tab).classList.add("active");
+		activateTab(tab);
 	});
 });
 
 // ---- Sub-tab navigation ----
 document.querySelectorAll(".sub-tabs").forEach((subTabGroup) => {
+	const parentTabId = subTabGroup.closest(".tab-content")?.id;
+	const subTabs = subTabGroup.querySelectorAll(".sub-tab");
+	const restoredSubTab = [...subTabs].find((btn) => btn.dataset.subtab === savedNavigation.subTabs?.[parentTabId]);
+	if (restoredSubTab && document.getElementById(restoredSubTab.dataset.subtab)) {
+		subTabs.forEach((btn) => {
+			btn.classList.toggle("active", btn === restoredSubTab);
+		});
+		subTabGroup.parentElement.querySelectorAll(":scope > .sub-tab-content").forEach((content) => {
+			content.classList.toggle("active", content.id === restoredSubTab.dataset.subtab);
+		});
+	}
+
 	subTabGroup.querySelectorAll(".sub-tab").forEach((btn) => {
 		btn.addEventListener("click", () => {
 			subTabGroup.querySelectorAll(".sub-tab").forEach((b) => {
@@ -32,6 +78,10 @@ document.querySelectorAll(".sub-tabs").forEach((subTabGroup) => {
 				c.classList.remove("active");
 			});
 			document.getElementById(btn.dataset.subtab).classList.add("active");
+			if (parentTabId) {
+				savedNavigation.subTabs = { ...savedNavigation.subTabs, [parentTabId]: btn.dataset.subtab };
+				saveNavigation();
+			}
 		});
 	});
 });
@@ -97,15 +147,6 @@ const sortState = {
 
 const sortRenderers = new Map();
 const sortComparators = new Map();
-
-function registerSortList(listKey, initialState, comparator) {
-	sortState[listKey] = initialState.map((sort) => ({ ...sort }));
-	if (comparator) sortComparators.set(listKey, comparator);
-}
-
-function registerSortRenderer(listKey, renderer) {
-	sortRenderers.set(listKey, renderer);
-}
 
 function getSortState(listKey) {
 	return sortState[listKey][0] || [];
@@ -213,18 +254,93 @@ function handleSort(listKey, field) {
 	else sortRenderers.get(listKey)?.();
 }
 
-function registerSortableTable(element) {
-	element.querySelectorAll("span.sortable").forEach((el) => {
-		el.addEventListener("click", () => handleSort(el.dataset.list, el.dataset.field));
+const registeredSortableElements = new WeakSet();
+const registeredCompactHeaders = new WeakSet();
+const compactTableHeaderLabels = new Map([
+	["rank", "#"],
+	["played", "GP"],
+	["matches", "GP"],
+	["wins", "W"],
+	["losses", "L"],
+	["diff", "+/-"],
+	["opponent", "Opp"],
+	["unique partners", "Ptnrs"],
+	["unique opponents", "Opps"],
+	["play time", "Time"],
+	["play rate", "Rate"],
+	["gender", "G"],
+	["arrival", "Arr"],
+	["sit 1st round", "Sit"],
+	["count", "#"],
+]);
+
+function registerCompactTableHeaders(element) {
+	element.querySelectorAll("th").forEach((header) => {
+		if (registeredCompactHeaders.has(header)) return;
+
+		const labelContainer = header.querySelector(".sortable") ?? header;
+		const labelNode = [...labelContainer.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+		if (!labelNode) return;
+
+		const fullLabel = labelNode.textContent.trim();
+		const compactLabel = compactTableHeaderLabels.get(fullLabel.toLowerCase());
+		if (!compactLabel) return;
+
+		const full = document.createElement("span");
+		full.className = "table-header-full";
+		full.textContent = fullLabel;
+		const compact = document.createElement("span");
+		compact.className = "table-header-compact";
+		compact.textContent = compactLabel;
+		compact.title = fullLabel;
+		labelNode.replaceWith(full, compact);
+		registeredCompactHeaders.add(header);
 	});
 }
 
+function registerSortableTable(element, { listKey, initialState, comparator, renderer } = {}) {
+	registerCompactTableHeaders(element);
+	if (listKey) {
+		sortState[listKey] = initialState.map((sort) => ({ ...sort }));
+		if (comparator) sortComparators.set(listKey, comparator);
+		if (renderer) sortRenderers.set(listKey, renderer);
+	}
+
+	element.querySelectorAll("span.sortable").forEach((sortable) => {
+		if (registeredSortableElements.has(sortable)) return;
+		registeredSortableElements.add(sortable);
+		sortable.addEventListener("click", () => handleSort(sortable.dataset.list, sortable.dataset.field));
+	});
+}
+
+registerSortableTable(document);
+
+// ============================================================
+// TABLE RESIZE UTILITIES
+// ============================================================
+
 const registeredTableFitControls = new Map();
 
-function registerTableFitControl(table, checkbox) {
-	const wrapper = table.closest(".gen-stats-table-wrap");
-	const state = { table, checkbox, wrapper, originalHeight: "", originalOverflowY: "" };
+function registerTableFitControl(table, autoResize = false) {
+	const wrapper = table.closest(".gen-table-wrap");
+	const checkboxId = `${table.id}-fit`;
+	const control = document.createElement("div");
+	control.className = "checkbox-group table-fit-control";
+	const label = document.createElement("label");
+	label.className = "gen-checkbox-label";
+	label.htmlFor = checkboxId;
+	const checkbox = document.createElement("input");
+	checkbox.type = "checkbox";
+	checkbox.id = checkboxId;
+	checkbox.checked = autoResize;
+	label.append(checkbox, " Auto-resize table to fit all rows");
+	control.append(label);
+	wrapper.before(control);
+
+	const observer = new ResizeObserver(() => updateRegisteredTableFit(table.id));
+	const state = { table, checkbox, wrapper, observer, originalHeight: "", originalOverflowY: "" };
 	registeredTableFitControls.set(table.id, state);
+	observer.observe(table);
 
 	checkbox.addEventListener("change", () => {
 		if (checkbox.checked) {
@@ -235,16 +351,22 @@ function registerTableFitControl(table, checkbox) {
 			restoreRegisteredTableFit(state);
 		}
 	});
+
+	if (checkbox.checked) {
+		state.originalHeight = getComputedStyle(wrapper).height;
+		state.originalOverflowY = getComputedStyle(wrapper).overflowY;
+		updateRegisteredTableFit(table.id);
+	}
 }
 
 function updateRegisteredTableFit(tableId) {
 	const state = registeredTableFitControls.get(tableId);
 	if (!state?.checkbox.checked) return;
 
-	const contentHeight = state.table.scrollHeight;
+	const contentHeight = Math.ceil(Math.max(state.table.scrollHeight, state.table.getBoundingClientRect().height));
 	if (contentHeight === 0) return;
 
-	state.wrapper.style.height = `${contentHeight}px`;
+	state.wrapper.style.height = `${contentHeight + 12}px`;
 	state.wrapper.style.overflowY = "hidden";
 }
 
@@ -263,7 +385,9 @@ function resetRegisteredTableFitControls() {
 	});
 }
 
-registerSortableTable(document);
+// ============================================================
+// CARD COLLAPSE UTILITIES
+// ============================================================
 
 document.querySelectorAll(".gen-card-toggle").forEach((header) => {
 	header.addEventListener("click", (event) => {
@@ -276,13 +400,8 @@ document.querySelectorAll(".gen-card-toggle").forEach((header) => {
 });
 
 // ============================================================
-// ADDITIONAL UTILITIES
+// DIALOG UTILITIES
 // ============================================================
-
-function valueWithSign(val) {
-	if (val > 0) return `+${val}`;
-	return val;
-}
 
 /**
  * Opens a confirmation dialog with optional input verification.
@@ -377,4 +496,13 @@ function alertDialog(title, note = null) {
 
 function confirmDialog(title, note = null) {
 	return openDialog(title, note, true, null);
+}
+
+// ============================================================
+// ADDITIONAL UTILITIES
+// ============================================================
+
+function valueWithSign(val) {
+	if (val > 0) return `+${val}`;
+	return val;
 }

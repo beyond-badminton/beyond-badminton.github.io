@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="color-scheme" content="light dark">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="Live read-only tournament matches and player standings.">
+		<title>Live Tournament | Beyond Badminton</title>
+		<link rel="stylesheet" href="assets/css/styles.css">
+	</head>
+	<body class="tournament-live-page">
+		<main class="tournament-live-app">
+			<div class="tournament-live-layout">
+				<section class="card tournament-live-panel" aria-label="Qualification matches">
+					<div class="tournament-live-panel-heading">
+						<div>
+							<p class="gen-table-label">On court</p>
+						</div>
+					</div>
+					<div id="gen-qualification-output" aria-live="polite"></div>
+				</section>
+
+				<section class="card tournament-live-panel" aria-label="Qualification standings" style="margin-top: 0">
+					<div class="tournament-live-panel-heading">
+						<div>
+							<p class="gen-table-label">Current standings</p>
+						</div>
+					</div>
+					<div class="gen-table-wrap">
+						<table class="gen-stats-table" id="qualification-stats-table">
+							<thead></thead>
+							<tbody id="qualification-stats-table-body"></tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+		</main>
+		<script src="assets/js/common.js"></script>
+		<script src="assets/js/schedule.common.js"></script>
+		<script src="assets/js/drag-and-drop.js"></script>
+		<script src="assets/js/tournament.common.js"></script>
+		<script src="assets/js/tournament.ranking.js"></script>
+		<script src="assets/js/tournament.base.js"></script>
+		<script src="assets/js/schedule.filter.js"></script>
+		<script src="assets/js/tournament.rounds.js"></script>
+		<script src="assets/js/tournament.playerstats.js"></script>
+		<script src="assets/js/tournament.live.js"></script>
+	</body>
+</html>

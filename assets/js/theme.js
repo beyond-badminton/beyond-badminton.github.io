@@ -3,7 +3,9 @@
 
 function setupTheme() {
 	var root = document.documentElement;
-	var buttons = document.querySelectorAll("[data-theme-choice]");
+	var buttons = document.querySelectorAll(".theme-switch [data-theme-choice]");
+	var liveThemeButtons = document.querySelectorAll(".live-theme-switch [data-theme-choice]");
+	const LIVE_THEME_KEY = "tournament-generator:live-theme";
 
 	const getSaved = () => {
 		try {
@@ -28,13 +30,40 @@ function setupTheme() {
 		});
 	};
 
+	const getSavedLiveTheme = () => {
+		try {
+			const savedTheme = localStorage.getItem(LIVE_THEME_KEY);
+			return savedTheme === "light" || savedTheme === "dark" ? savedTheme : "inherit";
+		} catch {
+			return "inherit";
+		}
+	};
+
+	const applyLiveThemeChoice = (choice) => {
+		try {
+			if (choice === "inherit") localStorage.removeItem(LIVE_THEME_KEY);
+			else localStorage.setItem(LIVE_THEME_KEY, choice);
+		} catch {}
+
+		liveThemeButtons.forEach((button) => {
+			button.setAttribute("aria-pressed", String(button.dataset.themeChoice === choice));
+		});
+	};
+
 	buttons.forEach((b) => {
 		b.addEventListener("click", () => {
 			apply(b.dataset.themeChoice);
 		});
 	});
 
+	liveThemeButtons.forEach((button) => {
+		button.addEventListener("click", () => {
+			applyLiveThemeChoice(button.dataset.themeChoice);
+		});
+	});
+
 	apply(getSaved());
+	applyLiveThemeChoice(getSavedLiveTheme());
 }
 
 setupTheme();
