@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="color-scheme" content="light dark">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="Live read-only tournament matches and player standings.">
+		<title>Live Tournament | Beyond Badminton</title>
+		<link rel="stylesheet" href="assets/css/styles.css">
+	</head>
+	<body class="tournament-live-page">
+		<main class="tournament-live-app">
+			<header class="tournament-live-header">
+				<a href="index.html" aria-label="Back to Tournament Manager">
+					<img src="assets/beyond-badminton.svg" alt="Beyond Badminton" class="logo">
+				</a>
+				<div class="tournament-live-heading">
+					<p class="tournament-live-eyebrow">Tournament Manager</p>
+					<h1>Live tournament</h1>
+					<p id="live-updated" class="tournament-live-updated" aria-live="polite"></p>
+				</div>
+				<a class="tournament-live-back" href="index.html">Open manager</a>
+			</header>
+
+			<div class="tournament-live-layout">
+				<section class="card tournament-live-panel" aria-labelledby="live-matches-title">
+					<div class="tournament-live-panel-heading">
+						<div>
+							<p class="gen-table-label">On court</p>
+							<h2 id="live-matches-title">Matches</h2>
+						</div>
+						<span id="live-match-count" class="tournament-live-count"></span>
+					</div>
+					<div id="live-matches" class="tournament-live-matches" aria-live="polite"></div>
+				</section>
+
+				<section class="card tournament-live-panel" aria-labelledby="live-players-title">
+					<div class="tournament-live-panel-heading">
+						<div>
+							<p class="gen-table-label">Current standings</p>
+							<h2 id="live-players-title">Players</h2>
+						</div>
+						<span id="live-player-count" class="tournament-live-count"></span>
+					</div>
+					<div class="tournament-live-table-wrap">
+						<table class="gen-stats-table tournament-live-table">
+							<thead>
+								<tr>
+									<th scope="col">#</th>
+									<th scope="col">Player</th>
+									<th scope="col">P</th>
+									<th scope="col">W</th>
+									<th scope="col">L</th>
+									<th scope="col">Diff</th>
+								</tr>
+							</thead>
+							<tbody id="live-player-stats"></tbody>
+						</table>
+					</div>
+				</section>
+			</div>
+		</main>
+		<script src="assets/js/tournament.live.js"></script>
+	</body>
+</html>

@@ -20,7 +20,7 @@
 				<div>
 					<img src="assets/beyond-badminton.svg" alt="Beyond Badminton" class="logo" />
 				</div>
-				<div class="header-controls">
+				<div class="main-controls">
 					<div>
 						<button type="button" class="imp-exp-button" id="export-storage-btn">Export Storage</button>
 						<button type="button" class="imp-exp-button" id="import-storage-btn">Import Storage </button>
@@ -402,11 +402,14 @@ Pikachu,3,x</pre>
 							</div>
 						</div>
 						<p class="section-hint">Time-based scheduling is not supported. All active players and courts are assumed to be available at all times.</p>
-						<div class="gen-btn-row">
+						<div class="main-controls">
 							<button type="button" id="gen-generate-tournament-btn" class="gen-primary-btn">Generate</button>
 							<button type="button" id="gen-clear-tournament-btn" class="clear-btn" hidden>Discard</button>
-							<button type="button" id="gen-print-tournament-btn" class="secondary-btn" hidden>Print</button>
-							<button type="button" id="gen-export-tournament-btn" class="secondary-btn" hidden>Export</button>
+							<div>
+								<button type="button" id="gen-print-tournament-btn" class="secondary-btn" hidden>Print</button>
+								<button type="button" id="gen-export-tournament-btn" class="secondary-btn" hidden>Export</button>
+							</div>
+							<a class="secondary-btn" href="tournament-live.html" target="_blank" rel="noopener noreferrer">Live view</a>
 						</div>
 					</div>
 
