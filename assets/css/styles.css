@@ -1621,6 +1621,9 @@ span.sort-active .sort-icon {
 	border-collapse: collapse;
 	font-size: 1rem;
 }
+.tournament-live-page #qualification-stats-table {
+	font-size: 1.1rem;
+}
 .gen-stats-table th {
 	text-align: left;
 	font-size: 0.85rem;
@@ -1670,7 +1673,7 @@ span.sort-active .sort-icon {
 
 .tournament-live-page {
 	justify-content: stretch;
-	padding: 24px clamp(16px, 3vw, 48px) 40px;
+	padding: 16px clamp(16px, 3vw, 48px) 16px;
 }
 
 .tournament-live-app {
