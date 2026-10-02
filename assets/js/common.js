@@ -251,7 +251,7 @@ function updateRegisteredTableFit(tableId) {
 	const contentHeight = state.table.scrollHeight;
 	if (contentHeight === 0) return;
 
-	state.wrapper.style.height = `${contentHeight}px`;
+	state.wrapper.style.height = `${contentHeight + 6}px`;
 	state.wrapper.style.overflowY = "hidden";
 }
 
