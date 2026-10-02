@@ -126,11 +126,7 @@ function qualificationRoundWindowHasChanged() {
 		const firstUnfinishedRound = getFirstUnfinishedQualificationRound();
 
 		if (firstUnfinishedRound) {
-			if (firstUnfinishedRound.roundId === 0) {
-				tmpRoundWindowFilterStartId = 0;
-			} else {
-				tmpRoundWindowFilterStartId = firstUnfinishedRound.roundId - roundWindowOffset;
-			}
+			tmpRoundWindowFilterStartId = Math.max(0, firstUnfinishedRound.roundId - roundWindowOffset);
 			tmpRoundWindowFilterEndId = Math.min(qualificationRounds.length, tmpRoundWindowFilterStartId + roundWindowSize);
 		} else {
 			// if all matches are played, show the last 4 rounds
