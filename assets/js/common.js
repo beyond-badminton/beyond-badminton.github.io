@@ -230,8 +230,10 @@ const registeredTableFitControls = new Map();
 
 function registerTableFitControl(table, checkbox) {
 	const wrapper = table.closest(".gen-table-wrap");
-	const state = { table, checkbox, wrapper, originalHeight: "", originalOverflowY: "" };
+	const observer = new ResizeObserver(() => updateRegisteredTableFit(table.id));
+	const state = { table, checkbox, wrapper, observer, originalHeight: "", originalOverflowY: "" };
 	registeredTableFitControls.set(table.id, state);
+	observer.observe(table);
 
 	checkbox.addEventListener("change", () => {
 		if (checkbox.checked) {
@@ -248,10 +250,10 @@ function updateRegisteredTableFit(tableId) {
 	const state = registeredTableFitControls.get(tableId);
 	if (!state?.checkbox.checked) return;
 
-	const contentHeight = state.table.scrollHeight;
+	const contentHeight = Math.ceil(Math.max(state.table.scrollHeight, state.table.getBoundingClientRect().height));
 	if (contentHeight === 0) return;
 
-	state.wrapper.style.height = `${contentHeight + 6}px`;
+	state.wrapper.style.height = `${contentHeight + 12}px`;
 	state.wrapper.style.overflowY = "hidden";
 }
 
