@@ -9,6 +9,15 @@ const LIVE_TOURNAMENT_STORAGE_KEYS = [
 ];
 const LIVE_THEME_STORAGE_KEY = "tournament-generator:live-theme";
 let lastLiveTournamentSnapshot = null;
+let livePageControlsHideTimer = null;
+
+function revealLivePageControls() {
+	document.body.classList.add("live-page-controls-visible");
+	window.clearTimeout(livePageControlsHideTimer);
+	livePageControlsHideTimer = window.setTimeout(() => {
+		document.body.classList.remove("live-page-controls-visible");
+	}, 8000);
+}
 
 function applyLiveTheme(theme) {
 	if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
@@ -82,4 +91,6 @@ window.addEventListener("storage", (event) => {
 window.addEventListener("focus", renderLiveTournament);
 loadLiveTheme();
 initLiveTournament();
+document.addEventListener("pointerover", revealLivePageControls);
+window.addEventListener("pointermove", revealLivePageControls, { passive: true });
 window.setInterval(renderLiveTournament, 1000);

@@ -1285,6 +1285,11 @@ span.sort-active .sort-icon {
 	transition: transform 0.12s ease;
 }
 
+body.tournament-live-page:not(.live-page-controls-visible) #qualification-match-filter-wrap,
+body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
+	display: none !important;
+}
+
 /* Hide everything in a collapsible container except its toggle header */
 .gen-collapsible.gen-collapsed > *:not(.gen-card-toggle) {
 	display: none !important;
