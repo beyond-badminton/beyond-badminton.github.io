@@ -101,18 +101,29 @@ let roundWindowFilterEndId = null; // this point past the last shown index (like
 let roundWindowOffset = 1;
 let roundWindowSize = 4;
 
+function getFirstUnfinishedQualificationRound() {
+	return qualificationRounds.find((round) =>
+		round.matches.some((match) => {
+			const scores = qualificationScores[match.matchId] || { a: null, b: null };
+			return (scores.a || 0) === (scores.b || 0);
+		}),
+	);
+}
+
+function refreshQualificationActiveRoundHighlight() {
+	const activeRoundId = tournamentConfig.qualificationStarted ? getFirstUnfinishedQualificationRound()?.roundId : null;
+	genQualificationOut.querySelectorAll(".gen-round").forEach((roundElement) => {
+		roundElement.classList.toggle("gen-round-active", Number(roundElement.dataset.roundId) === activeRoundId);
+	});
+}
+
 function qualificationRoundWindowHasChanged() {
 	let tmpRoundWindowFilterStartId = null;
 	let tmpRoundWindowFilterEndId = null;
 
 	if (tournamentConfig.qualificationStarted && genQualificationMatchFilterActiveWindow.checked) {
 		// note that roud id matches rounds array index, so we can use it directly
-		const firstUnfinishedRound = qualificationRounds.find((round) => {
-			return round.matches.some((match) => {
-				const scores = qualificationScores[match.matchId] || { a: null, b: null };
-				return (scores.a || 0) === (scores.b || 0);
-			});
-		});
+		const firstUnfinishedRound = getFirstUnfinishedQualificationRound();
 
 		if (firstUnfinishedRound) {
 			if (firstUnfinishedRound.roundId === 0) {
@@ -335,6 +346,7 @@ function renderQualificationRounds() {
 
 	genQualificationOut.innerHTML = "";
 	genQualificationOut.appendChild(blockEl);
+	refreshQualificationActiveRoundHighlight();
 
 	attachDragHandlers(genQualificationOut, qualificationRoundPlayersSwap);
 }

@@ -1365,6 +1365,10 @@ span.sort-active .sort-icon {
 	margin-bottom: 10px;
 }
 
+.gen-round-active {
+	border: 2px solid var(--accent);
+}
+
 .gen-round-header {
 	display: flex;
 	flex-direction: row;

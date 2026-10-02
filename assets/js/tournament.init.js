@@ -292,6 +292,7 @@ function initTournament() {
 		saveTournamentPlayers();
 		saveQualificationScores();
 		updateScoreUI(qualificationScores[matchId], input);
+		refreshQualificationActiveRoundHighlight();
 		renderTournamentStats();
 	});
 
