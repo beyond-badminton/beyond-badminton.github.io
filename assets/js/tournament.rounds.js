@@ -44,8 +44,8 @@ function applyQualificationMatchFilterSearch() {
 	});
 }
 
-genQualificationEditFilterEditable.addEventListener("change", renderQualificationRounds);
-genQualificationEditFilterDrawNumbers.addEventListener("change", renderQualificationRounds);
+genQualificationEditFilterEditable?.addEventListener("change", renderQualificationRounds);
+genQualificationEditFilterDrawNumbers?.addEventListener("change", renderQualificationRounds);
 
 genQualificationMatchFilterSearch.addEventListener("input", applyQualificationMatchFilterSearch);
 
@@ -203,7 +203,7 @@ function tournamentPlayerName(playerId) {
 			return player?.name || "";
 		} else if (
 			(tournamentConfig.qualificationStarted && genQualificationMatchFilterDrawnNumbers.checked) ||
-			(tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && genQualificationEditFilterDrawNumbers.checked)
+			(tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && genQualificationEditFilterDrawNumbers?.checked)
 		) {
 			return `(${player?.pick || 0}) ${player?.name || ""}`;
 		}
@@ -255,9 +255,11 @@ function renderQualificationRounds() {
 	}
 
 	genQualificationMatchFilterWrap.style.display = tournamentConfig.qualificationStarted ? "block" : "none";
-	genQualificationEditFilterWrap.style.display = manualEdit ? "block" : "none";
+	if (genQualificationEditFilterWrap) {
+		genQualificationEditFilterWrap.style.display = manualEdit ? "block" : "none";
+	}
 
-	const filterEditableMatches = manualEdit && genQualificationEditFilterEditable.checked;
+	const filterEditableMatches = manualEdit && genQualificationEditFilterEditable?.checked;
 
 	const blockEl = document.createElement("section");
 	blockEl.className = "gen-block";
@@ -441,8 +443,13 @@ function initQualificationRoundsRenderer({ offset = 1, size = 4, matchFilters = 
 
 function resetQualificationRoundsRenderer() {
 	resetRegisteredTableFitControls();
-	genQualificationEditFilterEditable.checked = true;
-	genQualificationEditFilterDrawNumbers.checked = false;
+	if (genQualificationEditFilterEditable) {
+		genQualificationEditFilterEditable.checked = false;
+	}
+	if (genQualificationEditFilterDrawNumbers) {
+		genQualificationEditFilterDrawNumbers.checked = false;
+	}
+
 	genQualificationMatchFilterActiveWindow.checked = false;
 	genQualificationMatchFilterDrawnNumbers.checked = false;
 	genQualificationMatchFilterNoBench.checked = false;
