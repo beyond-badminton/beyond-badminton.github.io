@@ -205,8 +205,51 @@ function handleSort(listKey, field) {
 }
 
 const registeredSortableElements = new WeakSet();
+const registeredCompactHeaders = new WeakSet();
+const compactTableHeaderLabels = new Map([
+	["rank", "#"],
+	["played", "GP"],
+	["matches", "GP"],
+	["wins", "W"],
+	["losses", "L"],
+	["diff", "+/-"],
+	["opponent", "Opp"],
+	["unique partners", "Ptnrs"],
+	["unique opponents", "Opps"],
+	["play time", "Time"],
+	["play rate", "Rate"],
+	["gender", "G"],
+	["arrival", "Arr"],
+	["sit 1st round", "Sit"],
+	["count", "#"],
+]);
+
+function registerCompactTableHeaders(element) {
+	element.querySelectorAll("th").forEach((header) => {
+		if (registeredCompactHeaders.has(header)) return;
+
+		const labelContainer = header.querySelector(".sortable") ?? header;
+		const labelNode = [...labelContainer.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+		if (!labelNode) return;
+
+		const fullLabel = labelNode.textContent.trim();
+		const compactLabel = compactTableHeaderLabels.get(fullLabel.toLowerCase());
+		if (!compactLabel) return;
+
+		const full = document.createElement("span");
+		full.className = "table-header-full";
+		full.textContent = fullLabel;
+		const compact = document.createElement("span");
+		compact.className = "table-header-compact";
+		compact.textContent = compactLabel;
+		compact.title = fullLabel;
+		labelNode.replaceWith(full, compact);
+		registeredCompactHeaders.add(header);
+	});
+}
 
 function registerSortableTable(element, { listKey, initialState, comparator, renderer } = {}) {
+	registerCompactTableHeaders(element);
 	if (listKey) {
 		sortState[listKey] = initialState.map((sort) => ({ ...sort }));
 		if (comparator) sortComparators.set(listKey, comparator);

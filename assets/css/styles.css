@@ -1610,8 +1610,10 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 .gen-table-wrap {
 	min-height: 150px;
 	height: 300px;
+	overflow-x: auto;
 	overflow-y: auto;
 	resize: vertical;
+	container-type: inline-size;
 }
 
 .gen-table-wrap thead th {
@@ -1626,6 +1628,9 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	border-collapse: collapse;
 	font-size: 1rem;
 }
+.table-header-compact {
+	display: none;
+}
 .tournament-live-page #qualification-stats-table {
 	font-size: 1.1rem;
 }
@@ -1639,6 +1644,21 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	padding: 0 10px 8px;
 	border-bottom: 1px solid var(--line);
 	white-space: nowrap;
+}
+.gen-stats-table .table-header-compact {
+	display: none;
+}
+@container (max-width: 900px) {
+	.gen-table-wrap .gen-stats-table {
+		width: max-content;
+		min-width: 100%;
+	}
+	.gen-stats-table .table-header-full {
+		display: none;
+	}
+	.gen-stats-table .table-header-compact {
+		display: inline;
+	}
 }
 .gen-stats-table td {
 	padding: 8px 10px;
