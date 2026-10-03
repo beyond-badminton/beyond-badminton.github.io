@@ -200,7 +200,7 @@ function tournamentPlayerName(playerId) {
 	if (tournamentConfig.qualificationDrawConfirmed) {
 		const player = tournamentPlayersMap.get(Number(playerId));
 		if (player?.withdrawn || false) {
-			return `(Withdrawn) ${player?.name || ""}`;
+			return player?.name || "";
 		} else if (
 			(tournamentConfig.qualificationStarted && genQualificationMatchFilterDrawnNumbers.checked) ||
 			(tournamentConfig.qualificationDrawConfirmed && !tournamentConfig.qualificationStarted && genQualificationEditFilterDrawNumbers.checked)
@@ -211,6 +211,10 @@ function tournamentPlayerName(playerId) {
 	}
 
 	return String(playerId);
+}
+
+function tournamentPlayerIsWithdrawn(playerId) {
+	return tournamentConfig.qualificationDrawConfirmed && (tournamentPlayersMap.get(Number(playerId))?.withdrawn ?? false);
 }
 
 function qualificationRoundPlayersSwap(dragSrc, dragDst) {
@@ -290,6 +294,7 @@ function renderQualificationRounds() {
 					!tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished,
 					tournamentPlayerName,
 					manualEdit && match.editable,
+					tournamentPlayerIsWithdrawn,
 				),
 			);
 		});
@@ -334,7 +339,7 @@ function renderQualificationRounds() {
 		const showBench = !genQualificationMatchFilterNoBench.checked && !(manualEdit && filterEditableMatches);
 
 		if (showBench && round.bench && round.bench.length > 0) {
-			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, tournamentPlayerName));
+			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, PLAYER_SLOT.CSV, tournamentPlayerName, false, tournamentPlayerIsWithdrawn));
 		}
 
 		blockEl.appendChild(roundEl);

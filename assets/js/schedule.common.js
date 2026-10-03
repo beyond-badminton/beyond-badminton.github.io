@@ -7,7 +7,7 @@ const PLAYER_SLOT = Object.freeze({
 	CSV: 3, // Player slot represented in CSV format, no pill
 });
 
-function buildPlayerSlot(roundId, playerId, playerCard = PLAYER_SLOT.DRAGGABLE, lastSlot, buildPlayerSlotFunc, accentColor) {
+function buildPlayerSlot(roundId, playerId, playerCard = PLAYER_SLOT.DRAGGABLE, lastSlot, buildPlayerSlotFunc, accentColor, isWithdrawnFunc) {
 	const slot = document.createElement("div");
 	slot.className = "gen-player-slot";
 	if (playerCard !== PLAYER_SLOT.CSV) {
@@ -22,11 +22,21 @@ function buildPlayerSlot(roundId, playerId, playerCard = PLAYER_SLOT.DRAGGABLE, 
 	}
 	slot.dataset.roundId = roundId;
 	slot.dataset.playerId = playerId;
-	const playerSlot = buildPlayerSlotFunc(playerId);
-	if (playerCard === PLAYER_SLOT.CSV) {
-		slot.innerHTML = `${playerSlot}${!lastSlot ? " ," : ""}`;
-	} else {
-		slot.innerHTML = playerSlot;
+	slot.innerHTML = buildPlayerSlotFunc(playerId);
+
+	if (isWithdrawnFunc?.(playerId)) {
+		const badge = document.createElement("span");
+		badge.className = "gen-withdrawn-badge";
+		badge.textContent = "WD";
+		badge.title = "Withdrawn";
+		badge.setAttribute("aria-label", "Withdrawn");
+		slot.appendChild(badge);
+	}
+	if (playerCard === PLAYER_SLOT.CSV && !lastSlot) {
+	
+		const comma = document.createElement("span");
+		comma.textContent = ", ";
+		slot.appendChild(comma);
 	}
 	return slot;
 }
@@ -39,6 +49,7 @@ function buildMatchCard(
 	disabledScore = false,
 	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
 	accentColor = false,
+	isWithdrawnFunc,
 ) {
 	const card = document.createElement("div");
 	card.className = "gen-match-card";
@@ -56,7 +67,7 @@ function buildMatchCard(
 		teamEl.dataset.matchId = match.matchId;
 
 		match[teamKey].forEach((pid, pi) => {
-			const slot = buildPlayerSlot(roundId, pid, playerCard, pi + 1 === match[teamKey].length, buildPlayerSlotFunc, accentColor);
+			const slot = buildPlayerSlot(roundId, pid, playerCard, pi + 1 === match[teamKey].length, buildPlayerSlotFunc, accentColor, isWithdrawnFunc);
 			slot.dataset.matchId = match.matchId;
 			slot.dataset.team = teamKey;
 			slot.dataset.pos = pi;
@@ -111,7 +122,14 @@ function buildMatchCard(
 	return card;
 }
 
-function buildBenchCard(bench, roundId, playerCard = PLAYER_SLOT.DRAGGABLE, buildPlayerSlotFunc = buildPlayerSlotInnerHtml, accentColor = false) {
+function buildBenchCard(
+	bench,
+	roundId,
+	playerCard = PLAYER_SLOT.DRAGGABLE,
+	buildPlayerSlotFunc = buildPlayerSlotInnerHtml,
+	accentColor = false,
+	isWithdrawnFunc,
+) {
 	if (!bench || bench.length === 0) {
 		return null;
 	}
@@ -125,7 +143,7 @@ function buildBenchCard(bench, roundId, playerCard = PLAYER_SLOT.DRAGGABLE, buil
 	benchEl.appendChild(bLabel);
 
 	bench.forEach((pid, bi) => {
-		const slot = buildPlayerSlot(roundId, pid, playerCard, bi + 1 === bench.length, buildPlayerSlotFunc, accentColor);
+		const slot = buildPlayerSlot(roundId, pid, playerCard, bi + 1 === bench.length, buildPlayerSlotFunc, accentColor, isWithdrawnFunc);
 		slot.dataset.pos = bi;
 		slot.dataset.bench = "true";
 		slot.classList.add("bench-slot");

@@ -1492,6 +1492,19 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	color: var(--ink-soft);
 }
 
+.gen-withdrawn-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 4px;
+	border: 1px solid currentColor;
+	border-radius: 3px;
+	color: var(--accent-red);
+	font-size: 0.55rem;
+	font-weight: 700;
+	line-height: 1;
+	flex-shrink: 0;
+}
+
 .gen-player-slot-pill {
 	padding: 3px 8px;
 	border: 1px solid var(--line);
