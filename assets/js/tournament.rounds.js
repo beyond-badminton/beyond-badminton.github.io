@@ -254,9 +254,9 @@ function renderQualificationRounds() {
 		genQualificationRoundsCardLabel.textContent = `Qualification rounds ${manualEdit ? " (Edit Mode)" : ""}`;
 	}
 
-	genQualificationMatchFilterWrap.style.display = tournamentConfig.qualificationStarted ? "block" : "none";
+	genQualificationMatchFilterWrap.hidden = !tournamentConfig.qualificationStarted;
 	if (genQualificationEditFilterWrap) {
-		genQualificationEditFilterWrap.style.display = manualEdit ? "block" : "none";
+		genQualificationEditFilterWrap.hidden = !manualEdit;
 	}
 
 	const filterEditableMatches = manualEdit && genQualificationEditFilterEditable?.checked;

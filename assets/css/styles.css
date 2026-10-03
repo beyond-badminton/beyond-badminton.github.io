@@ -266,11 +266,6 @@ header h1 {
 	color: var(--ink);
 	box-shadow: var(--shadow-subtle);
 }
-
-.tab:not(.active):hover {
-	color: var(--ink);
-}
-
 .card {
 	background: var(--card);
 	border: 1px solid var(--line);
@@ -282,12 +277,37 @@ header h1 {
 	margin-top: 16px;
 }
 
-.card > div:not([hidden]) + div {
+.card:not(.tournament-live-panel):not(#gen-qualification-rounds-card) > div:not([hidden]) + div {
 	margin-top: 20px;
 }
 
 .card .card {
 	border: 1px solid var(--accent-line);
+}
+
+#gen-qualification-rounds-card {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+#gen-qualification-rounds-card[hidden],
+#qualification-edit-filter-wrap[hidden] {
+	display: none;
+}
+
+#gen-qualification-rounds-card > h2 {
+	margin: 0;
+}
+
+#gen-qualification-rounds-card > div {
+	margin-top: 0;
+}
+
+#qualification-edit-filter-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
 }
 
 .tab-content {
@@ -300,7 +320,7 @@ header h1 {
 
 .players-layout {
 	display: flex;
-	flex-direction: column;
+	margin: 0;
 	gap: 16px;
 }
 
@@ -1286,6 +1306,7 @@ span.sort-active .sort-icon {
 }
 
 body.tournament-live-page:not(.live-page-controls-visible) #qualification-match-filter-wrap,
+body.tournament-live-page:not(.live-page-controls-visible) .tournament-live-panel-heading,
 body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	display: none !important;
 }
@@ -1363,11 +1384,13 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 }
 
 .gen-round {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 	background: var(--card);
 	border: 1px solid var(--accent-line);
 	border-radius: var(--radius);
 	padding: 14px;
-	margin-bottom: 10px;
 }
 
 .gen-round-active {
@@ -1381,7 +1404,6 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	gap: 12px;
 	flex-wrap: wrap;
 	height: 1.5rem;
-	margin-bottom: 10px;
 }
 
 .gen-round-header .gen-round-label {
@@ -1409,7 +1431,13 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
-	color: var(--ink-soft);
+	margin: 10px 14px 0;
+}
+
+.gen-block {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
 	margin: 0 0 10px;
 }
 
@@ -1605,7 +1633,7 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	align-items: center;
 	gap: 6px;
 	flex-wrap: wrap;
-	margin: 8px 0 0;
+	margin: 0;
 }
 .gen-bench-label {
 	font-size: 0.72rem;
@@ -1711,7 +1739,7 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 
 .tournament-live-page {
 	justify-content: stretch;
-	padding: 16px clamp(16px, 3vw, 48px) 16px;
+	padding: 16px clamp(16px, 3vw, 24px) 16px;
 }
 
 .tournament-live-app {
@@ -1760,6 +1788,9 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 }
 
 .tournament-live-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
 	min-width: 0;
 	padding: 16px;
 }
@@ -1769,7 +1800,6 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	margin-bottom: 12px;
 }
 
 .tournament-live-panel-heading h2 {
