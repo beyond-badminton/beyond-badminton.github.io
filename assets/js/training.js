@@ -778,6 +778,15 @@ function buildPlayerSlotInnerHtml(pid) {
 	return `<span>${activePlayerName(pid)}</span>${renderSkillPillHtml(activePlayerSkill(pid))}`;
 }
 
+function getTrainingPlayerData(playerId) {
+	return {
+		name: buildPlayerSlotInnerHtml(playerId),
+		slotType: PLAYER_SLOT.DRAGGABLE,
+		accent: false,
+		isWithdrawn: false,
+	};
+}
+
 // ── Training output ───────────────────────────────────────────
 function renderTraining() {
 	genTrainingOut.innerHTML = "";
@@ -812,14 +821,14 @@ function renderTraining() {
 		matchesRow.className = "gen-matches-row";
 
 		round.matches.forEach((match) => {
-			matchesRow.appendChild(buildMatchCard(match, scores[match.matchId] || { a: null, b: null }, round.roundId));
+			matchesRow.appendChild(buildMatchCard(match, scores[match.matchId] || { a: null, b: null }, round.roundId, getTrainingPlayerData));
 		});
 
 		roundEl.appendChild(matchesRow);
 
 		// Bench
 		if (round.bench && round.bench.length > 0) {
-			roundEl.appendChild(buildBenchCard(round.bench, round.roundId));
+			roundEl.appendChild(buildBenchCard(round.bench, round.roundId, getTrainingPlayerData));
 		}
 
 		blockEl.appendChild(roundEl);
@@ -856,7 +865,6 @@ function updateScoreUI(score, scoreInput) {
 		}
 	});
 }
-
 
 // ── Score input handler ───────────────────────────────────────
 genTrainingOut.addEventListener("change", (e) => {
