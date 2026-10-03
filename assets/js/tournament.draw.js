@@ -41,6 +41,7 @@ const genQualificationDrawTableBody = document.getElementById("qualification-dra
 const qualificationDrawFormCard = document.getElementById("gen-qualification-draw-form-card");
 const qualificationDrawPlayerField = document.getElementById("qualification-draw-player");
 const qualificationDrawPickField = document.getElementById("qualification-draw-pick");
+const qualificationDrawAutoAssignButton = document.getElementById("auto-assign-qualification-draw-btn");
 const qualificationDrawPanelHeader = document.getElementById("qualification-draw-panel-header");
 
 let currentDrawPlayerId = null;
@@ -58,29 +59,30 @@ function populateQualificationDrawPlayerField() {
 	}
 }
 
-function populateQualificationDrawPickField() {
-	const values = [];
+function getAvailableQualificationDrawPicks(playerId) {
+	let start = 1;
+	let end = tournamentPlayers.length;
 
-	if (currentDrawPlayerId !== null) {
-		let start = 1;
-		let end = tournamentPlayers.length;
-
-		if (tournamentConfig.twoMenVsTwoWomen === "disabled") {
-			const womenCount = getWomenCount();
-			if (playerIsWoman(currentDrawPlayerId)) {
-				end = womenCount;
-			} else {
-				start = 1 + womenCount;
-			}
-		}
-
-		for (let i = start; i <= end; i++) {
-			if (tournamentPlayers.some((p) => p.pick === i)) {
-				continue;
-			}
-			values.push(i);
+	if (tournamentConfig.twoMenVsTwoWomen === "disabled") {
+		const womenCount = getWomenCount();
+		if (playerIsWoman(playerId)) {
+			end = womenCount;
+		} else {
+			start = 1 + womenCount;
 		}
 	}
+
+	const values = [];
+	for (let pick = start; pick <= end; pick++) {
+		if (!tournamentPlayers.some((player) => player.pick === pick)) {
+			values.push(pick);
+		}
+	}
+	return values;
+}
+
+function populateQualificationDrawPickField() {
+	const values = currentDrawPlayerId === null ? [] : getAvailableQualificationDrawPicks(currentDrawPlayerId);
 
 	populateSelectElementWithValues(qualificationDrawPickField, values, "Select a pick");
 
@@ -120,6 +122,45 @@ qualificationDrawPickField.addEventListener("change", (event) => {
 	renderQualificationDrawPlayers();
 	currentDrawPlayerId = null;
 	populateQualificationDrawPlayerField();
+	renderQualificationDrawAutoAssignButton();
+});
+
+function shuffleQualificationDrawItems(items) {
+	for (let index = items.length - 1; index > 0; index--) {
+		const swapIndex = Math.floor(Math.random() * (index + 1));
+		[items[index], items[swapIndex]] = [items[swapIndex], items[index]];
+	}
+	return items;
+}
+
+function renderQualificationDrawAutoAssignButton() {
+	qualificationDrawAutoAssignButton.hidden = tournamentConfig.qualificationDrawConfirmed || !tournamentPlayers.some((player) => player.pick === 0);
+}
+
+qualificationDrawAutoAssignButton.addEventListener("click", () => {
+	const unassignedPlayers = tournamentPlayers.filter((player) => player.pick === 0);
+	if (unassignedPlayers.length === 0) return;
+
+	const groups =
+		tournamentConfig.twoMenVsTwoWomen === "disabled"
+			? [unassignedPlayers.filter((player) => playerIsWoman(player.id)), unassignedPlayers.filter((player) => !playerIsWoman(player.id))]
+			: [unassignedPlayers];
+
+	groups.forEach((players) => {
+		if (players.length === 0) return;
+
+		const availablePicks = getAvailableQualificationDrawPicks(players[0].id);
+		shuffleQualificationDrawItems(players);
+		shuffleQualificationDrawItems(availablePicks);
+		players.forEach((player, index) => {
+			if (availablePicks[index] !== undefined) player.pick = availablePicks[index];
+		});
+	});
+
+	currentDrawPlayerId = null;
+	saveTournamentPlayers();
+	renderQualificationDraw();
+	renderQualificationDrawSubmitButton();
 });
 
 function renderQualificationDrawPlayers() {
@@ -177,6 +218,7 @@ function renderQualificationDraw() {
 		populateQualificationDrawPlayerField();
 		populateQualificationDrawPickField();
 	}
+	renderQualificationDrawAutoAssignButton();
 
 	renderQualificationDrawPlayers();
 }
