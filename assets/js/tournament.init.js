@@ -16,6 +16,7 @@ const genLiveTournamentLink = document.querySelector('a[href="tournament-live.ht
 const genLiveThemeSwitch = document.querySelector(".live-theme-switch");
 const genTournamentManagementCard = document.getElementById("gen-tournament-management-card");
 const genTournamentSummary = document.getElementById("gen-tournament-summary");
+const genUseOnScreenNumpad = document.getElementById("use-onscreen-numpad");
 const genQualificationDrawCard = document.getElementById("gen-qualification-draw-card");
 const genQualificationRoundsCard = document.getElementById("gen-qualification-rounds-card");
 const genQualificationStatsCard = document.getElementById("gen-qualification-stats-card");
@@ -86,6 +87,7 @@ function renderTournamentConfigSummary() {
 		["Two men vs two women", genderPolicy[tournamentConfig?.twoMenVsTwoWomen] ?? "Allowed"],
 		["Playoff spots", `${tournamentConfig?.playoffPlayersCount ?? 0} player${tournamentConfig?.playoffPlayersCount === 1 ? "" : "s"}`],
 		["Tournament date", genTournamentSummary.querySelector("#gen-tournament-date-picker")],
+		["Use on-screen numpad", genTournamentSummary.querySelector("#use-onscreen-numpad")],
 	];
 
 	genTournamentSummary.replaceChildren(
@@ -108,6 +110,7 @@ function renderTournament() {
 	const hasTournamentValue = hasTournament();
 	genPointsToWin.value = tournamentConfig.pointsToWin;
 	genScoreCapInput.value = tournamentConfig.scoreCap;
+	genUseOnScreenNumpad.checked = tournamentConfig.useOnScreenNumpad;
 
 	//console.log("Rendering tournament, hasTournament:", hasTournamentValue);
 
@@ -148,13 +151,39 @@ function renderTournament() {
 	renderTournamentStats();
 }
 
+function saveQualificationMatchScore(matchId, score) {
+	const match = findQualificationMatch(matchId);
+	const previousScore = qualificationScores[matchId] || { a: null, b: null };
+	if (match) revertMatchScore(tournamentPlayersMap, match, previousScore);
+
+	qualificationScores[matchId] = { a: score.a, b: score.b };
+	if (match) applyMatchScore(tournamentPlayersMap, match, qualificationScores[matchId]);
+
+	saveTournamentPlayers();
+	saveQualificationScores();
+	const matchCard = [...genQualificationOut.querySelectorAll(".gen-match-card")].find((card) => card.dataset.matchId === matchId);
+	updateMatchScoreUI(qualificationScores[matchId], matchCard);
+	roundRendererOnScoreChanged();
+	renderTournamentStats();
+}
+
 function initTournament() {
+	document.addEventListener(QUALIFICATION_SCORE_SAVE_REQUEST_EVENT, (event) => {
+		const { matchId, score } = event.detail;
+		saveQualificationMatchScore(matchId, score);
+	});
+
 	initQualificationRoundsRenderer({ offset: 1, size: 4 });
 	initQualificationDrawRenderer();
 	initQualificationPlayerStatsRenderer();
 	initQualificationP2PStatsRenderer();
 	loadTournamentFromStorage();
 	renderTournament();
+	genUseOnScreenNumpad.addEventListener("change", () => {
+		tournamentConfig.useOnScreenNumpad = genUseOnScreenNumpad.checked;
+		saveTournamentConfig();
+		renderUpdateQualificationRounds();
+	});
 
 	genGenerateTournamentBtn.addEventListener("click", async () => {
 		if (hasTournament() && !(await confirmDialog("Replace the ongoing tournament with a new one?"))) return;
@@ -340,20 +369,8 @@ function initTournament() {
 			return;
 		}
 
-		const match = findQualificationMatch(matchId);
-		const previousScore = qualificationScores[matchId] || { a: null, b: null };
-
-		if (match) revertMatchScore(tournamentPlayersMap, match, previousScore);
-		if (!qualificationScores[matchId]) qualificationScores[matchId] = { a: null, b: null };
-
-		qualificationScores[matchId][side] = value;
-		if (match) applyMatchScore(tournamentPlayersMap, match, qualificationScores[matchId]);
-
-		saveTournamentPlayers();
-		saveQualificationScores();
-		updateScoreUI(qualificationScores[matchId], input);
-		roundRendererOnScoreChanged();
-		renderTournamentStats();
+		const score = { ...(qualificationScores[matchId] || { a: null, b: null }), [side]: value };
+		saveQualificationMatchScore(matchId, score);
 	});
 
 	const tournamentDataDesc = "Tournament";

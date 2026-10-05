@@ -10,6 +10,52 @@ const genQualificationEditFilterWrap = document.getElementById("qualification-ed
 const genQualificationEditFilterEditable = document.getElementById("qualification-edit-filter-editable");
 const genQualificationEditFilterDrawNumbers = document.getElementById("qualification-edit-filter-draw-numbers");
 
+function openQualificationScoreNumpad(scoreInput) {
+	if (!tournamentConfig.useOnScreenNumpad || !tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished) return;
+
+	const match = findQualificationMatch(scoreInput.dataset.matchId);
+	const round = qualificationRounds.find((candidate) => candidate.matches.includes(match));
+	if (!match || !round) return;
+
+	openMatchScoreDialog({
+		match,
+		score: qualificationScores[match.matchId] || { a: null, b: null },
+		roundId: round.roundId,
+		getPlayerData: (playerId) => getTournamentPlayerData(playerId, PLAYER_SLOT.CSV),
+		pointsToWin: tournamentConfig.pointsToWin,
+		scoreCap: tournamentConfig.scoreCap,
+		onScore: (score) =>
+			document.dispatchEvent(
+				// Custom event to request saving the score for the specified match, avoiding depencency on tournament.init.js
+				new CustomEvent(QUALIFICATION_SCORE_SAVE_REQUEST_EVENT, {
+					detail: { matchId: match.matchId, score },
+				}),
+			),
+		onClose: () => {
+			const currentScoreInput = [...genQualificationOut.querySelectorAll(".gen-score-input")].find(
+				(input) => input.dataset.matchId === match.matchId && input.dataset.side === scoreInput.dataset.side,
+			);
+			currentScoreInput?.blur();
+		},
+	});
+}
+
+genQualificationOut.addEventListener("click", (event) => {
+	if (!(event.target instanceof Element)) return;
+	const scoreInput = event.target.closest(".gen-score-input");
+	if (scoreInput) openQualificationScoreNumpad(scoreInput);
+});
+
+genQualificationOut.addEventListener("keydown", (event) => {
+	if (!(event.target instanceof Element) || (event.key !== "Enter" && event.key !== " ")) return;
+	const scoreInput = event.target.closest(".gen-score-input");
+	if (!scoreInput || !tournamentConfig.useOnScreenNumpad || !tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished) {
+		return;
+	}
+	event.preventDefault();
+	openQualificationScoreNumpad(scoreInput);
+});
+
 function onQualificationMatchFilterChange(changeType) {
 	if (changeType === "activeWindow") {
 		if (updateQualificationRoundWindowChanged()) renderQualificationRounds();
@@ -224,6 +270,7 @@ function renderQualificationRounds() {
 		const roundBuilder = createRoundBuilder({
 			roundId: round.roundId,
 			disabledScore: !tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished,
+			readOnlyScore: tournamentConfig.useOnScreenNumpad && tournamentConfig.qualificationStarted && !tournamentConfig.qualificationFinished,
 			scoreCap: tournamentConfig.scoreCap,
 			getPlayerData: (playerId) => getTournamentPlayerData(playerId, PLAYER_SLOT.CSV),
 			courtNames: visibleMatches.map((match) => match.court),
@@ -295,6 +342,7 @@ function renderUpdateQualificationRounds() {
 
 		updateRoundBuilder(roundEl, {
 			disabledScore: !tournamentConfig.qualificationStarted || tournamentConfig.qualificationFinished,
+			readOnlyScore: tournamentConfig.useOnScreenNumpad && tournamentConfig.qualificationStarted && !tournamentConfig.qualificationFinished,
 			getPlayerData: (playerId) => {
 				const match = visibleMatches.find((m) => m.teamA.includes(playerId) || m.teamB.includes(playerId));
 				return getTournamentPlayerData(
@@ -339,7 +387,7 @@ function cancelRoundWindowTimer(full = false) {
 }
 
 genQualificationOut.addEventListener("focusout", (e) => {
-	if (e.target.type !== "number") {
+	if (e.target.type !== "number" || (e.target.readOnly && document.querySelector(".score-entry-dialog[open]"))) {
 		return;
 	}
 
