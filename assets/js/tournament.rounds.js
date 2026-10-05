@@ -300,7 +300,7 @@ function renderQualificationRounds() {
 			cancel.innerText = "Cancel shifting (Esc)";
 			cancel.hidden = true;
 			cancel.disabled = true;
-			cancel.addEventListener("click", cancelRoundWindowTimer);
+			cancel.addEventListener("click", () => cancelRoundWindowTimer());
 			roundHeader.appendChild(cancel);
 
 			const shiftNow = document.createElement("button");
