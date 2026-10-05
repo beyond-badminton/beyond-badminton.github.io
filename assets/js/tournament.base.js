@@ -9,12 +9,14 @@ const TOURNAMENT_PLAYOFF_DRAW_KEY = "tournament-generator:playoffDraw";
 const TOURNAMENT_PLAYOFF_ROUNDS_KEY = "tournament-generator:playoffRounds";
 const TOURNAMENT_PLAYOFF_SCORES_KEY = "tournament-generator:playoffScores";
 const TOURNAMENT_PLAYERS_KEY = "tournament-generator:tournamentPlayers";
+const QUALIFICATION_SCORE_SAVE_REQUEST_EVENT = "qualification-score-save-request";
 
 // ── State ─────────────────────────────────────────────────────
 
 function newTournamentConfig() {
 	return {
 		tournamentDate: null,
+		useOnScreenNumpad: false,
 		matchesPerPlayer: 0,
 		twoMenVsTwoWomen: "enabled",
 		pointsToWin: 15,

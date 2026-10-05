@@ -50,7 +50,7 @@ function buildPlayerSlot(roundId, playerId, lastSlot, getPlayerData) {
 	return slot;
 }
 
-function buildMatchCard(match, score, roundId, getPlayerData, disabledScore = false, scoreCap = null) {
+function buildMatchCard(match, score, roundId, getPlayerData, disabledScore = false, readOnlyScore = false, scoreCap = null) {
 	const card = document.createElement("div");
 	card.className = "gen-match-card";
 	card.dataset.matchId = match.matchId;
@@ -97,6 +97,7 @@ function buildMatchCard(match, score, roundId, getPlayerData, disabledScore = fa
 			inA.value = score.a !== null ? score.a : "";
 			inA.dataset.matchId = match.matchId;
 			inA.dataset.side = "a";
+			inA.readOnly = readOnlyScore;
 
 			const sep = document.createElement("span");
 			sep.textContent = ":";
@@ -114,6 +115,7 @@ function buildMatchCard(match, score, roundId, getPlayerData, disabledScore = fa
 			inB.value = score.b !== null ? score.b : "";
 			inB.dataset.matchId = match.matchId;
 			inB.dataset.side = "b";
+			inB.readOnly = readOnlyScore;
 
 			if (disabledScore) {
 				inA.disabled = true;
@@ -128,6 +130,167 @@ function buildMatchCard(match, score, roundId, getPlayerData, disabledScore = fa
 	});
 
 	return card;
+}
+
+function updateMatchScoreUI(score, matchCard) {
+	const scoreRow = matchCard?.querySelector(".gen-score-row");
+	if (!scoreRow) return;
+
+	const winnerOrLoserAclass = score.a !== null && score.a > (score.b || 0) ? "winner" : "loser";
+	const winnerOrLoserBclass = score.b !== null && score.b > (score.a || 0) ? "winner" : "loser";
+	scoreRow.querySelectorAll(".gen-score-input").forEach((input) => {
+		const side = input.dataset.side;
+		input.value = score[side] ?? "";
+		input.className = `gen-score-input ${side === "a" ? winnerOrLoserAclass : winnerOrLoserBclass}`;
+	});
+	scoreRow.classList.toggle("score-blank", score.a === null && score.b === null);
+}
+
+function openMatchScoreDialog({ match, score, roundId, getPlayerData, pointsToWin, scoreCap, onScore, onClose }) {
+	const dialog = document.createElement("dialog");
+	dialog.className = "confirm-modal score-entry-dialog";
+	dialog.setAttribute("aria-labelledby", "score-entry-title");
+
+	const heading = document.createElement("header");
+	heading.className = "score-entry-heading";
+	const context = document.createElement("p");
+	context.className = "score-entry-context";
+	context.textContent = `Round ${roundId + 1} · ${match.court}`;
+	const title = document.createElement("h2");
+	title.id = "score-entry-title";
+	title.textContent = "Record match score";
+	heading.append(context, title);
+	dialog.appendChild(heading);
+
+	if (score.a !== null || score.b !== null) {
+		const currentScore = document.createElement("p");
+		currentScore.className = "score-entry-current-score";
+		currentScore.textContent = `Current score: ${score.a ?? 0} : ${score.b ?? 0}`;
+		dialog.appendChild(currentScore);
+	}
+
+	const matchPreview = document.createElement("div");
+	matchPreview.className = "score-entry-match";
+	const winnerPrompt = document.createElement("h3");
+	winnerPrompt.className = "score-entry-step-heading";
+	winnerPrompt.textContent = "Select the team that won";
+	matchPreview.appendChild(winnerPrompt);
+
+	const winnerChoices = document.createElement("div");
+	winnerChoices.className = "score-entry-winner-choices";
+	const loserSection = document.createElement("section");
+	loserSection.className = "score-entry-loser-section";
+	const loserHeading = document.createElement("h3");
+	loserHeading.textContent = "Losing team's score";
+	const loserHelp = document.createElement("p");
+	loserHelp.className = "score-entry-help";
+	loserHelp.textContent = `Select only the losing team's points. The winner's score is calculated automatically using points to win (${pointsToWin}), win by two, and the score cap (${scoreCap}).`;
+	const keypad = document.createElement("div");
+	keypad.className = "score-entry-keypad";
+	loserSection.append(loserHeading, loserHelp, keypad);
+
+	const currentScoreA = score.a === null || score.a === undefined ? 0 : Number(score.a);
+	const currentScoreB = score.b === null || score.b === undefined ? 0 : Number(score.b);
+	const currentWinningScore = Math.max(currentScoreA, currentScoreB);
+	const currentScoreDifference = Math.abs(currentScoreA - currentScoreB);
+	const validCurrentScore =
+		Number.isSafeInteger(currentScoreA) &&
+		Number.isSafeInteger(currentScoreB) &&
+		currentScoreA >= 0 &&
+		currentScoreB >= 0 &&
+		currentScoreA <= scoreCap &&
+		currentScoreB <= scoreCap;
+	const hasCurrentWinner =
+		validCurrentScore &&
+		currentScoreA !== currentScoreB &&
+		currentWinningScore >= pointsToWin &&
+		(currentScoreDifference >= 2 || currentWinningScore === scoreCap);
+	let winningTeam = hasCurrentWinner ? (currentScoreA > currentScoreB ? "teamA" : "teamB") : null;
+	const getExistingLoserScore = (team) => {
+		const value = team === "teamA" ? score.b : score.a;
+		const numericValue = value === null || value === undefined ? 0 : Number(value);
+		return Number.isInteger(numericValue) && numericValue >= 0 && numericValue < scoreCap ? numericValue : null;
+	};
+	let selectedLoserScore = winningTeam ? getExistingLoserScore(winningTeam) : null;
+	const scoreButtons = [];
+	["teamA", "teamB"].forEach((team, index) => {
+		const winnerButton = document.createElement("button");
+		winnerButton.type = "button";
+		winnerButton.className = "score-entry-team-choice";
+		const isSelected = team === winningTeam;
+		winnerButton.classList.toggle("selected", isSelected);
+		winnerButton.setAttribute("aria-pressed", String(isSelected));
+		const teamLabel = document.createElement("span");
+		teamLabel.className = "score-entry-team-label";
+		teamLabel.textContent = `Team ${index === 0 ? "A" : "B"}`;
+		const teamPlayers = document.createElement("span");
+		teamPlayers.className = "score-entry-team-players";
+		teamPlayers.textContent = match[team].map((playerId) => getPlayerData(playerId).name).join(" + ");
+		const actionLabel = document.createElement("span");
+		actionLabel.className = "score-entry-team-action";
+		actionLabel.textContent = isSelected ? "Selected winner" : "Select as winner";
+		winnerButton.append(teamLabel, teamPlayers, actionLabel);
+		winnerButton.addEventListener("click", () => {
+			if (winningTeam !== team) selectedLoserScore = getExistingLoserScore(team);
+			winningTeam = team;
+			winnerChoices.querySelectorAll("button").forEach((button) => {
+				const selected = button === winnerButton;
+				button.classList.toggle("selected", selected);
+				button.setAttribute("aria-pressed", String(selected));
+				button.querySelector(".score-entry-team-action").textContent = selected ? "Selected winner" : "Select as winner";
+			});
+			scoreButtons.forEach((button) => {
+				const selected = Number(button.dataset.loserScore) === selectedLoserScore;
+				button.disabled = false;
+				button.classList.toggle("selected", selected);
+				button.setAttribute("aria-pressed", String(selected));
+			});
+		});
+		winnerChoices.appendChild(winnerButton);
+	});
+	matchPreview.appendChild(winnerChoices);
+	dialog.appendChild(matchPreview);
+	dialog.appendChild(loserSection);
+
+	for (let loserScore = 0; loserScore < scoreCap; loserScore += 1) {
+		const scoreButton = document.createElement("button");
+		scoreButton.type = "button";
+		scoreButton.className = "score-entry-key";
+		scoreButton.textContent = String(loserScore);
+		scoreButton.dataset.loserScore = String(loserScore);
+		scoreButton.disabled = winningTeam === null;
+		scoreButton.classList.toggle("selected", loserScore === selectedLoserScore);
+		scoreButton.setAttribute("aria-pressed", String(loserScore === selectedLoserScore));
+		scoreButton.setAttribute("aria-label", `${loserScore} points for losing team`);
+		scoreButton.addEventListener("click", () => {
+			const winningScore = loserScore < pointsToWin - 1 ? pointsToWin : Math.min(scoreCap, loserScore + 2);
+			const result = winningTeam === "teamA" ? { a: winningScore, b: loserScore } : { a: loserScore, b: winningScore };
+			onScore(result);
+			dialog.close();
+		});
+		keypad.appendChild(scoreButton);
+		scoreButtons.push(scoreButton);
+	}
+
+	const actions = document.createElement("div");
+	actions.className = "modal-actions";
+	const cancelButton = document.createElement("button");
+	cancelButton.type = "button";
+	cancelButton.className = "discard-btn score-entry-cancel";
+	cancelButton.textContent = "Cancel";
+	cancelButton.addEventListener("click", () => dialog.close());
+	actions.appendChild(cancelButton);
+	dialog.appendChild(actions);
+	dialog.addEventListener(
+		"close",
+		() => {
+			dialog.remove();
+			onClose?.();
+		},
+		{ once: true },
+	);
+	document.body.appendChild(dialog);
+	dialog.showModal();
 }
 
 function getCourtLabelWidth(courtNames) {
@@ -156,6 +319,7 @@ function getCourtLabelWidth(courtNames) {
 function createRoundBuilder({
 	roundId,
 	disabledScore = false,
+	readOnlyScore = false,
 	scoreCap = null,
 	getPlayerData,
 	getBenchPlayerData = getPlayerData,
@@ -184,7 +348,7 @@ function createRoundBuilder({
 
 	return {
 		addMatch(match, score, matchGetPlayerData = getPlayerData) {
-			matchesRow.appendChild(buildMatchCard(match, score, roundId, matchGetPlayerData, disabledScore, scoreCap));
+			matchesRow.appendChild(buildMatchCard(match, score, roundId, matchGetPlayerData, disabledScore, readOnlyScore, scoreCap));
 		},
 		build() {
 			const benchCard = buildBenchCard(bench, roundId, getBenchPlayerData);
@@ -196,7 +360,10 @@ function createRoundBuilder({
 	};
 }
 
-function updateRoundBuilder(roundEl, { disabledScore = false, getPlayerData, getBenchPlayerData = getPlayerData, courtNames = [], bench = [] }) {
+function updateRoundBuilder(
+	roundEl,
+	{ disabledScore = false, readOnlyScore = false, getPlayerData, getBenchPlayerData = getPlayerData, courtNames = [], bench = [] },
+) {
 	const roundId = Number(roundEl.dataset.roundId);
 	const roundLabel = roundEl.querySelector(".gen-round-label");
 	if (roundLabel) {
@@ -221,6 +388,7 @@ function updateRoundBuilder(roundEl, { disabledScore = false, getPlayerData, get
 	});
 	roundEl.querySelectorAll(".gen-score-input").forEach((input) => {
 		input.disabled = disabledScore;
+		input.readOnly = readOnlyScore;
 	});
 
 	const existingBench = roundEl.querySelector(":scope > .gen-bench");
