@@ -73,9 +73,14 @@ function renderQualificationP2PStats() {
 				</tr>`;
 		})
 		.join("");
+
+	genQualificationP2PStatsTableBody.style.setProperty("--playoff-line-width", `${getExpectedBorderWidth(3)}px`);
+
 	updateSortUI("qualificationP2PStats");
 	updateRegisteredTableFit("qualification-p2p-stats-table");
 }
+
+let p2pStatsLastDpr = window.devicePixelRatio;
 
 function initQualificationP2PStatsRenderer() {
 	qualificationP2PFilterElements.initialize();
@@ -92,6 +97,14 @@ function initQualificationP2PStatsRenderer() {
 			<th><span class="sortable" data-list="qualificationP2PStats" data-field="losses">Losses <span class="sort-icon">↕</span></span></th>
 			<th><span class="sortable" data-list="qualificationP2PStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
 		</tr>`;
+
+	window.addEventListener("resize", () => {
+		if (window.devicePixelRatio !== p2pStatsLastDpr) {
+			p2pStatsLastDpr = window.devicePixelRatio;
+			renderQualificationP2PStats();
+		}
+	});
+
 	registerSortableTable(table, {
 		listKey: "qualificationP2PStats",
 		initialState: [{ field: "rank", dir: "asc" }],

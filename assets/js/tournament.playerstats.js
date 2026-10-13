@@ -44,9 +44,15 @@ function renderQualificationPlayerStats() {
 		</tr>`;
 		})
 		.join("");
+
+	genQualificationStatsTableBody.style.setProperty("--playoff-line-width", `${getExpectedBorderWidth(3)}px`);
+	genQualificationStatsTableBody.style.setProperty("--quartet-line-width", `${getExpectedBorderWidth(2)}px`);
+
 	updateSortUI("qualificationPlayerStats");
 	updateRegisteredTableFit("qualification-stats-table");
 }
+
+let playerStatsLastDpr = window.devicePixelRatio;
 
 function initQualificationPlayerStatsRenderer(autoResize = false) {
 	const table = document.getElementById("qualification-stats-table");
@@ -62,6 +68,14 @@ function initQualificationPlayerStatsRenderer(autoResize = false) {
 			<th><span class="sortable" data-list="qualificationPlayerStats" data-field="diff">Diff <span class="sort-icon">↕</span></span></th>
 			<th>Rule<span class="help-icon" title="The rule that set the player's final position, whether decisive on its own or used to break a tie.">?</span></th>
 		</tr>`;
+
+	window.addEventListener("resize", () => {
+		if (window.devicePixelRatio !== playerStatsLastDpr) {
+			playerStatsLastDpr = window.devicePixelRatio;
+			renderQualificationPlayerStats();
+		}
+	});
+
 	registerSortableTable(table, {
 		listKey: "qualificationPlayerStats",
 		initialState: [{ field: "rank", dir: "asc" }],
