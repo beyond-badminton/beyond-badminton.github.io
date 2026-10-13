@@ -1770,16 +1770,16 @@ body.tournament-live-page:not(.live-page-controls-visible) .table-fit-control {
 	border-bottom: none;
 }
 .gen-stats-table tr.playoff-line-desc:not(:first-child) {
-	border-top: 3px solid var(--ink-soft);
+	border-top: var(--playoff-line-width, 3px) solid var(--ink-soft);
 }
 .gen-stats-table tr.playoff-line-asc:not(:last-child) {
-	border-bottom: 3px solid var(--ink-soft);
+	border-bottom: var(--playoff-line-width, 3px) solid var(--ink-soft);
 }
 .gen-stats-table tr.quartet-line-desc:not(:first-child) {
-	border-top: 3px solid var(--accent-line);
+	border-top: var(--quartet-line-width, 2px) solid var(--accent);
 }
 .gen-stats-table tr.quartet-line-asc:not(:last-child) {
-	border-bottom: 3px solid var(--accent-line);
+	border-bottom: var(--quartet-line-width, 2px) solid var(--accent);
 }
 
 .gen-stats-table tr.playoff-in td:first-child {

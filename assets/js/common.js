@@ -506,3 +506,12 @@ function valueWithSign(val) {
 	if (val > 0) return `+${val}`;
 	return val;
 }
+
+// CSS width that produces exactly targetPx physical pixels
+function getExpectedBorderWidth(targetPx) {
+	const dpr = window.devicePixelRatio || 1;
+
+	// tiny epsilon: browsers floor border widths to whole device pixels,
+	// so 3/0.9*0.9 = 2.9999999 would otherwise render as 2px
+	return (targetPx + 0.01) / dpr;
+}
