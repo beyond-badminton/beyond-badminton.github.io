@@ -22,8 +22,16 @@
 	--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.06);
 	--shadow-modal: 0 4px 15px rgba(0, 0, 0, 0.3);
 	--backdrop: rgba(0, 0, 0, 0.6);
-	--accent-soft-red: #ffeeee;
+	--accent-soft-red: #ffdddd;
 	--accent-red-dark: #802727;
+	--skill-1-background: #fdbbbb;
+	--skill-1-color: #8f210e;
+	--skill-2-background: #ffd6d6;
+	--skill-2-color: #c73e25;
+	--skill-3-background: #ffefbc;
+	--skill-3-color: #8f6e03;
+	--skill-4-background: #caf2ff;
+	--skill-4-color: #0f7f9b;
 	--radius: 10px;
 	font-family: "Segoe UI", Helvetica, Arial, sans-serif;
 }
@@ -58,8 +66,16 @@
 		--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
 		--shadow-modal: 0 4px 20px rgba(0, 0, 0, 0.6);
 		--backdrop: rgba(0, 0, 0, 0.75);
-		--accent-soft-red: #3a1d1a;
+		--accent-soft-red: #492521;
 		--accent-red-dark: #f4a8a0;
+		--skill-1-background: #582c27;
+		--skill-1-color: #e2705c;
+		--skill-2-background: #79352c;
+		--skill-2-color: #ffa0a0;
+		--skill-3-background: #554719;
+		--skill-3-color: #e0b93c;
+		--skill-4-background: #1b4450;
+		--skill-4-color: #4ab8d4;
 	}
 }
 
@@ -85,8 +101,16 @@
 	--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
 	--shadow-modal: 0 4px 20px rgba(0, 0, 0, 0.6);
 	--backdrop: rgba(0, 0, 0, 0.75);
-	--accent-soft-red: #3a1d1a;
-	--accent-red-dark: #f4a8a0;
+	--accent-soft-red: #472723;
+	--accent-red-dark: #802727;
+	--skill-1-background: #582c27;
+	--skill-1-color: #e2705c;
+	--skill-2-background: #743c35;
+	--skill-2-color: #ffa0a0;
+	--skill-3-background: #554719;
+	--skill-3-color: #e0b93c;
+	--skill-4-background: #1b4450;
+	--skill-4-color: #4ab8d4;
 }
 
 .main-controls {
@@ -797,39 +821,39 @@ input[type="file"] {
 }
 
 .skill-pill.skill-1 {
-	background: var(--accent-soft-red);
-	color: var(--accent-red);
+	background: var(--skill-1-background);
+	color: var(--skill-1-color);
 }
 
 .skill-pick.skill-1:hover {
-	box-shadow: 0 0 0 1px var(--accent-red);
+	box-shadow: 0 0 0 1px var(--skill-1-color);
 }
 
 .skill-pill.skill-2 {
-	background: var(--accent-soft-yellow);
-	color: var(--accent-yellow);
+	background: var(--skill-2-background);
+	color: var(--skill-2-color);
 }
 
 .skill-pick.skill-2:hover {
-	box-shadow: 0 0 0 1px var(--accent-yellow);
+	box-shadow: 0 0 0 1px var(--skill-2-color);
 }
 
 .skill-pill.skill-3 {
-	background: var(--accent-soft);
-	color: var(--accent);
+	background: var(--skill-3-background);
+	color: var(--skill-3-color);
 }
 
 .skill-pick.skill-3:hover {
-	box-shadow: 0 0 0 1px var(--accent);
+	box-shadow: 0 0 0 1px var(--skill-3-color);
 }
 
 .skill-pill.skill-4 {
-	background: var(--accent-soft-blue);
-	color: var(--accent-blue);
+	background: var(--skill-4-background);
+	color: var(--skill-4-color);
 }
 
 .skill-pick.skill-4:hover {
-	box-shadow: 0 0 0 1px var(--accent-blue);
+	box-shadow: 0 0 0 1px var(--skill-4-color);
 }
 
 .gender-pill {
