@@ -297,7 +297,7 @@ function renderQualificationRounds() {
 
 			const cancel = document.createElement("button");
 			cancel.className = "discard-btn right";
-			cancel.innerText = "Cancel shifting (Esc)";
+			cancel.textContent = "Cancel shifting (Esc)";
 			cancel.hidden = true;
 			cancel.disabled = true;
 			cancel.addEventListener("click", () => cancelRoundWindowTimer());
@@ -305,7 +305,7 @@ function renderQualificationRounds() {
 
 			const shiftNow = document.createElement("button");
 			shiftNow.className = "discard-btn right gen-round-window-shift";
-			shiftNow.innerText = "Shift now";
+			shiftNow.textContent = "Shift now";
 			shiftNow.hidden = true;
 			shiftNow.disabled = true;
 			shiftNow.addEventListener("click", commitRoundWindowShiftNow);

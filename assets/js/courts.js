@@ -267,7 +267,7 @@ function validateCourtAvailabilityForm() {
 
 	if (failedCourts.length > 0) {
 		const failedCourtsList = orderedFailedCourts.join(", ");
-		courtOverlapErrMsg.innerText = `${orderedFailedCourts.length > 1 ? "Courts" : "Court"} ${failedCourtsList} ${orderedFailedCourts.length > 1 ? "are" : "is"} already booked during this time`;
+		courtOverlapErrMsg.textContent = `${orderedFailedCourts.length > 1 ? "Courts" : "Court"} ${failedCourtsList} ${orderedFailedCourts.length > 1 ? "are" : "is"} already booked during this time`;
 	}
 
 	return failedCourts.length === 0;
