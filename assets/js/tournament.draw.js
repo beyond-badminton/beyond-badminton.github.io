@@ -203,16 +203,16 @@ function renderQualificationDrawPlayers() {
 
 function renderQualificationDraw() {
 	qualificationDrawFormCard.hidden = tournamentConfig.qualificationDrawConfirmed;
-	genQualificationDrawTitle.innerText = tournamentConfig.qualificationDrawConfirmed ? "Qualification draw" : "Enter qualification draw results";
+	genQualificationDrawTitle.textContent = tournamentConfig.qualificationDrawConfirmed ? "Qualification draw" : "Enter qualification draw results";
 
 	if (!tournamentConfig.qualificationDrawConfirmed) {
 		const hint = qualificationDrawFormCard.querySelector("p.section-hint");
 		if (tournamentConfig.twoMenVsTwoWomen === "enabled") {
-			hint.innerText = "2 Men vs. 2 Women matches are allowed. Men and women share the same draw pool.";
+			hint.textContent = "2 Men vs. 2 Women matches are allowed. Men and women share the same draw pool.";
 		} else if (tournamentConfig.twoMenVsTwoWomen === "disabled") {
 			hint.innerHTML = `2 Men vs. 2 Women matches are blocked. Men and women draw from separate pools: <ul class="section-hint-list"><li>Women: 1–${tournamentWomenCount}</li><li>Men: ${tournamentWomenCount + 1}–${tournamentPlayers.length}</li></ul>`;
 		} else if (tournamentConfig.twoMenVsTwoWomen === "manual") {
-			hint.innerText =
+			hint.textContent =
 				"2 Men vs. 2 Women matches are allowed but flagged for organizer review using a shared draw pool. If any are created, confirming draws opens edit mode automatically.";
 		}
 	}
