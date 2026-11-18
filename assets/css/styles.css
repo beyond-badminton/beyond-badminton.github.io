@@ -422,13 +422,13 @@ button[type="submit"]:active {
 	filter: brightness(0.95);
 }
 
-.import-section {
+.card-section {
 	margin-top: 20px;
 	padding-top: 18px;
 	border-top: 1px solid var(--line);
 }
 
-.import-section h3 {
+.card-section h3 {
 	font-size: 0.82rem;
 	margin: 0 0 8px;
 	text-transform: uppercase;

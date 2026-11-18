@@ -72,14 +72,25 @@
 									</select>
 								</div>
 								<div class="field">
-									<label for="ap-skill">Skill level</label>
+									<label for="ap-skill"><span data-skill-display-label="level">Skill level</span></label>
 									<select id="ap-skill" name="skill">
 									</select>
 								</div>
 								<button type="submit">Add player</button>
 							</form>
 
-							<div class="import-section">
+							<div class="card-section">
+								<h3>Configure rating labels</h3>
+								<p class="section-hint">Customize rating labels. Any updates will automatically reload the page.</p>
+								<div class="field">
+									<label for="skill-label-type">Rating labels</label>
+									<select id="skill-label-type" aria-label="Rating label type">
+										<option value="skill">Skill</option>
+										<option value="winrate">Win rate</option>
+									</select>
+								</div>
+							</div>
+							<div class="card-section">
 								<h3>Import / Export CSV</h3>
 								<p class="section-hint">Data is stored in browser local storage. Export is useful if local storage is cleared or you wish to change browser or device.</p>
 								<p class="section-hint">Import format:</p>
@@ -120,7 +131,7 @@ Pikachu,3,x</pre>
 								<tr>
 									<th><span class="sortable" data-list="all" data-field="name">Name <span class="sort-icon">↕</span></span></th>
 									<th><span class="sortable" data-list="all" data-field="gender">Gender <span class="sort-icon">↕</span></span>&nbsp;&nbsp;<span class="help-icon" title="Click a gender to edit it directly. Changing genders will not re-sort the table automatically - click this header to re-sort anytime.">?</span></th>
-									<th><span class="sortable" data-list="all" data-field="skill">Skill <span class="sort-icon">↕</span></span>&nbsp;&nbsp;<span class="help-icon" title="Click a skill to edit it directly. Changing skills will not re-sort the table automatically - click this header to re-sort anytime.">?</span></th>
+									<th><span class="sortable" data-list="all" data-field="skill"><span data-skill-display-label>Skill</span> <span class="sort-icon">↕</span></span>&nbsp;&nbsp;<span class="help-icon" title="Click a rating to edit it directly. Changing ratings will not re-sort the table automatically - click this header to re-sort anytime.">?</span></th>
 									<th></th>
 								</tr>
 							</thead>
@@ -170,7 +181,7 @@ Pikachu,3,x</pre>
 							<thead>
 								<tr>
 									<th><span class="sortable" data-list="active" data-field="name">Name <span class="sort-icon">↕</span></span></th>
-									<th><span class="sortable" data-list="active" data-field="skill">Skill <span class="sort-icon">↕</span></span></th>
+									<th><span class="sortable" data-list="active" data-field="skill"><span data-skill-display-label>Skill</span> <span class="sort-icon">↕</span></span></th>
 									<th><span class="sortable" data-list="active" data-field="arrival">Arrival <span class="sort-icon">↕</span></span></th>
 									<th><span class="sortable" data-list="active" data-field="playtime">Play time <span class="sort-icon">↕</span></span></th>
 									<th><span class="sortable" data-list="active" data-field="sit1stRound">Sit 1st round <span class="sort-icon">↕</span></span>&nbsp;&nbsp;<span class="help-icon" title="Is someone running late? Put them on the bench for their first round :) This option is ignored if there are not enough players to form a bench.">?</span></th>
@@ -355,7 +366,7 @@ Pikachu,3,x</pre>
 								<thead>
 									<tr>
 										<th><span class="sortable" data-list="stats" data-field="name">Player <span class="sort-icon">↕</span></span></th>
-										<th><span class="sortable" data-list="stats" data-field="skill">Skill <span class="sort-icon">↕</span></span></th>
+										<th><span class="sortable" data-list="stats" data-field="skill"><span data-skill-display-label>Skill</span> <span class="sort-icon">↕</span></span></th>
 										<th><span class="sortable" data-list="stats" data-field="playtime">Play time <span class="sort-icon">↕</span></span></th>
 										<th><span class="sortable" data-list="stats" data-field="matches">Matches <span class="sort-icon">↕</span></span></th>
 										<th><span class="sortable" data-list="stats" data-field="bench">Bench <span class="sort-icon">↕</span></span></th>
@@ -615,7 +626,7 @@ Pikachu,3,x</pre>
 				<div class="card">
 					<h3>1 About</h3>
 					<p>This badminton tournament manager tool helps you easily organize badminton events by managing players and courts, and automatically generating schedules based on your parameters.</p>
-					<p>This tool was created to provide a generator that builds randomized matches while still following specific rules, such as keeping teams balanced in skill.</p>
+					<p>This tool was created to provide a generator that builds randomized matches while still following specific rules, such as keeping teams balanced by player rating.</p>
 					<p>Of course, this is not strictly designed for badminton matches. Feel free to use it for any games that are played in doubles.</p>
 
 					<h3>2 Beyond Badminton</h3>

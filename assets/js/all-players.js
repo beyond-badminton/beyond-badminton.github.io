@@ -6,6 +6,7 @@
 // ============================================================
 const ALL_PLAYERS_KEY = "tournament-generator:allPlayers";
 const ALL_PLAYERS_NEXT_ID_KEY = "tournament-generator:allPlayersNextId";
+const SKILL_LABEL_TYPE_KEY = "tournament-generator:skillLabelType";
 
 const GENDER_LABELS = {
 	m: "Man",
@@ -13,12 +14,22 @@ const GENDER_LABELS = {
 	x: "N/A",
 };
 
-const SKILL_LABELS = {
-	1: "Beginner",
-	2: "Intermediate",
-	3: "Advanced",
-	4: "Skilled",
+const SKILL_LABELS_BY_TYPE = {
+	skill: {
+		1: "Beginner",
+		2: "Intermediate",
+		3: "Advanced",
+		4: "Skilled",
+	},
+	winrate: {
+		1: "0 - 49%",
+		2: "50 - 59%",
+		3: "60 - 69%",
+		4: "70 - 100%",
+	},
 };
+const SKILL_LABELS = {};
+let skillLabelType = "skill";
 
 let allPlayers = [];
 let nextAllPlayerId = 1;
@@ -41,6 +52,46 @@ const allPlayerTableBody = document.getElementById("all-player-table-body");
 const allPlayersEmpty = document.getElementById("all-players-empty");
 const allPlayerCount = document.getElementById("all-player-count");
 const csvSkillCodes = document.getElementById("csv-skill-codes");
+const skillLabelTypeInput = document.getElementById("skill-label-type");
+
+function getSkillLabelTypeFromStorage() {
+	try {
+		const savedType = localStorage.getItem(SKILL_LABEL_TYPE_KEY);
+		return Object.hasOwn(SKILL_LABELS_BY_TYPE, savedType) ? savedType : "skill";
+	} catch {
+		return "skill";
+	}
+}
+
+function getSkillDisplayName() {
+	return skillLabelType === "winrate" ? "Win rate" : "Skill";
+}
+
+function updateSkillDisplayLabels() {
+	const label = getSkillDisplayName();
+	document.querySelectorAll("[data-skill-display-label]").forEach((element) => {
+		element.textContent = element.dataset.skillDisplayLabel === "level" && skillLabelType === "skill" ? `${label} level` : label;
+	});
+	if (skillLabelTypeInput) skillLabelTypeInput.value = skillLabelType;
+}
+
+function setSkillLabelTypeToStorage(type) {
+	if (!Object.hasOwn(SKILL_LABELS_BY_TYPE, type)) return false;
+
+	let stored = true;
+	try {
+		localStorage.setItem(SKILL_LABEL_TYPE_KEY, type);
+	} catch {
+		stored = false;
+	}
+
+	skillLabelType = type;
+	Object.keys(SKILL_LABELS).forEach((skillId) => {
+		delete SKILL_LABELS[skillId];
+	});
+	Object.assign(SKILL_LABELS, SKILL_LABELS_BY_TYPE[type]);
+	return stored;
+}
 
 function renderGenderPillHtml(genderId, clickable = false) {
 	return `<span class="gender-pill gender-${genderId || "x"} ${clickable ? "gender-pick" : ""}">${genderLabel(genderId)}</span>`;
@@ -61,6 +112,7 @@ function updateSkillPillElement(element, skillId, clickable = false) {
 }
 
 function populateAppSkillOptions() {
+	apSkillInput.replaceChildren();
 	const skillLabelsHtml = Object.entries(SKILL_LABELS)
 		.map(([skillId, skillName]) => `<code>${skillId}</code> (${skillName})`)
 		.join(", ");
@@ -68,7 +120,7 @@ function populateAppSkillOptions() {
 	Object.entries(SKILL_LABELS).forEach(([skillId, skillName]) => {
 		const opt = document.createElement("option");
 		opt.value = skillId;
-		opt.textContent = `${skillId} — ${skillName}`;
+		opt.textContent = `[${skillId}] ${skillName}`;
 		apSkillInput.appendChild(opt);
 	});
 }
@@ -163,23 +215,32 @@ function saveAllPlayersToStorage(render = true) {
 }
 
 function saveAllPlayersDataToStorage(data) {
-	[ALL_PLAYERS_KEY, ALL_PLAYERS_NEXT_ID_KEY].forEach((key) => {
+	const previousSkillLabelType = getSkillLabelTypeFromStorage();
+	[ALL_PLAYERS_KEY, ALL_PLAYERS_NEXT_ID_KEY, SKILL_LABEL_TYPE_KEY].forEach((key) => {
 		if (key in data) {
 			const value = data[key];
-			const toStore = typeof value === "string" ? value : JSON.stringify(value);
-			localStorage.setItem(key, toStore);
+			if (key === SKILL_LABEL_TYPE_KEY) {
+				setSkillLabelTypeToStorage(value);
+			} else {
+				const toStore = typeof value === "string" ? value : JSON.stringify(value);
+				localStorage.setItem(key, toStore);
+			}
 		}
 	});
+	if (previousSkillLabelType !== getSkillLabelTypeFromStorage()) {
+		window.setTimeout(() => window.location.reload(), 0);
+	}
 }
 
 function getAllPlayersDataFromStorage() {
 	const data = {};
-	[ALL_PLAYERS_KEY, ALL_PLAYERS_NEXT_ID_KEY].forEach((key) => {
+	[ALL_PLAYERS_KEY, ALL_PLAYERS_NEXT_ID_KEY, SKILL_LABEL_TYPE_KEY].forEach((key) => {
 		const value = localStorage.getItem(key);
 		if (value !== null) {
 			data[key] = value;
 		}
 	});
+	data[SKILL_LABEL_TYPE_KEY] = getSkillLabelTypeFromStorage();
 	return data;
 }
 
@@ -260,7 +321,7 @@ allPlayersCsvInput.addEventListener("change", () => {
 			}
 
 			if (!skillNumbers.includes(skill)) {
-				errors.push(`Row ${i + 2}: Skill must be one of ${skillNumbers.join(", ")}`);
+				errors.push(`Row ${i + 2}: Rating must be one of ${skillNumbers.join(", ")}`);
 				return;
 			}
 
@@ -517,9 +578,19 @@ function playerIsWoman(allPlayerId) {
 	return playerGender(allPlayerId) === "w";
 }
 
+skillLabelTypeInput.addEventListener("change", () => {
+	if (setSkillLabelTypeToStorage(skillLabelTypeInput.value)) {
+		window.location.reload();
+	} else {
+		updateSkillDisplayLabels();
+	}
+});
+
 // ============================================================
 // INIT — initial render on page load
 // ============================================================
+setSkillLabelTypeToStorage(getSkillLabelTypeFromStorage());
+updateSkillDisplayLabels();
 populateAppSkillOptions();
 loadAllPlayersFromStorage();
 
