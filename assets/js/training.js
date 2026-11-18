@@ -1065,11 +1065,11 @@ function renderScoreboard() {
 
 	const rows = [
 		[
-			"Skill imbalance",
+			`${getSkillDisplayName()} imbalance`,
 			generatedPenalties.skill,
 			adjustedPenalties.skill,
 			adjustedPenalties.skill - generatedPenalties.skill,
-			`Skill imbalance means that the total skill of one team is significantly higher than the other team, which can lead to unfair matches. If the skill difference is 1, a ${PENALTY_WEIGHTS.SKILL_1}-points penalty is applied. If the skill difference is 2, a ${PENALTY_WEIGHTS.SKILL_2}-points penalty is applied. If the skill difference is 3 or more, a ${PENALTY_WEIGHTS.SKILL_3}-points penalty is applied.`,
+			`${getSkillDisplayName()} imbalance means that the total player rating of one team is significantly higher than the other team, which can lead to unfair matches. If the rating difference is 1, a ${PENALTY_WEIGHTS.SKILL_1}-points penalty is applied. If the rating difference is 2, a ${PENALTY_WEIGHTS.SKILL_2}-points penalty is applied. If the rating difference is 3 or more, a ${PENALTY_WEIGHTS.SKILL_3}-points penalty is applied.`,
 		],
 		[
 			"Same-team repeats",
