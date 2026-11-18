@@ -535,7 +535,7 @@ function onSkillChanged(targetPillElement, playerId, skillId) {
 		updateSkillPillElement(targetPillElement, skillId, true);
 
 		PlayerEvents.emit(PlayerEvents.Type.UPDATE, player.id);
-		renderGeneratedSchedule();
+		renderGeneratedTraining();
 
 		return true;
 	}
