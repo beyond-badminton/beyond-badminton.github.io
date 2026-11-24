@@ -1,37 +1,36 @@
 :root {
 	color-scheme: light dark;
-	--ink: #1a2420;
-	--ink-soft: #5c6b64;
-	--line: #dde3df;
-	--accent-line: #d4d4d4;
+	--ink: light-dark(#1a2420, #e4ebe7);
+	--ink-soft: light-dark(#5c6b64, #97a69e);
+	--line: light-dark(#dde3df, #2a3530);
+	--accent-line: light-dark(#d4d4d4, #3a4540);
 	--modal-border: var(--accent-line);
-	--paper: #f7f8f6;
-	--accent-paper: #eeefed;
-	--card: #ffffff;
-	--accent: #1f7a5c;
-	--accent-soft: #e6f2ec;
-	--accent-red: #c8503a;
-	--accent-yellow: #96760a;
-	--accent-soft-yellow: #fdf1c8;
-	--accent-blue: #0f7f9b;
-	--accent-soft-blue: hsl(194, 100%, 92%);
-	--on-accent: #ffffff;
+	--paper: light-dark(#f7f8f6, #111614);
+	--accent-paper: light-dark(#eeefed, #272d2a);
+	--card: light-dark(#ffffff, #1a221f);
+	--accent: light-dark(#1f7a5c, #3fb58a);
+	--accent-soft: light-dark(#e6f2ec, #1a3329);
+	--accent-red: light-dark(#c8503a, #ef7a63);
+	--accent-yellow: light-dark(#96760a, #e0b93c);
+	--accent-soft-yellow: light-dark(#fdf1c8, #3a3010);
+	--accent-blue: light-dark(#0f7f9b, #4ab8d4);
+	--accent-soft-blue: light-dark(hsl(194, 100%, 92%), hsl(194, 50%, 16%));
+	--on-accent: light-dark(#ffffff, #06140e);
 	--transparent: transparent;
-	--accent-red-ring: rgba(200, 80, 58, 0.15);
-	--accent-hover: rgba(31, 122, 92, 0.18);
-	--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.06);
-	--shadow-modal: 0 4px 15px rgba(0, 0, 0, 0.3);
-	--backdrop: rgba(0, 0, 0, 0.6);
-	--accent-soft-red: #ffdddd;
+	--accent-red-ring: light-dark(rgba(200, 80, 58, 0.15), rgba(239, 122, 99, 0.25));
+	--accent-hover: light-dark(rgba(31, 122, 92, 0.18), #3fb58a38);
+	--shadow-subtle: 0 1px 2px light-dark(rgba(0, 0, 0, 0.06), #00000066);
+	--shadow-modal: 0 4px 15px light-dark(rgba(0, 0, 0, 0.3), #00000099);
+	--backdrop: light-dark(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.75));
+	--accent-soft-red: light-dark(#ffdddd, #472723);
 	--accent-red-dark: #802727;
-	--skill-1-background: #fdbbbb;
-	--skill-1-color: #8f210e;
-	--skill-2-background: #ffd6d6;
-	--skill-2-color: #c73e25;
-	--skill-3-background: #ffefbc;
-	--skill-3-color: #8f6e03;
-	--skill-4-background: #caf2ff;
-	--skill-4-color: #0f7f9b;
+	--skill-pill-color: #1d1d1d;
+	--skill-pill-border: light-dark(#888888, #97a69e);
+	--skill-1-background: light-dark(#fda5a5, #ff8383);
+	--skill-2-background: light-dark(#ffdaa3, #fdb03c);
+	--skill-3-background: light-dark(#ffffa0, #fcfc55);
+	--skill-4-background: light-dark(#b0ffb0, #74ff74);
+	--skill-5-background: light-dark(#a3fffd, #62faf7);
 	--radius: 10px;
 	font-family: "Segoe UI", Helvetica, Arial, sans-serif;
 }
@@ -41,76 +40,6 @@
 }
 :root[data-theme="dark"] {
 	color-scheme: dark;
-}
-
-/* Auto: follow the system unless the user forced light */
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme="light"]) {
-		--ink: #e4ebe7;
-		--ink-soft: #97a69e;
-		--line: #2a3530;
-		--accent-line: #3a4540;
-		--paper: #111614;
-		--accent-paper: #272d2a;
-		--card: #1a221f;
-		--accent: #3fb58a;
-		--accent-soft: #1a3329;
-		--accent-red: #ef7a63;
-		--accent-yellow: #e0b93c;
-		--accent-soft-yellow: #3a3010;
-		--accent-blue: #4ab8d4;
-		--accent-soft-blue: hsl(194, 50%, 16%);
-		--on-accent: #06140e;
-		--accent-red-ring: rgba(239, 122, 99, 0.25);
-		--accent-hover: rgba(63, 181, 138, 0.22);
-		--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
-		--shadow-modal: 0 4px 20px rgba(0, 0, 0, 0.6);
-		--backdrop: rgba(0, 0, 0, 0.75);
-		--accent-soft-red: #492521;
-		--accent-red-dark: #f4a8a0;
-		--skill-1-background: #582c27;
-		--skill-1-color: #e2705c;
-		--skill-2-background: #743c35;
-		--skill-2-color: #ffa0a0;
-		--skill-3-background: #554719;
-		--skill-3-color: #e0b93c;
-		--skill-4-background: #1b4450;
-		--skill-4-color: #4ab8d4;
-	}
-}
-
-/* Forced dark: exactly the same variables as above */
-:root[data-theme="dark"] {
-	--ink: #e4ebe7;
-	--ink-soft: #97a69e;
-	--line: #2a3530;
-	--accent-line: #3a4540;
-	--paper: #111614;
-	--accent-paper: #272d2a;
-	--card: #1a221f;
-	--accent: #3fb58a;
-	--accent-soft: #1a3329;
-	--accent-red: #ef7a63;
-	--accent-yellow: #e0b93c;
-	--accent-soft-yellow: #3a3010;
-	--accent-blue: #4ab8d4;
-	--accent-soft-blue: hsl(194, 50%, 16%);
-	--on-accent: #06140e;
-	--accent-red-ring: rgba(239, 122, 99, 0.25);
-	--accent-hover: rgba(63, 181, 138, 0.22);
-	--shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.4);
-	--shadow-modal: 0 4px 20px rgba(0, 0, 0, 0.6);
-	--backdrop: rgba(0, 0, 0, 0.75);
-	--accent-soft-red: #472723;
-	--accent-red-dark: #802727;
-	--skill-1-background: #582c27;
-	--skill-1-color: #e2705c;
-	--skill-2-background: #743c35;
-	--skill-2-color: #ffa0a0;
-	--skill-3-background: #554719;
-	--skill-3-color: #e0b93c;
-	--skill-4-background: #1b4450;
-	--skill-4-color: #4ab8d4;
 }
 
 .main-controls {
@@ -807,10 +736,13 @@ input[type="file"] {
 
 .skill-pill {
 	display: inline-block;
+	user-select: none;
 	padding: 2px 8px;
 	border-radius: 999px;
+	border: 1px solid var(--skill-pill-border);
 	font-weight: 600;
 	font-size: 0.78rem;
+	color: var(--skill-pill-color);
 	transition:
 		box-shadow 0.2s ease-in-out,
 		border-color 0.2s ease-in-out;
@@ -822,42 +754,31 @@ input[type="file"] {
 
 .skill-pill.skill-1 {
 	background: var(--skill-1-background);
-	color: var(--skill-1-color);
-}
-
-.skill-pick.skill-1:hover {
-	box-shadow: 0 0 0 1px var(--skill-1-color);
 }
 
 .skill-pill.skill-2 {
 	background: var(--skill-2-background);
-	color: var(--skill-2-color);
-}
-
-.skill-pick.skill-2:hover {
-	box-shadow: 0 0 0 1px var(--skill-2-color);
 }
 
 .skill-pill.skill-3 {
 	background: var(--skill-3-background);
-	color: var(--skill-3-color);
-}
-
-.skill-pick.skill-3:hover {
-	box-shadow: 0 0 0 1px var(--skill-3-color);
 }
 
 .skill-pill.skill-4 {
 	background: var(--skill-4-background);
-	color: var(--skill-4-color);
 }
 
-.skill-pick.skill-4:hover {
-	box-shadow: 0 0 0 1px var(--skill-4-color);
+.skill-pill.skill-5 {
+	background: var(--skill-5-background);
+}
+
+.skill-pick:hover {
+	box-shadow: 0 0 0 2px var(--skill-pill-border);
 }
 
 .gender-pill {
 	display: inline-block;
+	user-select: none;
 	padding: 2px 8px;
 	border-radius: 999px;
 	font-weight: 600;
@@ -865,6 +786,18 @@ input[type="file"] {
 	transition:
 		box-shadow 0.2s ease-in-out,
 		border-color 0.2s ease-in-out;
+}
+
+.gender-picker-popover {
+	position: absolute;
+	display: flex;
+	gap: 6px;
+	z-index: 1000;
+	padding: 6px 8px;
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	background: var(--paper);
+	box-shadow: 0 3px 8px var(--accent-soft);
 }
 
 .gender-pick {
