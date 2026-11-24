@@ -16,16 +16,18 @@ const GENDER_LABELS = {
 
 const SKILL_LABELS_BY_TYPE = {
 	skill: {
-		1: "Beginner",
-		2: "Intermediate",
-		3: "Advanced",
+		1: "Novice",
+		2: "Active",
+		3: "Solid",
 		4: "Skilled",
+		5: "Master",
 	},
 	winrate: {
-		1: "0 - 49%",
-		2: "50 - 59%",
-		3: "60 - 69%",
-		4: "70 - 100%",
+		1: "0 - 39%",
+		2: "40 - 49%",
+		3: "50 - 59%",
+		4: "60 - 74%",
+		5: "75 - 100%",
 	},
 };
 const SKILL_LABELS = {};
@@ -397,19 +399,6 @@ function createPickerPopover(targetPill) {
 	// Create pickerPopover element
 	const pickerPopover = document.createElement("div");
 	pickerPopover.className = "gender-picker-popover";
-
-	// Apply positioning styles
-	Object.assign(pickerPopover.style, {
-		position: "absolute",
-		backgroundColor: "#ffffff",
-		border: "1px solid var(--accent-soft)",
-		borderRadius: "6px",
-		padding: "6px 8px",
-		boxShadow: "0 4px 12px var(--accent-soft)",
-		zIndex: "1000",
-		display: "flex",
-		gap: "6px",
-	});
 
 	// Calculate position relative to clicked pill
 	const rect = targetPill.getBoundingClientRect();
